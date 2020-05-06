@@ -9,7 +9,7 @@ import java.util.*
 import kotlin.math.pow
 
 class Ship(
-    val type: ShipModel,
+    val type: ShipClass,
     var velocity: Vector2,
     var globalPos: Vector2,
     var rotation: Double
@@ -60,7 +60,7 @@ class Ship(
     {
         val retval = JSONObject()
         retval.put("id", uuid)
-        retval.put("type", type.qualifiedName())
+        retval.put("type", type.qualifiedName)
         retval.put("velocity", velocity.toJSON())
         retval.put("global_pos", globalPos.toJSON())
         retval.put("rotation", rotation)

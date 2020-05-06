@@ -3,14 +3,15 @@ package com.dibujaron.distanthorizon.player
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
-import com.dibujaron.distanthorizon.ship.ShipModel
+import com.dibujaron.distanthorizon.ship.ShipClass
+import com.dibujaron.distanthorizon.ship.ShipClassManager
 import io.javalin.websocket.WsContext
 import org.json.JSONObject
 import java.util.*
 
 class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
-    val myShip: Ship = Ship(ShipModel.RIJAY_MOCKINGBIRD, Vector2(0, 0), Vector2(375, 3180), 0.0)
+    val myShip: Ship = Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, Vector2(0, 0), Vector2(375, 3180), 0.0)
 
     init {
         ShipManager.markForAdd(myShip)
