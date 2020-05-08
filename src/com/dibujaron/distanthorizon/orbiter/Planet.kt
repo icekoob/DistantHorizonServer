@@ -4,8 +4,9 @@ import org.json.JSONObject
 import java.lang.IllegalArgumentException
 import java.util.*
 
-class Planet(properties: Properties): Orbiter(properties){
-    val scale = if(properties.containsKey("scale")) properties.getProperty("scale").toDouble() else 1.0
+class Planet(val properties: Properties): Orbiter(properties){
+    val scaleFromProps: Double = if(properties.containsKey("scale")) properties.getProperty("scale").toDouble() else 1.0
+    val scaleProperty: Double by lazy{scaleFromProps * typeScale(type)}
     val type = properties.getProperty("type").toString()
     val mass = loadMass(properties)
     val tidalLock = if(properties.containsKey("tidalLock")) properties.getProperty("tidalLock")!!.toBoolean() else false
@@ -13,14 +14,28 @@ class Planet(properties: Properties): Orbiter(properties){
     val minOrbitalRadius = properties.getProperty("minOrbitalRadius").toInt()
     val minRadiusSquared = minOrbitalRadius * minOrbitalRadius
 
+    val displayScale: Double by lazy{cumulativeScale()}//lazy{cumulativeScale()}
+
     override fun toJSON(): JSONObject {
         val retval = super.toJSON()
         retval.put("tidal_lock", tidalLock)
         retval.put("rotation_speed", rotationSpeed)
-        retval.put("scale", scale)
+        retval.put("scale", displayScale)
         retval.put("type", type)
         return retval
     }
+
+    fun cumulativeScale(): Double {
+        val par = parent;
+        if(par != null){
+            var parScale = par.cumulativeScale()
+            var myScale = parScale * scaleProperty;
+            return myScale;
+        } else {
+            return scaleProperty;
+        }
+    }
+
 }
 
 fun loadMass(properties: Properties): Double{
@@ -30,6 +45,16 @@ fun loadMass(properties: Properties): Double{
         return massBase * Math.pow(10.0, massExp);
     } else {
         throw IllegalArgumentException("Planet properties must contain massBase and massExp")
+    }
+}
+
+fun typeScale(type: String): Double{
+    when(type){
+        "Star" -> return 1.0
+        "Continental" -> return 0.2
+        "Moon" -> return 0.1
+        "Gas" -> return 0.75
+        else -> return 1.0
     }
 }
 

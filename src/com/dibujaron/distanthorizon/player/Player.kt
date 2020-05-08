@@ -3,7 +3,6 @@ package com.dibujaron.distanthorizon.player
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
-import com.dibujaron.distanthorizon.ship.ShipClass
 import com.dibujaron.distanthorizon.ship.ShipClassManager
 import io.javalin.websocket.WsContext
 import org.json.JSONObject
@@ -29,7 +28,7 @@ class Player(val connection: WsContext) {
             myShip.rotatingLeft = message.getBoolean("rotate_left_pressed")
             myShip.rotatingRight = message.getBoolean("rotate_right_pressed")
         } else if(messageType == "attempt_dock") {
-            myShip.attemptDock()
+            myShip.dockOrUndock()
         } else {
             println("Error unknown message type $messageType from player $uuid");
         }

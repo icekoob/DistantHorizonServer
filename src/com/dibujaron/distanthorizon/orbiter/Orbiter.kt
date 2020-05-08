@@ -10,14 +10,16 @@ import kotlin.math.sin
 abstract class Orbiter(properties: Properties) {
     val name: String = properties.getProperty("name").trim()
     val parentName: String = properties.getProperty("parent").trim()
-    val orbitalSpeed: Int = properties.getProperty("orbitalSpeed").toInt()
 
     var initialized = false;
     var parent: Planet? = null;
 
-    var relativePos: Vector2 = loadStartingPosition(properties)
-    val orbitalRadius = relativePos.length
-    val angularVelocity = if(orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius
+    val orbitalSpeedUnscaled: Double = properties.getProperty("orbitalSpeed").toDouble()
+    val orbitalSpeed: Double by lazy {orbitalSpeedUnscaled * parentCumulativeScale()}
+    var relativePosUnscaled: Vector2 = loadStartingPosition(properties)
+    val orbitalRadius: Double by lazy {relativePos.length}
+    val angularVelocity: Double by lazy { if (orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius }
+    var relativePos: Vector2 = Vector2(0,0)
 
     //called after all of the orbiters have loaded from file.
     fun initialize() {
@@ -34,7 +36,18 @@ abstract class Orbiter(properties: Properties) {
                     parent = foundParent;
                 }
             }
+            relativePos = relativePosUnscaled * parentCumulativeScale()
             initialized = true;
+        }
+    }
+
+    fun parentCumulativeScale(): Double{
+        val par = parent;
+        if(par != null){
+            val parScale = par.cumulativeScale();
+            return parScale
+        } else {
+            return 1.0
         }
     }
 
@@ -53,12 +66,18 @@ abstract class Orbiter(properties: Properties) {
         relativePos = relativePosAtTime(delta) //this is tricky but correct.
     }
 
+
     fun globalPos(): Vector2 {
         return globalPosAtTime(0.0)
     }
 
     fun velocity(): Vector2 {
         return globalPosAtTime(1.0) - globalPos()
+    }
+
+    fun globalRotation(): Double {
+        val vecToParent = relativePos * -1.0;
+        return vecToParent.angle;
     }
 
     fun globalPosAtTime(timeOffset: Double): Vector2 {
@@ -76,7 +95,7 @@ abstract class Orbiter(properties: Properties) {
     }
 
     fun relativePosAtTime(timeOffset: Double): Vector2 {
-        return if (relativePos.lengthSquared == 0.0 || timeOffset == 0.0) {
+        return if (relativePos.lengthSquared == 0.0) {
             relativePos
         } else {
             val angleFromParent: Double = relativePos.angle

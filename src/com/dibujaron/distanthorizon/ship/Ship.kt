@@ -1,6 +1,8 @@
 package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.docking.DockingPort
+import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import org.json.JSONObject
@@ -24,11 +26,21 @@ class Ship(
     var aftThrustersActive: Boolean = false
     var rotatingLeft: Boolean = false
     var rotatingRight: Boolean = false
-    var docked: Boolean = false
 
-    val myDockingPorts = LinkedList<ShipDockingPort>()
+    val myDockingPorts = type.dockingPorts.asSequence().map{ShipDockingPort(this, it)}.toList()
+    var dockedToPort: DockingPort? = null
+    var myDockedPort: ShipDockingPort? = null
+
     fun process(delta: Double) {
-        if (!docked) {
+        val dockedTo = dockedToPort
+        val dockedFrom = myDockedPort
+        if(dockedTo != null && dockedFrom != null){
+            velocity = dockedTo.getVelocity()
+            val myPortRelative = dockedFrom.relativePosition()
+            rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
+            globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
+        }
+        else {
             if (mainEnginesActive) {
                 velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
             }
@@ -91,7 +103,16 @@ class Ship(
         return accel
     }
 
+    fun dockOrUndock(){
+        if(dockedToPort == null){
+            attemptDock()
+        } else {
+            dockedToPort = null;
+            myDockedPort = null;
+        }
+    }
     fun attemptDock(){
+        println("attempting to dock.");
         val maxDockDist = 50.0
         val maxDistSquared = pow(2.0, maxDockDist)
 
@@ -106,11 +127,12 @@ class Ship(
             .map{Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared)}
             .filter{it.third < maxDistSquared}
             .minBy{it.third}
-
         if(match != null){
             val bestShipPort = match.first
             val bestStationPort = match.second
-            println("best dock is ship port $bestShipPort to $bestStationPort")
+            this.myDockedPort = bestShipPort
+            this.dockedToPort = bestStationPort
+            println("docked to ${bestStationPort.station.name}");
         }
     }
 }
