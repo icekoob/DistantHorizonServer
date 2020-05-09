@@ -37,25 +37,40 @@ object DHServer {
     fun run() {
         val jav = initJavalin()
         var deltaSeconds = 0.0
+        var firstTick = true;
         while (!shuttingDown) {
             //process
             val startTime = System.currentTimeMillis()
+            var priorTime = startTime
             OrbiterManager.process(deltaSeconds)
+            val orbiterTime = System.currentTimeMillis() - priorTime
+            priorTime = System.currentTimeMillis()
             ShipManager.process(deltaSeconds)
+            val shipsTime = System.currentTimeMillis() - priorTime
+            priorTime = System.currentTimeMillis()
             //send messages
             val worldStateMessage = composeWorldStateMessage()
+            val composeTime = System.currentTimeMillis() - priorTime
+            priorTime = System.currentTimeMillis()
             PlayerManager.process(worldStateMessage)
-            val endTime = System.currentTimeMillis()
-            val msTaken = endTime - startTime
+            val playerTime = System.currentTimeMillis() - priorTime
+            val totalTime = System.currentTimeMillis() - startTime
 
             //if we have time left over, sleep.
-            if (msTaken < tickLengthMs) {
-                Thread.sleep(tickLengthMs - msTaken)
+            if (totalTime < tickLengthMs) {
+                Thread.sleep(tickLengthMs - totalTime)
                 deltaSeconds = tickLengthSeconds
             } else {
-                println("can't keep up! Tick took ${msTaken}ms")
-                deltaSeconds = msTaken / 1000.0
+                if(!firstTick) {
+                    println("can't keep up! Tick took ${totalTime}ms")
+                    println("    orbiter processing: ${orbiterTime}ms")
+                    println("    ships processing: ${shipsTime}ms")
+                    println("    compose message: ${composeTime}ms")
+                    println("    player processing: ${playerTime}ms")
+                }
+                deltaSeconds = totalTime / 1000.0
             }
+            firstTick = false;
         }
         jav.stop()
     }

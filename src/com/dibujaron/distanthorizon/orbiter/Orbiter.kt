@@ -7,20 +7,21 @@ import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 
-abstract class Orbiter(properties: Properties) {
+abstract class Orbiter(val properties: Properties) {
     val name: String = properties.getProperty("name").trim()
     val parentName: String = properties.getProperty("parent").trim()
 
     var initialized = false;
     var parent: Planet? = null;
 
-    val orbitalSpeedUnscaled: Double = properties.getProperty("orbitalSpeed").toDouble()
-    val orbitalSpeed: Double by lazy {orbitalSpeedUnscaled * parentCumulativeScale()}
-    var relativePosUnscaled: Vector2 = loadStartingPosition(properties)
-    val orbitalRadius: Double by lazy {relativePos.length}
+    val orbitalSpeed: Double by lazy { properties.getProperty("orbitalSpeed").toDouble() * scale() }
+    var relativePos: Vector2 = loadStartingPositionAndScale(properties, parent?.scale() ?: 1.0)
+    val orbitalRadius: Double by lazy { relativePos.length }
     val angularVelocity: Double by lazy { if (orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius }
-    var relativePos: Vector2 = Vector2(0,0)
 
+    open fun scale(): Double{
+        return 1.0
+    }
     //called after all of the orbiters have loaded from file.
     fun initialize() {
         if (!initialized) {
@@ -32,16 +33,15 @@ abstract class Orbiter(properties: Properties) {
                     throw IllegalArgumentException("parent planet $parentName not found.")
                 } else {
                     foundParent.initialize()
-                    println("Initialized orbiter $name with parent $foundParent at relative position $relativePos")
                     parent = foundParent;
                 }
             }
-            relativePos = relativePosUnscaled * parentCumulativeScale()
+            println("Initialized orbiter $name with parent $parent at relative position $relativePos")
             initialized = true;
         }
     }
 
-    fun parentCumulativeScale(): Double{
+    /*fun parentCumulativeScale(): Double{
         val par = parent;
         if(par != null){
             val parScale = par.cumulativeScale();
@@ -49,7 +49,7 @@ abstract class Orbiter(properties: Properties) {
         } else {
             return 1.0
         }
-    }
+    }*/
 
     open fun toJSON(): JSONObject {
         val retval = JSONObject()
@@ -107,7 +107,9 @@ abstract class Orbiter(properties: Properties) {
     }
 }
 
-fun loadStartingPosition(properties: Properties): Vector2 {
+
+fun loadStartingPosition(properties: Properties): Vector2
+{
     if (properties.containsKey("posX") && properties.containsKey("posY")) {
         val posX = properties.getProperty("posX").toDouble()
         val posY = properties.getProperty("posY").toDouble()
@@ -115,6 +117,18 @@ fun loadStartingPosition(properties: Properties): Vector2 {
     } else if (properties.containsKey("orbitalRadius")) {
         val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
         return Vector2(orbitalRadius, 0);
+    } else {
+        throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
+    }
+}
+fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
+    if (properties.containsKey("posX") && properties.containsKey("posY")) {
+        val posX = properties.getProperty("posX").toDouble()
+        val posY = properties.getProperty("posY").toDouble()
+        return Vector2(posX, posY) * (1/parentScale)
+    } else if (properties.containsKey("orbitalRadius")) {
+        val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
+        return Vector2(orbitalRadius, 0) * (1/parentScale)
     } else {
         throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
     }

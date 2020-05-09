@@ -4,9 +4,7 @@ import org.json.JSONObject
 import java.lang.IllegalArgumentException
 import java.util.*
 
-class Planet(val properties: Properties): Orbiter(properties){
-    val scaleFromProps: Double = if(properties.containsKey("scale")) properties.getProperty("scale").toDouble() else 1.0
-    val scaleProperty: Double by lazy{scaleFromProps * typeScale(type)}
+class Planet(properties: Properties): Orbiter(properties){
     val type = properties.getProperty("type").toString()
     val mass = loadMass(properties)
     val tidalLock = if(properties.containsKey("tidalLock")) properties.getProperty("tidalLock")!!.toBoolean() else false
@@ -14,18 +12,27 @@ class Planet(val properties: Properties): Orbiter(properties){
     val minOrbitalRadius = properties.getProperty("minOrbitalRadius").toInt()
     val minRadiusSquared = minOrbitalRadius * minOrbitalRadius
 
-    val displayScale: Double by lazy{cumulativeScale()}//lazy{cumulativeScale()}
+    override fun scale(): Double{
+        val par = parent
+        val type = properties.getProperty("type")
+        val typeScale = typeScale(properties.getProperty("type").toString())
+        return if (properties.containsKey("scale")) {
+            typeScale * properties.getProperty("scale").toDouble()
+        } else {
+            typeScale * (par?.scale() ?: 1.0)
+        }
+    }
 
     override fun toJSON(): JSONObject {
         val retval = super.toJSON()
         retval.put("tidal_lock", tidalLock)
         retval.put("rotation_speed", rotationSpeed)
-        retval.put("scale", displayScale)
+        retval.put("scale", scale())
         retval.put("type", type)
         return retval
     }
 
-    fun cumulativeScale(): Double {
+    /*fun cumulativeScale(): Double {
         val par = parent;
         if(par != null){
             var parScale = par.cumulativeScale()
@@ -34,7 +41,7 @@ class Planet(val properties: Properties): Orbiter(properties){
         } else {
             return scaleProperty;
         }
-    }
+    }*/
 
 }
 
@@ -57,4 +64,3 @@ fun typeScale(type: String): Double{
         else -> return 1.0
     }
 }
-

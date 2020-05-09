@@ -114,18 +114,25 @@ class Ship(
     fun attemptDock(){
         println("attempting to dock.");
         val maxDockDist = 50.0
-        val maxDistSquared = pow(2.0, maxDockDist)
+        val maxDistSquared = maxDockDist.pow(2)
 
         val maxClosingSpeed = 500.0
-        val maxClosingSpeedSquared = pow(2.0, maxClosingSpeed)
+        val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
+        var pairCount = 0
+        var closingSpeedCount = 0
+        var distCount = 0
         val match = OrbiterManager.getStations().asSequence()
             .flatMap{it.dockingPorts.asSequence()}
             .flatMap{stationPort -> myDockingPorts.asSequence()
                 .map{shipPort -> Pair(shipPort, stationPort)}}
+            .onEach{pairCount++}
             .filter{(it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared}
+            .onEach{closingSpeedCount++}
             .map{Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared)}
+            .onEach{println("${it.third}, $maxDistSquared")}
             .filter{it.third < maxDistSquared}
+            .onEach{distCount++}
             .minBy{it.third}
         if(match != null){
             val bestShipPort = match.first
@@ -133,6 +140,7 @@ class Ship(
             this.myDockedPort = bestShipPort
             this.dockedToPort = bestStationPort
             println("docked to ${bestStationPort.station.name}");
+            println("pair count: $pairCount, closing speed count: $closingSpeedCount, dist count: $distCount")
         }
     }
 }
