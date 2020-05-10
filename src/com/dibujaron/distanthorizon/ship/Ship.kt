@@ -1,9 +1,11 @@
 package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.commodity.CommodityType
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
+import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import org.json.JSONObject
 import java.lang.Math.pow
@@ -28,9 +30,25 @@ class Ship(
     var rotatingRight: Boolean = false
 
     val myDockingPorts = type.dockingPorts.asSequence().map{ShipDockingPort(this, it)}.toList()
-    var dockedToPort: DockingPort? = null
+    var dockedToPort: StationDockingPort? = null
     var myDockedPort: ShipDockingPort? = null
 
+    var holdCapacity = type.holdSize
+    var hold = HashMap<String, Int>()
+
+    fun holdOccupied(): Int
+    {
+        return hold.values.asSequence().sum()
+    }
+
+    fun createHoldStatusMessage(): JSONObject
+    {
+        val retval = JSONObject()
+        CommodityType.values().asSequence()
+            .map{Pair(it.identifyingName, hold[it.identifyingName]?:0)}
+            .forEach { retval.put(it.first, it.second)}
+        return retval
+    }
     fun process(delta: Double) {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
@@ -113,26 +131,19 @@ class Ship(
     }
     fun attemptDock(){
         println("attempting to dock.");
-        val maxDockDist = 50.0
+        val maxDockDist = 50.0//10000.0//50.0
         val maxDistSquared = maxDockDist.pow(2)
 
-        val maxClosingSpeed = 500.0
+        val maxClosingSpeed = 500.0//5000.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
-        var pairCount = 0
-        var closingSpeedCount = 0
-        var distCount = 0
         val match = OrbiterManager.getStations().asSequence()
             .flatMap{it.dockingPorts.asSequence()}
             .flatMap{stationPort -> myDockingPorts.asSequence()
                 .map{shipPort -> Pair(shipPort, stationPort)}}
-            .onEach{pairCount++}
             .filter{(it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared}
-            .onEach{closingSpeedCount++}
             .map{Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared)}
-            .onEach{println("${it.third}, $maxDistSquared")}
             .filter{it.third < maxDistSquared}
-            .onEach{distCount++}
             .minBy{it.third}
         if(match != null){
             val bestShipPort = match.first
@@ -140,7 +151,6 @@ class Ship(
             this.myDockedPort = bestShipPort
             this.dockedToPort = bestStationPort
             println("docked to ${bestStationPort.station.name}");
-            println("pair count: $pairCount, closing speed count: $closingSpeedCount, dist count: $distCount")
         }
     }
 }

@@ -22,6 +22,7 @@ class ShipClass(
     val mainThrust: Double = properties.getProperty("mainThrust").toDouble()
     val manuThrust: Double = properties.getProperty("manuThrust").toDouble()
     val dockingPortCount: Int = properties.getProperty("dockingPortCount").toInt()
+    val holdSize: Int = properties.getProperty("holdSize").toInt()
     val dockingPorts = generateSequence(0) { it + 1 }
         .take(dockingPortCount)
         .map {

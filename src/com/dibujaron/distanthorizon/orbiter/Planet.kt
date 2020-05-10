@@ -23,8 +23,8 @@ class Planet(properties: Properties): Orbiter(properties){
         }
     }
 
-    override fun toJSON(): JSONObject {
-        val retval = super.toJSON()
+    override fun createOrbiterJson(): JSONObject {
+        val retval = super.createOrbiterJson()
         retval.put("tidal_lock", tidalLock)
         retval.put("rotation_speed", rotationSpeed)
         retval.put("scale", scale())

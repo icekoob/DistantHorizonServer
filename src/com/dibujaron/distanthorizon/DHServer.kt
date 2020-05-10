@@ -123,11 +123,11 @@ object DHServer {
     {
         val worldStateMessage = JSONObject()
         val planets = JSONArray()
-        OrbiterManager.getPlanets().asSequence().map { it.toJSON() }.forEach { planets.put(it) }
+        OrbiterManager.getPlanets().asSequence().map { it.createOrbiterJson() }.forEach { planets.put(it) }
         worldStateMessage.put("planets", planets)
 
         val stations = JSONArray()
-        OrbiterManager.getStations().asSequence().map { it.toJSON() }.forEach { stations.put(it) }
+        OrbiterManager.getStations().asSequence().map { it.createOrbiterJson() }.forEach { stations.put(it) }
         worldStateMessage.put("stations", stations)
 
         val ships = JSONArray()

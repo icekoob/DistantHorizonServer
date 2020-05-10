@@ -14,10 +14,10 @@ abstract class Orbiter(val properties: Properties) {
     var initialized = false;
     var parent: Planet? = null;
 
-    val orbitalSpeed: Double by lazy { properties.getProperty("orbitalSpeed").toDouble() * scale() }
-    var relativePos: Vector2 = loadStartingPositionAndScale(properties, parent?.scale() ?: 1.0)
-    val orbitalRadius: Double by lazy { relativePos.length }
-    val angularVelocity: Double by lazy { if (orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius }
+    var orbitalSpeed: Double = 0.0
+    var relativePos: Vector2 = Vector2(0,0)
+    var orbitalRadius: Double = 0.0//by lazy { relativePos.length }
+    var angularVelocity: Double = 0.0//by lazy { if (orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius }
 
     open fun scale(): Double{
         return 1.0
@@ -25,33 +25,34 @@ abstract class Orbiter(val properties: Properties) {
     //called after all of the orbiters have loaded from file.
     fun initialize() {
         if (!initialized) {
+            val orbitalSpeedProp: Double by lazy { properties.getProperty("orbitalSpeed").toDouble() }
             if (parentName.isEmpty()) {
                 println("Initialized orbiter $name as stationary object at position $relativePos.")
+                relativePos = loadStartingPositionAndScale(properties, 1.0)
+                orbitalSpeed = 0.0
             } else {
                 val foundParent: Planet? = OrbiterManager.getPlanet(parentName)
                 if (foundParent == null) {
                     throw IllegalArgumentException("parent planet $parentName not found.")
                 } else {
                     foundParent.initialize()
+                    relativePos = loadStartingPositionAndScale(properties, foundParent.scale())
+                    orbitalSpeed = orbitalSpeedProp * foundParent.scale();
                     parent = foundParent;
                 }
+            }
+            orbitalRadius = relativePos.length
+            if(orbitalRadius > 0){
+                angularVelocity = orbitalSpeed / orbitalRadius
+            } else {
+                angularVelocity = 0.0
             }
             println("Initialized orbiter $name with parent $parent at relative position $relativePos")
             initialized = true;
         }
     }
 
-    /*fun parentCumulativeScale(): Double{
-        val par = parent;
-        if(par != null){
-            val parScale = par.cumulativeScale();
-            return parScale
-        } else {
-            return 1.0
-        }
-    }*/
-
-    open fun toJSON(): JSONObject {
+    open fun createOrbiterJson(): JSONObject {
         val retval = JSONObject()
         retval.put("name", name)
         retval.put("relative_pos", relativePos.toJSON())
@@ -107,28 +108,15 @@ abstract class Orbiter(val properties: Properties) {
     }
 }
 
-
-fun loadStartingPosition(properties: Properties): Vector2
-{
-    if (properties.containsKey("posX") && properties.containsKey("posY")) {
-        val posX = properties.getProperty("posX").toDouble()
-        val posY = properties.getProperty("posY").toDouble()
-        return Vector2(posX, posY);
-    } else if (properties.containsKey("orbitalRadius")) {
-        val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
-        return Vector2(orbitalRadius, 0);
-    } else {
-        throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
-    }
-}
 fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
     if (properties.containsKey("posX") && properties.containsKey("posY")) {
         val posX = properties.getProperty("posX").toDouble()
         val posY = properties.getProperty("posY").toDouble()
-        return Vector2(posX, posY) * (1/parentScale)
+        val retval = Vector2(posX,posY) * parentScale
+        return retval;
     } else if (properties.containsKey("orbitalRadius")) {
         val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
-        return Vector2(orbitalRadius, 0) * (1/parentScale)
+        return Vector2(orbitalRadius, 0) * (parentScale)
     } else {
         throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
     }
