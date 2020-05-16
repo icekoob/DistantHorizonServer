@@ -1,8 +1,6 @@
 package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.commodity.CommodityStore
-import com.dibujaron.distanthorizon.commodity.CommodityType
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.ship.Ship

@@ -1,64 +1,63 @@
 package com.dibujaron.distanthorizon.ship
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.commodity.CommodityType
-import com.dibujaron.distanthorizon.docking.DockingPort
-import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.player.PlayerManager
 import org.json.JSONObject
-import java.lang.Math.pow
 import java.util.*
 import kotlin.math.pow
 
 class Ship(
     val type: ShipClass,
-    var velocity: Vector2,
     var globalPos: Vector2,
     var rotation: Double
 ) {
+    var velocity: Vector2 = Vector2(0, 0)
     val gravityConstant = 6.67408 * 10.0.pow(-11.0)
     val uuid = UUID.randomUUID()
+
     //controls
     var mainEnginesActive: Boolean = false
     var portThrustersActive: Boolean = false
     var stbdThrustersActive: Boolean = false
     var foreThrustersActive: Boolean = false
     var aftThrustersActive: Boolean = false
-    var rotatingLeft: Boolean = false
-    var rotatingRight: Boolean = false
+    var tillerLeft: Boolean = false
+    var tillerRight: Boolean = false
 
-    val myDockingPorts = type.dockingPorts.asSequence().map{ShipDockingPort(this, it)}.toList()
+    val myDockingPorts = type.dockingPorts.asSequence().map { ShipDockingPort(this, it) }.toList()
     var dockedToPort: StationDockingPort? = null
     var myDockedPort: ShipDockingPort? = null
 
     var holdCapacity = type.holdSize
     var hold = HashMap<String, Int>()
 
-    fun holdOccupied(): Int
-    {
+    fun holdOccupied(): Int {
         return hold.values.asSequence().sum()
     }
 
-    fun createHoldStatusMessage(): JSONObject
-    {
+    fun createHoldStatusMessage(): JSONObject {
         val retval = JSONObject()
         CommodityType.values().asSequence()
-            .map{Pair(it.identifyingName, hold[it.identifyingName]?:0)}
-            .forEach { retval.put(it.first, it.second)}
+            .map { Pair(it.identifyingName, hold[it.identifyingName] ?: 0) }
+            .forEach { retval.put(it.first, it.second) }
         return retval
     }
+
+    var tickCount = 0
     fun process(delta: Double) {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
-        if(dockedTo != null && dockedFrom != null){
+        if (dockedTo != null && dockedFrom != null) {
             velocity = dockedTo.getVelocity()
             val myPortRelative = dockedFrom.relativePosition()
             rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
             globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
-        }
-        else {
+        } else {
             if (mainEnginesActive) {
                 velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
             }
@@ -74,20 +73,18 @@ class Ship(
             if (aftThrustersActive) {
                 velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
             }
-            if (rotatingLeft) {
+            if (tillerLeft) {
                 rotation -= type.rotationPower * delta
-            }
-            if (rotatingRight) {
+            } else if (tillerRight) {
                 rotation += type.rotationPower * delta
             }
-            velocity += gravityAccelAtTime(0.0, globalPos)
+            velocity += gravityAccelAtTime(0.0, globalPos) * delta * 60.0
             globalPos += velocity * delta
-            //velocity += gravityAccelAtTime(delta, globalPos)
         }
+        tickCount++
     }
 
-    fun toJSON(): JSONObject
-    {
+    fun createFullShipJSON(): JSONObject {
         val retval = JSONObject()
         retval.put("id", uuid)
         retval.put("type", type.qualifiedName)
@@ -99,8 +96,71 @@ class Ship(
         retval.put("stbd_thrusters", stbdThrustersActive)
         retval.put("fore_thrusters", foreThrustersActive)
         retval.put("aft_thrusters", aftThrustersActive)
-        retval.put("rotating_left", rotatingLeft)
-        retval.put("rotating_right", rotatingRight)
+        retval.put("rotating_left", tillerLeft)
+        retval.put("rotating_right", tillerRight)
+        retval.put("main_engine_thrust", type.mainThrust)
+        retval.put("manu_engine_thrust", type.manuThrust)
+        retval.put("rotation_power", type.rotationPower)
+        retval.put("docking_ports", myDockingPorts.asSequence().map{it.toJSON()}.toList())
+        return retval
+    }
+
+    fun createShipHeartbeatJSON(): JSONObject {
+        val retval = JSONObject()
+        retval.put("id", uuid)
+        retval.put("velocity", velocity.toJSON())
+        retval.put("global_pos", globalPos.toJSON())
+        retval.put("rotation", rotation)
+        return retval
+    }
+
+    var leftPressTime = 0L
+    var leftPressStartTick = 0
+    var rightPressTime = 0L
+    var rightPressStartTick = 0
+
+    fun receiveInputsAndBroadcast(message: JSONObject) {
+        mainEnginesActive = message.getBoolean("main_engines_pressed");
+        portThrustersActive = message.getBoolean("port_thrusters_pressed")
+        stbdThrustersActive = message.getBoolean("stbd_thrusters_pressed")
+        foreThrustersActive = message.getBoolean("fore_thrusters_pressed")
+        aftThrustersActive = message.getBoolean("aft_thrusters_pressed")
+        val leftPressed = message.getBoolean("rotate_left_pressed")
+        /*if(leftPressed && !tillerLeft){
+            leftPressTime = System.currentTimeMillis()
+            leftPressStartTick = tickCount
+        } else if(!leftPressed && tillerLeft){
+            println("left pressed for ${System.currentTimeMillis() - leftPressTime}ms, ${tickCount - leftPressStartTick} ticks. Rotation is $rotation")
+        }*/
+        tillerLeft = leftPressed
+
+        val rightPressed = message.getBoolean("rotate_right_pressed")
+        /*if(rightPressed && !tillerRight){
+            rightPressTime = System.currentTimeMillis()
+            rightPressStartTick = tickCount
+        } else if(!rightPressed && tillerRight){
+            println("right pressed for ${System.currentTimeMillis() - rightPressTime}, ${tickCount - rightPressStartTick} ticks. Rotation is $rotation")
+        }*/
+        tillerRight = rightPressed
+        //broadcast this back tod the clients.
+        val shipInputsUpdate = createInputsJSON()
+        PlayerManager.getPlayers().asSequence()
+            .forEach { it.sendShipInputsUpdate(shipInputsUpdate) }
+    }
+
+    fun createInputsJSON(): JSONObject {
+        val retval = JSONObject()
+        retval.put("id", uuid)
+        retval.put("main_engines", mainEnginesActive)
+        retval.put("port_thrusters", portThrustersActive)
+        retval.put("stbd_thrusters", stbdThrustersActive)
+        retval.put("fore_thrusters", foreThrustersActive)
+        retval.put("aft_thrusters", aftThrustersActive)
+        retval.put("rotating_left", tillerLeft)
+        retval.put("rotating_right", tillerRight)
+        retval.put("velocity", velocity.toJSON())
+        retval.put("global_pos", globalPos.toJSON())
+        retval.put("rotation", rotation)
         return retval
     }
 
@@ -121,36 +181,44 @@ class Ship(
         return accel
     }
 
-    fun dockOrUndock(){
-        if(dockedToPort == null){
+    fun dockOrUndock() {
+        if (dockedToPort == null) {
             attemptDock()
         } else {
+            if(dockedToPort != null){
+                DHServer.broadcastShipUndocked(this)
+            }
             dockedToPort = null;
             myDockedPort = null;
         }
     }
-    fun attemptDock(){
+
+    fun attemptDock() {
         println("attempting to dock.");
         val maxDockDist = 50.0//10000.0//50.0
         val maxDistSquared = maxDockDist.pow(2)
 
-        val maxClosingSpeed = 500.0//5000.0
+        val maxClosingSpeed = 500.0//5000.0//500.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
         val match = OrbiterManager.getStations().asSequence()
-            .flatMap{it.dockingPorts.asSequence()}
-            .flatMap{stationPort -> myDockingPorts.asSequence()
-                .map{shipPort -> Pair(shipPort, stationPort)}}
-            .filter{(it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared}
-            .map{Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared)}
-            .filter{it.third < maxDistSquared}
-            .minBy{it.third}
-        if(match != null){
+            .flatMap { it.dockingPorts.asSequence() }
+            .flatMap { stationPort ->
+                myDockingPorts.asSequence()
+                    .map { shipPort -> Pair(shipPort, stationPort) }
+            }
+            .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
+            .map { Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared) }
+            .filter { it.third < maxDistSquared }
+            .minBy { it.third }
+
+        if (match != null) {
             val bestShipPort = match.first
             val bestStationPort = match.second
             this.myDockedPort = bestShipPort
             this.dockedToPort = bestStationPort
             println("docked to ${bestStationPort.station.name}");
+            DHServer.broadcastShipDocked(this, bestShipPort, bestStationPort.station, bestStationPort);
         }
     }
 }

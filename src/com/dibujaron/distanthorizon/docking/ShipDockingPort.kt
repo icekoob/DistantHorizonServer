@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.docking
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.Ship
+import org.json.JSONObject
 
 class ShipDockingPort(private val ship: Ship, private val shipClassDockingPort: ShipClassDockingPort) : DockingPort {
 

@@ -1,6 +1,10 @@
 package com.dibujaron.distanthorizon
 
+import com.dibujaron.distanthorizon.docking.DockingPort
+import com.dibujaron.distanthorizon.docking.ShipDockingPort
+import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
@@ -10,7 +14,9 @@ import io.javalin.websocket.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.IllegalStateException
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlin.math.pow
 
 fun main() {
     thread{DHServer.commandLoop()}
@@ -19,8 +25,8 @@ fun main() {
 
 object DHServer {
 
-    private const val tickLengthMs = 17
-    private const val tickLengthSeconds = tickLengthMs / 1000.0
+    private const val tickLengthSeconds = 0.016667
+    private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
 
     fun commandLoop(){
@@ -36,41 +42,43 @@ object DHServer {
 
     fun run() {
         val jav = initJavalin()
-        var deltaSeconds = 0.0
-        var firstTick = true;
+        var lastTickTime = 0L
+        var tickCount = 0
         while (!shuttingDown) {
             //process
-            val startTime = System.currentTimeMillis()
-            var priorTime = startTime
+            val startTime = System.nanoTime()
+            val deltaSeconds = (startTime - lastTickTime) / 1000000000.0
+            lastTickTime = startTime
             OrbiterManager.process(deltaSeconds)
-            val orbiterTime = System.currentTimeMillis() - priorTime
-            priorTime = System.currentTimeMillis()
             ShipManager.process(deltaSeconds)
-            val shipsTime = System.currentTimeMillis() - priorTime
-            priorTime = System.currentTimeMillis()
             //send messages
-            val worldStateMessage = composeWorldStateMessage()
-            val composeTime = System.currentTimeMillis() - priorTime
-            priorTime = System.currentTimeMillis()
-            PlayerManager.process(worldStateMessage)
-            val playerTime = System.currentTimeMillis() - priorTime
-            val totalTime = System.currentTimeMillis() - startTime
-
-            //if we have time left over, sleep.
-            if (totalTime < tickLengthMs) {
-                Thread.sleep(tickLengthMs - totalTime)
-                deltaSeconds = tickLengthSeconds
-            } else {
-                if(!firstTick) {
-                    println("can't keep up! Tick took ${totalTime}ms")
-                    println("    orbiter processing: ${orbiterTime}ms")
-                    println("    ships processing: ${shipsTime}ms")
-                    println("    compose message: ${composeTime}ms")
-                    println("    player processing: ${playerTime}ms")
-                }
-                deltaSeconds = totalTime / 1000.0
+            if(tickCount % 60 == 0){
+                val worldStateMessage = composeWorldStateMessage()
+                PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
             }
-            firstTick = false;
+            if(tickCount % 10 == 0) {
+                val shipHeartbeatsMessage = composeShipHeartbeatsMessage()
+                PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
+            }
+            //val shipsState = composeInitialShipsMessage()
+            //PlayerManager.getPlayers().forEach{it.sendInitialShipsState(shipsState)}
+            //process players
+            PlayerManager.process()
+            val totalTimeNanos = System.nanoTime() - startTime
+            //if we have time left over, sleep.
+            if (totalTimeNanos < tickLengthNanos) {
+                TimeUnit.NANOSECONDS.sleep(tickLengthNanos - totalTimeNanos)
+            } else {
+                if(tickCount > 5) {
+                    println("can't keep up! Tick took ${totalTimeNanos}s, limit is $tickLengthNanos")
+                    //println("    orbiter processing: ${orbiterTime}ms")
+                    //println("    ships processing: ${shipsTime}ms")
+                    //println("    compose message: ${composeTime}ms")
+                    //println("    player processing: ${playerTime}ms")
+                    //println("    message send time: ${messageSendTime}ms")
+                }
+            }
+            tickCount++
         }
         jav.stop()
     }
@@ -93,7 +101,7 @@ object DHServer {
     private fun onClientConnect(conn: WsConnectContext) {
         val player = Player(conn)
         PlayerManager.markForAdd(player)
-        println("Player id=${player.uuid} joined the game")
+        println("Player id=${player.uuid} joined the game, player count is ${PlayerManager.playerCount()}")
     }
 
     private fun onClientDisconnect(conn: WsCloseContext) {
@@ -104,7 +112,7 @@ object DHServer {
             PlayerManager.markForRemove(player)
             var playerShip: Ship = player.myShip
             ShipManager.markForRemove(playerShip)
-            println("Player id=${player.uuid} left the game")
+            println("Player id=${player.uuid} left the game, player count is ${PlayerManager.playerCount()}")
         }
     }
 
@@ -119,7 +127,7 @@ object DHServer {
         }
     }
 
-    private fun composeWorldStateMessage(): JSONObject
+    fun composeWorldStateMessage(): JSONObject
     {
         val worldStateMessage = JSONObject()
         val planets = JSONArray()
@@ -129,11 +137,36 @@ object DHServer {
         val stations = JSONArray()
         OrbiterManager.getStations().asSequence().map { it.createOrbiterJson() }.forEach { stations.put(it) }
         worldStateMessage.put("stations", stations)
-
-        val ships = JSONArray()
-        ShipManager.getShips().asSequence().map { it.toJSON() }.forEach { ships.put(it) }
-        worldStateMessage.put("ships", ships)
         return worldStateMessage
+    }
+
+    private fun composeShipHeartbeatsMessage(): JSONArray
+    {
+        val ships = JSONArray()
+        ShipManager.getShips().asSequence().map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
+        return ships
+    }
+    fun composeInitialShipsMessage(): JSONArray
+    {
+        val ships = JSONArray()
+        ShipManager.getShips().asSequence().map { it.createFullShipJSON() }.forEach { ships.put(it) }
+        return ships
+    }
+
+    fun broadcastShipDocked(ship: Ship, shipPort: ShipDockingPort, station: Station, stationPort: DockingPort)
+    {
+        val dockedMessage = JSONObject()
+        dockedMessage.put("id", ship.uuid)
+        dockedMessage.put("station_identifying_name", station.name)
+        dockedMessage.put("ship_port", shipPort.toJSON())
+        dockedMessage.put("station_port", stationPort.toJSON());
+        PlayerManager.getPlayers().forEach { it.sendShipDocked(dockedMessage) }
+    }
+
+    fun broadcastShipUndocked(ship: Ship)
+    {
+        val undockedMessage = ship.createShipHeartbeatJSON()
+        PlayerManager.getPlayers().forEach { it.sendShipUndocked(undockedMessage) }
     }
 
     private fun onSocketError(conn: WsErrorContext) {

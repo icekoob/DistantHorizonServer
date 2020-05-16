@@ -1,6 +1,8 @@
 package com.dibujaron.distanthorizon.player
 
+import com.dibujaron.distanthorizon.DHServer
 import io.javalin.websocket.WsContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.HashMap
@@ -21,7 +23,11 @@ object PlayerManager {
         playersToRemove.add(player)
     }
 
-    fun process(worldStateMessage: JSONObject)
+    fun playerCount(): Int{
+        return idMap.size - playersToRemove.size + playersToAdd.size
+    }
+
+    fun process()
     {
         playersToRemove.forEach{
             idMap.remove(it.uuid)
@@ -31,9 +37,12 @@ object PlayerManager {
         playersToAdd.forEach{
             idMap[it.uuid] = it
             connectionMap[it.connection] = it
+            val worldStateMessage = DHServer.composeWorldStateMessage()
+            it.sendWorldState(worldStateMessage)
+            val shipsMessage = DHServer.composeInitialShipsMessage()
+            it.sendInitialShipsState(shipsMessage)
         }
         playersToAdd.clear()
-        getPlayers().forEach{it.sendWorldState(worldStateMessage)}
     }
 
     fun getPlayerById(uuid: UUID): Player?

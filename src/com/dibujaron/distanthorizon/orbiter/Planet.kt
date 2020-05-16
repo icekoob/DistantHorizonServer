@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.orbiter
 import org.json.JSONObject
 import java.lang.IllegalArgumentException
 import java.util.*
+import kotlin.math.pow
 
 class Planet(properties: Properties): Orbiter(properties){
     val type = properties.getProperty("type").toString()
@@ -29,6 +30,8 @@ class Planet(properties: Properties): Orbiter(properties){
         retval.put("rotation_speed", rotationSpeed)
         retval.put("scale", scale())
         retval.put("type", type)
+        retval.put("mass", mass)
+        retval.put("min_orbital_altitude", minOrbitalRadius)
         return retval
     }
 
@@ -49,7 +52,7 @@ fun loadMass(properties: Properties): Double{
     if (properties.containsKey("massBase") && properties.containsKey("massExp")) {
         val massBase = properties.getProperty("massBase").toDouble()
         val massExp = properties.getProperty("massExp").toDouble()
-        return massBase * Math.pow(10.0, massExp);
+        return massBase * 10.0.pow(massExp);
     } else {
         throw IllegalArgumentException("Planet properties must contain massBase and massExp")
     }
