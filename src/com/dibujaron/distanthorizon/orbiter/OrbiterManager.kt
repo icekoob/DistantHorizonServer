@@ -1,9 +1,11 @@
 package com.dibujaron.distanthorizon.orbiter
 
+import com.dibujaron.distanthorizon.Vector2
 import java.io.File
 import java.io.FileReader
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.math.pow
 
 object OrbiterManager {
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
@@ -38,6 +40,24 @@ object OrbiterManager {
     fun getStations(): Collection<Station>
     {
         return stationsMap.values
+    }
+
+    val gravityConstant = 6.67408 * 10.0.pow(-11.0)
+    fun calculateGravity(timeOffset: Double, globalPosAtTime: Vector2): Vector2 {
+        var accel = Vector2(0, 0)
+        getPlanets().asSequence()
+            .map {
+                val planetPosAtTime = it.globalPosAtTime(timeOffset)
+                val offset = (planetPosAtTime - globalPosAtTime)
+                var rSquared = offset.lengthSquared
+                if (rSquared < it.minRadiusSquared) {
+                    rSquared = it.minRadiusSquared.toDouble()
+                }
+                val forceMag = gravityConstant * it.mass / rSquared
+                offset.normalized() * forceMag
+            }
+            .forEach { accel += it }
+        return accel
     }
 
     init {

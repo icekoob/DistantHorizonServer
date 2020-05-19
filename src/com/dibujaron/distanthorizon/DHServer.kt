@@ -3,84 +3,83 @@ package com.dibujaron.distanthorizon
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.orbiter.Orbiter
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipClassManager
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
 import io.javalin.websocket.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.IllegalStateException
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
+import kotlin.concurrent.timerTask
 import kotlin.math.pow
 
 fun main() {
     thread{DHServer.commandLoop()}
-    DHServer.run()
 }
 
 object DHServer {
 
-    private const val tickLengthSeconds = 0.016667
-    private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
+    private const val tickLengthMillis = 20L
+    private const val tickLengthSeconds = tickLengthMillis / 1000//0.016667
+    //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
-
+    private val timer = fixedRateTimer(name="mainThread", initialDelay = tickLengthMillis, period= tickLengthMillis){tick()}
+    private val javalin = initJavalin()
+    var lastTickTime = 0L
+    var tickCount = 0
     fun commandLoop(){
         while(!shuttingDown) {
             val command = readLine()
             if(command == "stop"){
                 shuttingDown = true;
+                timer.cancel()
+                javalin.stop()
             } else {
                 println("Unknown command $command")
             }
         }
     }
 
-    fun run() {
-        val jav = initJavalin()
-        var lastTickTime = 0L
-        var tickCount = 0
-        while (!shuttingDown) {
-            //process
-            val startTime = System.nanoTime()
-            val deltaSeconds = (startTime - lastTickTime) / 1000000000.0
-            lastTickTime = startTime
-            OrbiterManager.process(deltaSeconds)
-            ShipManager.process(deltaSeconds)
-            //send messages
-            if(tickCount % 60 == 0){
-                val worldStateMessage = composeWorldStateMessage()
-                PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
-            }
-            if(tickCount % 10 == 0) {
-                val shipHeartbeatsMessage = composeShipHeartbeatsMessage()
-                PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
-            }
-            //val shipsState = composeInitialShipsMessage()
-            //PlayerManager.getPlayers().forEach{it.sendInitialShipsState(shipsState)}
-            //process players
-            PlayerManager.process()
-            val totalTimeNanos = System.nanoTime() - startTime
-            //if we have time left over, sleep.
-            if (totalTimeNanos < tickLengthNanos) {
-                TimeUnit.NANOSECONDS.sleep(tickLengthNanos - totalTimeNanos)
-            } else {
-                if(tickCount > 5) {
-                    println("can't keep up! Tick took ${totalTimeNanos}s, limit is $tickLengthNanos")
-                    //println("    orbiter processing: ${orbiterTime}ms")
-                    //println("    ships processing: ${shipsTime}ms")
-                    //println("    compose message: ${composeTime}ms")
-                    //println("    player processing: ${playerTime}ms")
-                    //println("    message send time: ${messageSendTime}ms")
-                }
-            }
-            tickCount++
+    private fun tick(){
+        val startTime = System.currentTimeMillis()
+        val deltaSeconds = (startTime - lastTickTime) / 1000.0
+        lastTickTime = startTime
+        OrbiterManager.process(deltaSeconds)
+        ShipManager.process(deltaSeconds)
+        //send messages
+        if(tickCount % 50 == 0){
+            val worldStateMessage = composeWorldStateMessage()
+            PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
         }
-        jav.stop()
+        if(tickCount % 50 == 25) {
+            val shipHeartbeatsMessage = composeShipHeartbeatsMessage()
+            PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
+        }
+        //val shipsState = composeInitialShipsMessage()
+        //PlayerManager.getPlayers().forEach{it.sendInitialShipsState(shipsState)}
+        //process players
+        PlayerManager.process()
+        //val totalTimeNanos = System.nanoTime() - startTime
+        val totalTimeMillis = System.currentTimeMillis() - startTime
+        if(totalTimeMillis > tickLengthMillis) {
+            println("can't keep up! Tick took ${totalTimeMillis}ms, limit is $tickLengthMillis")
+            //println("    orbiter processing: ${orbiterTime}ms")
+            //println("    ships processing: ${shipsTime}ms")
+            //println("    compose message: ${composeTime}ms")
+            //println("    player processing: ${playerTime}ms")
+            //println("    message send time: ${messageSendTime}ms")
+        }
+        tickCount++
     }
 
     fun initJavalin(): Javalin {

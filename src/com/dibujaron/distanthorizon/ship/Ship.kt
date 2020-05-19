@@ -17,7 +17,6 @@ class Ship(
     var rotation: Double
 ) {
     var velocity: Vector2 = Vector2(0, 0)
-    val gravityConstant = 6.67408 * 10.0.pow(-11.0)
     val uuid = UUID.randomUUID()
 
     //controls
@@ -78,7 +77,7 @@ class Ship(
             } else if (tillerRight) {
                 rotation += type.rotationPower * delta
             }
-            velocity += gravityAccelAtTime(0.0, globalPos) * delta * 60.0
+            velocity += OrbiterManager.calculateGravity(0.0, globalPos) * delta * 50.0
             globalPos += velocity * delta
         }
         tickCount++
@@ -114,71 +113,37 @@ class Ship(
         return retval
     }
 
-    var leftPressTime = 0L
-    var leftPressStartTick = 0
-    var rightPressTime = 0L
-    var rightPressStartTick = 0
-
     fun receiveInputsAndBroadcast(message: JSONObject) {
         mainEnginesActive = message.getBoolean("main_engines_pressed");
         portThrustersActive = message.getBoolean("port_thrusters_pressed")
         stbdThrustersActive = message.getBoolean("stbd_thrusters_pressed")
         foreThrustersActive = message.getBoolean("fore_thrusters_pressed")
         aftThrustersActive = message.getBoolean("aft_thrusters_pressed")
-        val leftPressed = message.getBoolean("rotate_left_pressed")
-        /*if(leftPressed && !tillerLeft){
-            leftPressTime = System.currentTimeMillis()
-            leftPressStartTick = tickCount
-        } else if(!leftPressed && tillerLeft){
-            println("left pressed for ${System.currentTimeMillis() - leftPressTime}ms, ${tickCount - leftPressStartTick} ticks. Rotation is $rotation")
-        }*/
-        tillerLeft = leftPressed
+        //val leftPressed = message.getBoolean("rotate_left_pressed")
+        //if(leftPressed && !tillerLeft){
+        //    leftPressTime = System.currentTimeMillis()
+        //    leftPressStartTick = tickCount
+        //} else if(!leftPressed && tillerLeft){
+        //    println("left pressed for ${System.currentTimeMillis() - leftPressTime}ms, ${tickCount - leftPressStartTick} ticks. Rotation is $rotation")
+        //}
+        //tillerLeft = leftPressed
 
         val rightPressed = message.getBoolean("rotate_right_pressed")
-        /*if(rightPressed && !tillerRight){
-            rightPressTime = System.currentTimeMillis()
-            rightPressStartTick = tickCount
-        } else if(!rightPressed && tillerRight){
-            println("right pressed for ${System.currentTimeMillis() - rightPressTime}, ${tickCount - rightPressStartTick} ticks. Rotation is $rotation")
-        }*/
         tillerRight = rightPressed
-        //broadcast this back tod the clients.
-        val shipInputsUpdate = createInputsJSON()
+        broadcastInputsChange()
+    }
+
+    fun broadcastInputsChange(){
+        val inputsUpdate = createShipHeartbeatJSON()
+        inputsUpdate.put("main_engines", mainEnginesActive)
+        inputsUpdate.put("port_thrusters", portThrustersActive)
+        inputsUpdate.put("stbd_thrusters", stbdThrustersActive)
+        inputsUpdate.put("fore_thrusters", foreThrustersActive)
+        inputsUpdate.put("aft_thrusters", aftThrustersActive)
+        inputsUpdate.put("rotating_left", tillerLeft)
+        inputsUpdate.put("rotating_right", tillerRight)
         PlayerManager.getPlayers().asSequence()
-            .forEach { it.sendShipInputsUpdate(shipInputsUpdate) }
-    }
-
-    fun createInputsJSON(): JSONObject {
-        val retval = JSONObject()
-        retval.put("id", uuid)
-        retval.put("main_engines", mainEnginesActive)
-        retval.put("port_thrusters", portThrustersActive)
-        retval.put("stbd_thrusters", stbdThrustersActive)
-        retval.put("fore_thrusters", foreThrustersActive)
-        retval.put("aft_thrusters", aftThrustersActive)
-        retval.put("rotating_left", tillerLeft)
-        retval.put("rotating_right", tillerRight)
-        retval.put("velocity", velocity.toJSON())
-        retval.put("global_pos", globalPos.toJSON())
-        retval.put("rotation", rotation)
-        return retval
-    }
-
-    fun gravityAccelAtTime(timeOffset: Double, globalPosAtTime: Vector2): Vector2 {
-        var accel = Vector2(0, 0)
-        OrbiterManager.getPlanets().asSequence()
-            .map {
-                val planetPosAtTime = it.globalPosAtTime(timeOffset)
-                val offset = (planetPosAtTime - globalPosAtTime)
-                var rSquared = offset.lengthSquared
-                if (rSquared < it.minRadiusSquared) {
-                    rSquared = it.minRadiusSquared.toDouble()
-                }
-                val forceMag = gravityConstant * it.mass / rSquared
-                offset.normalized() * forceMag
-            }
-            .forEach { accel += it }
-        return accel
+            .forEach { it.sendShipInputsUpdate(inputsUpdate) }
     }
 
     fun dockOrUndock() {
