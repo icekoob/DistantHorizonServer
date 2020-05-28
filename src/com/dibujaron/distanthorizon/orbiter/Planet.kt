@@ -15,7 +15,6 @@ class Planet(properties: Properties): Orbiter(properties){
 
     override fun scale(): Double{
         val par = parent
-        val type = properties.getProperty("type")
         val typeScale = typeScale(properties.getProperty("type").toString())
         return if (properties.containsKey("scale")) {
             typeScale * properties.getProperty("scale").toDouble()

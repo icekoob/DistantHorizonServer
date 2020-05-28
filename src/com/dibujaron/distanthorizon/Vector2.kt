@@ -1,10 +1,8 @@
 package com.dibujaron.distanthorizon
 
+import dev.benedikt.math.bezier.vector.Vector2D
 import org.json.JSONObject
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 
 class Vector2(val x: Double, val y: Double) {
@@ -12,10 +10,11 @@ class Vector2(val x: Double, val y: Double) {
     val angle: Double by lazy { atan2(y, x) }
     val lengthSquared: Double by lazy { x * x + y * y }
     val length: Double by lazy { sqrt(lengthSquared) }
-
+    val angleLimited: Double by lazy {normaliseToRange(angle, 0.0, Math.PI * 2)}
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
     constructor(x: Int, y: Double) : this(x.toDouble(), y)
     constructor(x: Double, y: Int) : this(x, y.toDouble())
+    constructor(v: Vector2D): this(v.x, v.y)
 
     operator fun plus(other: Vector2): Vector2 {
         return Vector2(x + other.x, y + other.y)
@@ -52,8 +51,26 @@ class Vector2(val x: Double, val y: Double) {
         return retval
     }
 
+    fun toBezierVector(): Vector2D{
+        return Vector2D(x, y)
+    }
+
     override fun toString(): String
     {
         return "($x,$y)"
+    }
+
+    fun angularDiff(other: Vector2): Double
+    {
+        return angleLimited - other.angleLimited
+    }
+
+    companion object{
+        fun normaliseToRange(value: Double, start: Double, end: Double): Double
+        {
+            val width = end - start;
+            val offsetValue = value - start;
+            return (offsetValue - (floor(offsetValue / width) * width)) + start;
+        }
     }
 }

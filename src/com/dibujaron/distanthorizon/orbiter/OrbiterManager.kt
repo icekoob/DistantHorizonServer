@@ -11,6 +11,8 @@ object OrbiterManager {
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
     private val planetsMap: HashMap<String, Planet> = HashMap()
     private val stationsMap: HashMap<String, Station> = HashMap()
+    val gravityConstantFudge = 10.0
+    val gravityConstant = 6.67408 * 10.0.pow(-11.0) * gravityConstantFudge
 
     fun process(deltaSeconds: Double)
     {
@@ -42,7 +44,6 @@ object OrbiterManager {
         return stationsMap.values
     }
 
-    val gravityConstant = 6.67408 * 10.0.pow(-11.0)
     fun calculateGravity(timeOffset: Double, globalPosAtTime: Vector2): Vector2 {
         var accel = Vector2(0, 0)
         getPlanets().asSequence()

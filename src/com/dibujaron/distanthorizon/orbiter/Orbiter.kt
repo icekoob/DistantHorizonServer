@@ -5,7 +5,9 @@ import org.json.JSONObject
 import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 abstract class Orbiter(val properties: Properties) {
     val name: String = properties.getProperty("name").trim()
@@ -30,6 +32,7 @@ abstract class Orbiter(val properties: Properties) {
                 println("Initialized orbiter $name as stationary object at position $relativePos.")
                 relativePos = loadStartingPositionAndScale(properties, 1.0)
                 orbitalSpeed = 0.0
+                orbitalRadius = relativePos.length
             } else {
                 val foundParent: Planet? = OrbiterManager.getPlanet(parentName)
                 if (foundParent == null) {
@@ -37,11 +40,15 @@ abstract class Orbiter(val properties: Properties) {
                 } else {
                     foundParent.initialize()
                     relativePos = loadStartingPositionAndScale(properties, foundParent.scale())
-                    orbitalSpeed = orbitalSpeedProp * foundParent.scale();
+                    //orbitalSpeed = orbitalSpeedProp * foundParent.scale();
+                    orbitalRadius = relativePos.length
+                    orbitalSpeed = sqrt((OrbiterManager.gravityConstant * foundParent.mass) / orbitalRadius)
+                    //val orbitalPeriod = 2.0 * Math.PI * sqrt(orbitalRadius.pow(3.0) / (OrbiterManager.gravityConstant * foundParent.mass))
+                    //angularVelocity = 2.0 * Math.PI / orbitalPeriod
                     parent = foundParent;
+
                 }
             }
-            orbitalRadius = relativePos.length
             if(orbitalRadius > 0){
                 angularVelocity = orbitalSpeed / orbitalRadius
             } else {
@@ -95,7 +102,7 @@ abstract class Orbiter(val properties: Properties) {
         return name
     }
 
-    fun relativePosAtTime(timeOffset: Double): Vector2 {
+    fun relativePosAtTime(timeOffset: Double): Vector2 { //clear cache of any values that are in the past
         return if (relativePos.lengthSquared == 0.0) {
             relativePos
         } else {
@@ -104,6 +111,7 @@ abstract class Orbiter(val properties: Properties) {
             val newAngle = angleFromParent + angleOffset
             val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
             newAngleVector * orbitalRadius
+
         }
     }
 }

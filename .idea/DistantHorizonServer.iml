@@ -13,5 +13,7 @@
     <orderEntry type="library" name="io.javalin:javalin:3.8.0" level="project" />
     <orderEntry type="library" name="org.json:json:20190722" level="project" />
     <orderEntry type="library" name="org.slf4j:slf4j-simple:1.7.28" level="project" />
+    <orderEntry type="library" name="junit:junit:4.13" level="project" />
+    <orderEntry type="library" name="dev.benedikt.math:bezier-spline:1.2.0" level="project" />
   </component>
 </module>

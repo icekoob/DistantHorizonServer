@@ -20,13 +20,7 @@ class Ship(
     val uuid = UUID.randomUUID()
 
     //controls
-    var mainEnginesActive: Boolean = false
-    var portThrustersActive: Boolean = false
-    var stbdThrustersActive: Boolean = false
-    var foreThrustersActive: Boolean = false
-    var aftThrustersActive: Boolean = false
-    var tillerLeft: Boolean = false
-    var tillerRight: Boolean = false
+    var controls: ShipInputs = ShipInputs()
 
     val myDockingPorts = type.dockingPorts.asSequence().map { ShipDockingPort(this, it) }.toList()
     var dockedToPort: StationDockingPort? = null
@@ -34,6 +28,8 @@ class Ship(
 
     var holdCapacity = type.holdSize
     var hold = HashMap<String, Int>()
+
+    var manuallyControlled = true
 
     fun holdOccupied(): Int {
         return hold.values.asSequence().sum()
@@ -57,28 +53,32 @@ class Ship(
             rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
             globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
         } else {
-            if (mainEnginesActive) {
-                velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
+            if(manuallyControlled) {
+                if (controls.mainEnginesActive) {
+                    velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
+                }
+                if (controls.stbdThrustersActive) {
+                    velocity += Vector2(-type.manuThrust, 0).rotated(rotation) * delta
+                }
+                if (controls.portThrustersActive) {
+                    velocity += Vector2(type.manuThrust, 0).rotated(rotation) * delta
+                }
+                if (controls.foreThrustersActive) {
+                    velocity += Vector2(0, type.manuThrust).rotated(rotation) * delta
+                }
+                if (controls.aftThrustersActive) {
+                    velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
+                }
+                if (controls.tillerLeft) {
+                    rotation -= type.rotationPower * delta
+                } else if (controls.tillerRight) {
+                    rotation += type.rotationPower * delta
+                }
+                velocity += OrbiterManager.calculateGravity(0.0, globalPos) * delta
+                globalPos += velocity * delta
+            } else {
+                //todo ai navigation; take the next NavigationStep and apply it.
             }
-            if (stbdThrustersActive) {
-                velocity += Vector2(-type.manuThrust, 0).rotated(rotation) * delta
-            }
-            if (portThrustersActive) {
-                velocity += Vector2(type.manuThrust, 0).rotated(rotation) * delta
-            }
-            if (foreThrustersActive) {
-                velocity += Vector2(0, type.manuThrust).rotated(rotation) * delta
-            }
-            if (aftThrustersActive) {
-                velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
-            }
-            if (tillerLeft) {
-                rotation -= type.rotationPower * delta
-            } else if (tillerRight) {
-                rotation += type.rotationPower * delta
-            }
-            velocity += OrbiterManager.calculateGravity(0.0, globalPos) * delta * 50.0
-            globalPos += velocity * delta
         }
         tickCount++
     }
@@ -90,13 +90,13 @@ class Ship(
         retval.put("velocity", velocity.toJSON())
         retval.put("global_pos", globalPos.toJSON())
         retval.put("rotation", rotation)
-        retval.put("main_engines", mainEnginesActive)
-        retval.put("port_thrusters", portThrustersActive)
-        retval.put("stbd_thrusters", stbdThrustersActive)
-        retval.put("fore_thrusters", foreThrustersActive)
-        retval.put("aft_thrusters", aftThrustersActive)
-        retval.put("rotating_left", tillerLeft)
-        retval.put("rotating_right", tillerRight)
+        retval.put("main_engines", controls.mainEnginesActive)
+        retval.put("port_thrusters", controls.portThrustersActive)
+        retval.put("stbd_thrusters", controls.stbdThrustersActive)
+        retval.put("fore_thrusters", controls.foreThrustersActive)
+        retval.put("aft_thrusters", controls.aftThrustersActive)
+        retval.put("rotating_left", controls.tillerLeft)
+        retval.put("rotating_right", controls.tillerRight)
         retval.put("main_engine_thrust", type.mainThrust)
         retval.put("manu_engine_thrust", type.manuThrust)
         retval.put("rotation_power", type.rotationPower)
@@ -110,38 +110,29 @@ class Ship(
         retval.put("velocity", velocity.toJSON())
         retval.put("global_pos", globalPos.toJSON())
         retval.put("rotation", rotation)
+        retval.put("manually_controlled", manuallyControlled)
+        //todo if not manually controlled send navigation steps
         return retval
     }
 
-    fun receiveInputsAndBroadcast(message: JSONObject) {
-        mainEnginesActive = message.getBoolean("main_engines_pressed");
-        portThrustersActive = message.getBoolean("port_thrusters_pressed")
-        stbdThrustersActive = message.getBoolean("stbd_thrusters_pressed")
-        foreThrustersActive = message.getBoolean("fore_thrusters_pressed")
-        aftThrustersActive = message.getBoolean("aft_thrusters_pressed")
-        //val leftPressed = message.getBoolean("rotate_left_pressed")
-        //if(leftPressed && !tillerLeft){
-        //    leftPressTime = System.currentTimeMillis()
-        //    leftPressStartTick = tickCount
-        //} else if(!leftPressed && tillerLeft){
-        //    println("left pressed for ${System.currentTimeMillis() - leftPressTime}ms, ${tickCount - leftPressStartTick} ticks. Rotation is $rotation")
-        //}
-        //tillerLeft = leftPressed
-
-        val rightPressed = message.getBoolean("rotate_right_pressed")
-        tillerRight = rightPressed
-        broadcastInputsChange()
+    fun receiveInputChange(shipInputs: ShipInputs) {
+        if(controls == shipInputs){
+            return;
+        } else {
+            controls = shipInputs
+            broadcastInputsChange()
+        }
     }
 
-    fun broadcastInputsChange(){
+    private fun broadcastInputsChange(){
         val inputsUpdate = createShipHeartbeatJSON()
-        inputsUpdate.put("main_engines", mainEnginesActive)
-        inputsUpdate.put("port_thrusters", portThrustersActive)
-        inputsUpdate.put("stbd_thrusters", stbdThrustersActive)
-        inputsUpdate.put("fore_thrusters", foreThrustersActive)
-        inputsUpdate.put("aft_thrusters", aftThrustersActive)
-        inputsUpdate.put("rotating_left", tillerLeft)
-        inputsUpdate.put("rotating_right", tillerRight)
+        inputsUpdate.put("main_engines", controls.mainEnginesActive)
+        inputsUpdate.put("port_thrusters", controls.portThrustersActive)
+        inputsUpdate.put("stbd_thrusters", controls.stbdThrustersActive)
+        inputsUpdate.put("fore_thrusters", controls.foreThrustersActive)
+        inputsUpdate.put("aft_thrusters", controls.aftThrustersActive)
+        inputsUpdate.put("rotating_left", controls.tillerLeft)
+        inputsUpdate.put("rotating_right", controls.tillerRight)
         PlayerManager.getPlayers().asSequence()
             .forEach { it.sendShipInputsUpdate(inputsUpdate) }
     }
@@ -160,10 +151,10 @@ class Ship(
 
     fun attemptDock() {
         println("attempting to dock.");
-        val maxDockDist = 50.0//10000.0//50.0
+        val maxDockDist = 100.0//10000.0//50.0
         val maxDistSquared = maxDockDist.pow(2)
 
-        val maxClosingSpeed = 500.0//5000.0//500.0
+        val maxClosingSpeed = 1000.0//5000.0//500.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
         val match = OrbiterManager.getStations().asSequence()

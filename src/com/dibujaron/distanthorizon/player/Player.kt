@@ -4,15 +4,15 @@ import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import com.dibujaron.distanthorizon.ship.ShipClassManager
+import com.dibujaron.distanthorizon.ship.ShipInputs
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 
-class Player(val connection: WsContext) {
+class Player(val connection: WsContext){
     val uuid: UUID = UUID.randomUUID()
-    val myShip: Ship =
-        Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, Vector2(375, 3180), 0.0)
+    val myShip: Ship = Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, Vector2(375, 3180), 0.0)
     var balance = 1000.0
 
     init {
@@ -23,7 +23,9 @@ class Player(val connection: WsContext) {
         //so far we only have one client message, and it's inputs.
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
-            myShip.receiveInputsAndBroadcast(message)
+            println(message)
+            val inputs = ShipInputs(message)
+            myShip.receiveInputChange(inputs)
         } else if (messageType == "dock_or_undock") {
             myShip.dockOrUndock()
             sendTradeMenuMessage()

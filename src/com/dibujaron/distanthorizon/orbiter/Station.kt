@@ -46,7 +46,7 @@ class Station(properties: Properties) : Orbiter(properties) {
 
     fun sellResourceToPlayer(resource: String, player: Player, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
-        val price = store.buyPrice * quantity
+        val price = store.buyPrice() * quantity
         var purchaseQuantity = quantity
 
         //first check if there's enough on the station
@@ -62,10 +62,10 @@ class Station(properties: Properties) : Orbiter(properties) {
         }
 
         if (player.balance < price){
-            val affordableQuantity = floor(player.balance / store.buyPrice).toInt()
+            val affordableQuantity = floor(player.balance / store.buyPrice()).toInt()
             purchaseQuantity = affordableQuantity
         }
-        val purchasePrice = store.buyPrice * purchaseQuantity
+        val purchasePrice = store.buyPrice() * purchaseQuantity
         player.balance = player.balance - purchasePrice
         store.quantityAvailable -= purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
@@ -84,7 +84,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         }
 
         //now do it
-        val purchasePrice = store.sellPrice * purchaseQuantity
+        val purchasePrice = store.sellPrice() * purchaseQuantity
         player.balance = player.balance + purchasePrice
         store.quantityAvailable += purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
