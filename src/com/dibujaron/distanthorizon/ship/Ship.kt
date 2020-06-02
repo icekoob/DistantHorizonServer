@@ -5,9 +5,12 @@ import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.navigation.NavigationRoute
+import com.dibujaron.distanthorizon.navigation.NavigationState
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
 import org.json.JSONObject
+import java.lang.IllegalStateException
 import java.util.*
 import kotlin.math.pow
 
@@ -29,7 +32,8 @@ class Ship(
     var holdCapacity = type.holdSize
     var hold = HashMap<String, Int>()
 
-    var manuallyControlled = true
+    private var manualControl = true
+    private var route: SortedMap<Int, NavigationState> = TreeMap()
 
     fun holdOccupied(): Int {
         return hold.values.asSequence().sum()
@@ -43,6 +47,7 @@ class Ship(
         return retval
     }
 
+    var routeSetTime = 0L
     var tickCount = 0
     fun process(delta: Double) {
         val dockedTo = dockedToPort
@@ -53,7 +58,7 @@ class Ship(
             rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
             globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
         } else {
-            if(manuallyControlled) {
+            if (manualControl) {
                 if (controls.mainEnginesActive) {
                     velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
                 }
@@ -77,7 +82,18 @@ class Ship(
                 velocity += OrbiterManager.calculateGravity(0.0, globalPos) * delta
                 globalPos += velocity * delta
             } else {
-                //todo ai navigation; take the next NavigationStep and apply it.
+                val stateIndex = route.firstKey()
+                val state = route[stateIndex]!!
+                route.remove(stateIndex)
+                velocity = state.velocity
+                globalPos = state.position
+                rotation = state.rotation
+                if (route.isEmpty()) {
+                    val routeTime = System.currentTimeMillis() - routeSetTime
+                    println("route complete in $routeTime ms")
+                    completeDock()
+                    manualControl = true
+                }
             }
         }
         tickCount++
@@ -100,7 +116,7 @@ class Ship(
         retval.put("main_engine_thrust", type.mainThrust)
         retval.put("manu_engine_thrust", type.manuThrust)
         retval.put("rotation_power", type.rotationPower)
-        retval.put("docking_ports", myDockingPorts.asSequence().map{it.toJSON()}.toList())
+        retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())
         return retval
     }
 
@@ -110,13 +126,24 @@ class Ship(
         retval.put("velocity", velocity.toJSON())
         retval.put("global_pos", globalPos.toJSON())
         retval.put("rotation", rotation)
-        retval.put("manually_controlled", manuallyControlled)
+        if (!manualControl) {
+            retval.put("movement_script", createMovementScriptJSON())
+        }
         //todo if not manually controlled send navigation steps
         return retval
     }
 
+    fun createMovementScriptJSON(): JSONObject {
+        val retval = JSONObject()
+        if(manualControl){
+            throw IllegalStateException("Manual control while creating movement script json!?")
+        }
+        route.asSequence().forEach { retval.put(it.key.toString(), it.value.toJSON()) }
+        return retval
+    }
+
     fun receiveInputChange(shipInputs: ShipInputs) {
-        if(controls == shipInputs){
+        if (controls == shipInputs) {
             return;
         } else {
             controls = shipInputs
@@ -124,7 +151,7 @@ class Ship(
         }
     }
 
-    private fun broadcastInputsChange(){
+    private fun broadcastInputsChange() {
         val inputsUpdate = createShipHeartbeatJSON()
         inputsUpdate.put("main_engines", controls.mainEnginesActive)
         inputsUpdate.put("port_thrusters", controls.portThrustersActive)
@@ -139,9 +166,9 @@ class Ship(
 
     fun dockOrUndock() {
         if (dockedToPort == null) {
-            attemptDock()
+            navigateToDock()
         } else {
-            if(dockedToPort != null){
+            if (dockedToPort != null) {
                 DHServer.broadcastShipUndocked(this)
             }
             dockedToPort = null;
@@ -149,12 +176,14 @@ class Ship(
         }
     }
 
-    fun attemptDock() {
-        println("attempting to dock.");
-        val maxDockDist = 100.0//10000.0//50.0
+    var navigatingToDockAtPort: StationDockingPort? = null
+    var navigatingToDockFromPort: ShipDockingPort? = null
+    fun navigateToDock() {
+        println("attempting to navigate to dock.");
+        val maxDockDist = 10000.0//10000.0//50.0
         val maxDistSquared = maxDockDist.pow(2)
 
-        val maxClosingSpeed = 1000.0//5000.0//500.0
+        val maxClosingSpeed = 100000.0//5000.0//500.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
         val match = OrbiterManager.getStations().asSequence()
@@ -163,18 +192,47 @@ class Ship(
                 myDockingPorts.asSequence()
                     .map { shipPort -> Pair(shipPort, stationPort) }
             }
+            .filter{  it.first.relativeRotation() + it.second.relativeRotation == 0.0 } //only want docking position facing forward
             .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
             .map { Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared) }
             .filter { it.third < maxDistSquared }
             .minBy { it.third }
 
         if (match != null) {
+            println("Found docking match.")
             val bestShipPort = match.first
             val bestStationPort = match.second
-            this.myDockedPort = bestShipPort
-            this.dockedToPort = bestStationPort
-            println("docked to ${bestStationPort.station.name}");
-            DHServer.broadcastShipDocked(this, bestShipPort, bestStationPort.station, bestStationPort);
+
+            val navRoute = NavigationRoute(this, bestShipPort, bestStationPort)
+            navRoute.getSteps().asSequence()
+                .withIndex()
+                .forEach { route[it.index] = it.value }
+
+            navigatingToDockFromPort = bestShipPort
+            navigatingToDockAtPort = bestStationPort
+            routeSetTime = System.currentTimeMillis()
+            println("route set, length is ${route.size}, first index is ${route.firstKey()}, manual control disabled.")
+            manualControl = false
+            broadcastInputsChange()
+            //this.myDockedPort = bestShipPort
+            //this.dockedToPort = bestStationPort
+            //DHServer.broadcastShipDocked(this, bestShipPort, bestStationPort.station, bestStationPort);
+        } else {
+            println("Found no match to dock.")
         }
+    }
+
+    fun completeDock() {
+        val shipPort = navigatingToDockFromPort
+        val stationPort = navigatingToDockAtPort
+        if (shipPort == null || stationPort == null) {
+            throw IllegalStateException("Attempting to complete docking but I am missing docking targets. My port: $shipPort, station port: $stationPort")
+        }
+        this.myDockedPort = shipPort
+        this.dockedToPort = stationPort
+        navigatingToDockAtPort = null
+        navigatingToDockFromPort = null
+        println("docked to ${stationPort.station.name}");
+        DHServer.broadcastShipDocked(this, shipPort, stationPort.station, stationPort);
     }
 }

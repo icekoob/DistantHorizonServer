@@ -29,8 +29,8 @@ fun main() {
 
 object DHServer {
 
-    private const val tickLengthMillis = 20L
-    private const val tickLengthSeconds = tickLengthMillis / 1000//0.016667
+    public const val tickLengthMillis = 20L
+    public const val tickLengthSeconds = tickLengthMillis / 1000.0//0.016667
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
     private val timer = fixedRateTimer(name="mainThread", initialDelay = tickLengthMillis, period= tickLengthMillis){tick()}

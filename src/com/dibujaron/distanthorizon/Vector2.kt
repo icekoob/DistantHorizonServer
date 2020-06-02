@@ -10,7 +10,7 @@ class Vector2(val x: Double, val y: Double) {
     val angle: Double by lazy { atan2(y, x) }
     val lengthSquared: Double by lazy { x * x + y * y }
     val length: Double by lazy { sqrt(lengthSquared) }
-    val angleLimited: Double by lazy {normaliseToRange(angle, 0.0, Math.PI * 2)}
+    val angleLimited: Double by lazy {AngleUtils.limitAngle(angle)}
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
     constructor(x: Int, y: Double) : this(x.toDouble(), y)
     constructor(x: Double, y: Int) : this(x, y.toDouble())
@@ -60,17 +60,7 @@ class Vector2(val x: Double, val y: Double) {
         return "($x,$y)"
     }
 
-    fun angularDiff(other: Vector2): Double
-    {
-        return angleLimited - other.angleLimited
-    }
-
     companion object{
-        fun normaliseToRange(value: Double, start: Double, end: Double): Double
-        {
-            val width = end - start;
-            val offsetValue = value - start;
-            return (offsetValue - (floor(offsetValue / width) * width)) + start;
-        }
+
     }
 }

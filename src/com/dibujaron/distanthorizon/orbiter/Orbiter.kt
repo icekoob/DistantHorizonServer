@@ -18,8 +18,8 @@ abstract class Orbiter(val properties: Properties) {
 
     var orbitalSpeed: Double = 0.0
     var relativePos: Vector2 = Vector2(0,0)
-    var orbitalRadius: Double = 0.0//by lazy { relativePos.length }
-    var angularVelocity: Double = 0.0//by lazy { if (orbitalRadius == 0.0) orbitalRadius else orbitalSpeed / orbitalRadius }
+    var orbitalRadius: Double = 0.0
+    var angularVelocity: Double = 0.0
 
     open fun scale(): Double{
         return 1.0
@@ -27,7 +27,6 @@ abstract class Orbiter(val properties: Properties) {
     //called after all of the orbiters have loaded from file.
     fun initialize() {
         if (!initialized) {
-            val orbitalSpeedProp: Double by lazy { properties.getProperty("orbitalSpeed").toDouble() }
             if (parentName.isEmpty()) {
                 println("Initialized orbiter $name as stationary object at position $relativePos.")
                 relativePos = loadStartingPositionAndScale(properties, 1.0)
@@ -40,11 +39,8 @@ abstract class Orbiter(val properties: Properties) {
                 } else {
                     foundParent.initialize()
                     relativePos = loadStartingPositionAndScale(properties, foundParent.scale())
-                    //orbitalSpeed = orbitalSpeedProp * foundParent.scale();
                     orbitalRadius = relativePos.length
                     orbitalSpeed = sqrt((OrbiterManager.gravityConstant * foundParent.mass) / orbitalRadius)
-                    //val orbitalPeriod = 2.0 * Math.PI * sqrt(orbitalRadius.pow(3.0) / (OrbiterManager.gravityConstant * foundParent.mass))
-                    //angularVelocity = 2.0 * Math.PI / orbitalPeriod
                     parent = foundParent;
 
                 }
@@ -80,12 +76,11 @@ abstract class Orbiter(val properties: Properties) {
     }
 
     fun velocity(): Vector2 {
-        return globalPosAtTime(1.0) - globalPos()
+        return velocityAtTime(0.0)
     }
 
-    fun globalRotation(): Double {
-        val vecToParent = relativePos * -1.0;
-        return vecToParent.angle;
+    fun velocityAtTime(timeOffset: Double): Vector2 {
+        return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
     }
 
     fun globalPosAtTime(timeOffset: Double): Vector2 {

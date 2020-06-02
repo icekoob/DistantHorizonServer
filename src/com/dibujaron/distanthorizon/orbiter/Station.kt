@@ -14,6 +14,7 @@ class Station(properties: Properties) : Orbiter(properties) {
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
     val description = properties.getProperty("description").trim()
+
     private val commodityStores: Map<String, CommodityStore> = CommodityType
         .values()
         .asSequence()
@@ -24,6 +25,16 @@ class Station(properties: Properties) : Orbiter(properties) {
     init {
         dockingPorts.add(StationDockingPort(this, Vector2(7.0, 0.5), -90.0))
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
+    }
+
+    fun globalRotation(): Double {
+        val vecToParent = relativePos * -1.0;
+        return vecToParent.angle;
+    }
+
+    fun globalRotationAtTime(timeOffset: Double): Double {
+        val vecToParentAtTime = relativePosAtTime(timeOffset) * -1.0
+        return vecToParentAtTime.angle
     }
 
     override fun createOrbiterJson(): JSONObject {

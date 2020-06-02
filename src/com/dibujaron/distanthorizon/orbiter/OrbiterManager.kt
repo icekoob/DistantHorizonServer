@@ -14,15 +14,15 @@ object OrbiterManager {
     val gravityConstantFudge = 10.0
     val gravityConstant = 6.67408 * 10.0.pow(-11.0) * gravityConstantFudge
 
-    fun process(deltaSeconds: Double)
-    {
+    fun process(deltaSeconds: Double) {
         getOrbiters().forEach { it.process(deltaSeconds) }
     }
+
     fun getPlanet(name: String): Planet? {
         return planetsMap[name];
     }
 
-    fun getPlanets(): Collection<Planet>{
+    fun getPlanets(): Collection<Planet> {
         return planetsMap.values
     }
 
@@ -30,8 +30,7 @@ object OrbiterManager {
         return orbitersMap[name];
     }
 
-    fun getOrbiters(): Collection<Orbiter>
-    {
+    fun getOrbiters(): Collection<Orbiter> {
         return orbitersMap.values
     }
 
@@ -39,8 +38,7 @@ object OrbiterManager {
         return stationsMap[name];
     }
 
-    fun getStations(): Collection<Station>
-    {
+    fun getStations(): Collection<Station> {
         return stationsMap.values
     }
 
@@ -82,7 +80,7 @@ object OrbiterManager {
                 stationsMap[it.name] = it
             }
 
-        orbitersMap.values.forEach{it.initialize()}
+        orbitersMap.values.forEach { it.initialize() }
     }
 
     fun loadProperties(reader: FileReader): Properties {

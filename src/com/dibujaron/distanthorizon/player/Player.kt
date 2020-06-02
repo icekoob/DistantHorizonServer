@@ -23,7 +23,6 @@ class Player(val connection: WsContext){
         //so far we only have one client message, and it's inputs.
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
-            println(message)
             val inputs = ShipInputs(message)
             myShip.receiveInputChange(inputs)
         } else if (messageType == "dock_or_undock") {
