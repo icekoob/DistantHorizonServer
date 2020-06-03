@@ -10,7 +10,6 @@ abstract class AbstractRotationPhase(startTime: Double, ship: Ship, startState: 
     //a navigation phase that rotates the ship through the given theta.
     //not a complete phase because this does not supply position or velocity.
 
-    val rotationPower = ship.type.rotationPower
     var rotationCurrent = startState.rotation
     var thetaRemaining = AngleUtils.angularDiff(startState.rotation, endRotation)
 
@@ -20,7 +19,7 @@ abstract class AbstractRotationPhase(startTime: Double, ship: Ship, startState: 
 
     //step is not overridden
     fun stepRotation(delta: Double): Double {
-        val maxRot = rotationPower * delta
+        val maxRot = ship.type.rotationPower * delta
         if (thetaRemaining > maxRot) {
             rotationCurrent += maxRot
             thetaRemaining -= maxRot
@@ -38,7 +37,7 @@ abstract class AbstractRotationPhase(startTime: Double, ship: Ship, startState: 
     }
 
     override fun phaseDuration(assumedDelta: Double): Double {
-        val ticksRequired = ceil(thetaRemaining / (rotationPower * assumedDelta)).toInt()
+        val ticksRequired = ceil(thetaRemaining / (ship.type.rotationPower * assumedDelta)).toInt()
         return ticksRequired * assumedDelta
     }
 }
