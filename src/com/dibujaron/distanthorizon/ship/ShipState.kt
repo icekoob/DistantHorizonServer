@@ -1,9 +1,9 @@
-package com.dibujaron.distanthorizon.navigation
+package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
 import org.json.JSONObject
 
-class NavigationState(val position: Vector2, val rotation: Double, val velocity: Vector2) {
+class ShipState(val position: Vector2, val rotation: Double, val velocity: Vector2) {
     fun toJSON(): JSONObject
     {
         val retval = JSONObject()

@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.ship.Ship
 import org.json.JSONArray
@@ -55,7 +56,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         return retval
     }
 
-    fun sellResourceToPlayer(resource: String, player: Player, ship: Ship, quantity: Int) {
+    fun sellResourceToShip(resource: String, buyingAccount: Account, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         val price = store.buyPrice() * quantity
         var purchaseQuantity = quantity
@@ -72,19 +73,18 @@ class Station(properties: Properties) : Orbiter(properties) {
             purchaseQuantity = spaceInHold
         }
 
-        if (player.balance < price){
-            val affordableQuantity = floor(player.balance / store.buyPrice()).toInt()
+        if (buyingAccount.balance < price){
+            val affordableQuantity = floor(buyingAccount.balance / store.buyPrice()).toInt()
             purchaseQuantity = affordableQuantity
         }
         val purchasePrice = store.buyPrice() * purchaseQuantity
-        player.balance = player.balance - purchasePrice
-        store.quantityAvailable -= purchaseQuantity
+        buyingAccount.balance = buyingAccount.balance - purchasePrice
+        //store.quantityAvailable -= purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
         ship.hold[store.identifyingName] = holdStore + purchaseQuantity
-        println("player ${player.uuid} bought $purchaseQuantity of ${store.identifyingName} for $purchasePrice")
     }
 
-    fun buyResourceFromPlayer(resource: String, player: Player, ship: Ship, quantity: Int) {
+    fun buyResourceFromShip(resource: String, buyingAccount: Account, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         var purchaseQuantity = quantity
 
@@ -96,10 +96,9 @@ class Station(properties: Properties) : Orbiter(properties) {
 
         //now do it
         val purchasePrice = store.sellPrice() * purchaseQuantity
-        player.balance = player.balance + purchasePrice
-        store.quantityAvailable += purchaseQuantity
+        buyingAccount.balance = buyingAccount.balance + purchasePrice
+        //store.quantityAvailable += purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
         ship.hold[store.identifyingName] = holdStore - purchaseQuantity
-        println("player ${player.uuid} sold $purchaseQuantity of ${store.identifyingName} for $purchasePrice")
     }
 }

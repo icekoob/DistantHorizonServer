@@ -1,10 +1,8 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.ship.Ship
-import com.dibujaron.distanthorizon.ship.ShipManager
-import com.dibujaron.distanthorizon.ship.ShipClassManager
-import com.dibujaron.distanthorizon.ship.ShipInputs
+import com.dibujaron.distanthorizon.ship.*
+import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -12,11 +10,12 @@ import java.util.*
 
 class Player(val connection: WsContext){
     val uuid: UUID = UUID.randomUUID()
-    val myShip: Ship = Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, Vector2(375, 3180), 0.0)
-    var balance = 1000.0
+    val myShipController: PlayerShipController = PlayerShipController()
+    val ship: Ship = Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO), myShipController)
+    var account = Account()
 
     init {
-        ShipManager.markForAdd(myShip)
+        ShipManager.markForAdd(ship)
     }
 
     fun onMessageFromClient(message: JSONObject) {
@@ -24,41 +23,37 @@ class Player(val connection: WsContext){
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
-            myShip.receiveInputChange(inputs)
+            myShipController.receiveInputChange(inputs)
         } else if (messageType == "dock_or_undock") {
-            myShip.dockOrUndock()
+            myShipController.dockOrUndock()
             sendTradeMenuMessage()
         } else if (messageType == "purchase_from_station") {
-            val dockedTo = myShip.dockedToPort
-            if (dockedTo != null) {
-                val station = dockedTo.station
+            if (ship.isDocked()) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
-                station.sellResourceToPlayer(commodity, this, myShip, quantity)
+                ship.buyResourceFromStation(commodity, account, quantity)
                 sendTradeMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
-            val dockedTo = myShip.dockedToPort
-            if (dockedTo != null) {
-                val station = dockedTo.station
+            if (ship.isDocked()) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
-                station.buyResourceFromPlayer(commodity, this, myShip, quantity)
+                ship.sellResourceToStation(commodity, account, quantity)
                 sendTradeMenuMessage()
             }
         }
     }
 
     fun sendTradeMenuMessage() {
-        val dockedTo = myShip.dockedToPort
+        val dockedTo = ship.dockedToPort
         if (dockedTo != null) {
             val dockedToStation = dockedTo.station
             val stationInfo = dockedToStation.createdShopMessage();
             val myMessage = createMessage("trade_menu_info")
             myMessage.put("station_info", stationInfo)
-            myMessage.put("player_balance", balance)
-            myMessage.put("hold_space", myShip.holdCapacity - myShip.holdOccupied())
-            val holdInfo: JSONObject = myShip.createHoldStatusMessage()
+            myMessage.put("player_balance", account.balance)
+            myMessage.put("hold_space", ship.holdCapacity - ship.holdOccupied())
+            val holdInfo: JSONObject = ship.createHoldStatusMessage()
             myMessage.put("hold_contents", holdInfo)
             sendMessage(myMessage)
         } else {
@@ -108,7 +103,7 @@ class Player(val connection: WsContext){
         val message = JSONObject();
         message.put("message_type", type)
         message.put("player_id", uuid.toString())
-        message.put("ship_id", myShip.uuid.toString())
+        message.put("ship_id", ship.uuid.toString())
         return message
     }
 

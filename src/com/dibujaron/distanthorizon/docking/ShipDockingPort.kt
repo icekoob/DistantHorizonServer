@@ -8,7 +8,7 @@ class ShipDockingPort(private val ship: Ship, private val shipClassDockingPort: 
 
     val rotation = Math.toRadians(shipClassDockingPort.rotationDegrees)
     override fun globalPosition(): Vector2 {
-        return ship.globalPos + shipClassDockingPort.relativePos
+        return ship.currentState.position + shipClassDockingPort.relativePos
     }
 
     override fun relativePosition(): Vector2
@@ -17,11 +17,11 @@ class ShipDockingPort(private val ship: Ship, private val shipClassDockingPort: 
     }
 
     override fun getVelocity(): Vector2 {
-        return ship.velocity
+        return ship.currentState.velocity
     }
 
     override fun globalRotation(): Double {
-        return ship.rotation + rotation
+        return ship.currentState.rotation + rotation
     }
 
     override fun relativeRotation(): Double {

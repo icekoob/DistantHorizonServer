@@ -1,10 +1,11 @@
 package com.dibujaron.distanthorizon.navigation
 
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipState
 
-abstract class NavigationPhase(val startTime: Double, val startState: NavigationState, val ship: Ship){
+abstract class NavigationPhase(val startTime: Double, val startState: ShipState, val ship: Ship){
 
-    open fun computeStates(assumedDelta: Double): Sequence<NavigationState>
+    open fun computeStates(assumedDelta: Double): Sequence<ShipState>
     {
         return generateSequence {
             if(hasNextStep(assumedDelta)) step(assumedDelta) else null
@@ -12,7 +13,7 @@ abstract class NavigationPhase(val startTime: Double, val startState: Navigation
     }
 
     abstract fun hasNextStep(delta: Double): Boolean
-    abstract fun step(delta: Double): NavigationState
+    abstract fun step(delta: Double): ShipState
     abstract fun phaseDuration(assumedDelta: Double): Double
     fun endTime(assumedDelta: Double): Double
     {

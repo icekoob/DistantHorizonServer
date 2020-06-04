@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.navigation
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipState
 import dev.benedikt.math.bezier.curve.BezierCurve
 import dev.benedikt.math.bezier.curve.DoubleBezierCurve
 import dev.benedikt.math.bezier.curve.Order
@@ -11,7 +12,7 @@ import java.lang.IllegalStateException
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class BezierPhase(startTime: Double, ship: Ship, startState: NavigationState, val endPos: Vector2, val endVel: Vector2) :
+class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, val endPos: Vector2, val endVel: Vector2) :
     NavigationPhase(startTime, startState, ship) {
 
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
@@ -68,7 +69,7 @@ class BezierPhase(startTime: Double, ship: Ship, startState: NavigationState, va
         return newT <= 1.0
     }
 
-    override fun step(delta: Double): NavigationState {
+    override fun step(delta: Double): ShipState {
         val newTime = currentTimeOffset + delta
         val newT = tForTimeOffset(currentTimeOffset + delta)
         val pos = Vector2(curve.getCoordinatesAt(newT))
@@ -85,7 +86,7 @@ class BezierPhase(startTime: Double, ship: Ship, startState: NavigationState, va
         val totalThrust = requiredAccel + gravityCounter
         val rotation = totalThrust.angle
         currentTimeOffset = newTime
-        return NavigationState(pos, rotation + Math.PI / 2, velocity)
+        return ShipState(pos, rotation + Math.PI / 2, velocity)
     }
 
     fun tForTimeOffset(timeOffset: Double): Double {

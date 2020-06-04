@@ -2,9 +2,10 @@ package com.dibujaron.distanthorizon.navigation
 
 import com.dibujaron.distanthorizon.AngleUtils
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipState
 import kotlin.math.ceil
 
-abstract class AbstractRotationPhase(startTime: Double, ship: Ship, startState: NavigationState, endRotation: Double) :
+abstract class AbstractRotationPhase(startTime: Double, ship: Ship, startState: ShipState, endRotation: Double) :
     NavigationPhase(startTime, startState, ship) {
 
     //a navigation phase that rotates the ship through the given theta.

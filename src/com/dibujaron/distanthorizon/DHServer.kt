@@ -109,7 +109,7 @@ object DHServer {
             throw IllegalStateException("Connection disconnected but no player found for this connection.")
         } else {
             PlayerManager.markForRemove(player)
-            var playerShip: Ship = player.myShip
+            var playerShip: Ship = player.ship
             ShipManager.markForRemove(playerShip)
             println("Player id=${player.uuid} left the game, player count is ${PlayerManager.playerCount()}")
         }

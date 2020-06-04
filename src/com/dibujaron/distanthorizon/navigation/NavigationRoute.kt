@@ -4,15 +4,16 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
 import java.util.*
 
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
-    private val steps = TreeMap<Int, NavigationState>()
+    private val steps = TreeMap<Int, ShipState>()
     var maxStepIndex = -1
     init {
         val startTime = 0.0
-        val shipState = NavigationState(ship.globalPos, ship.rotation, ship.velocity)
+        val shipState = ship.currentState
         val bezierPhase = trainPhase(startTime) { endTimeEst ->
             val endVel = destination.velocityAtTime(endTimeEst)
             val endPortGlobalPos = destination.globalPosAtTime(endTimeEst)
@@ -63,7 +64,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
         return !steps.isEmpty()
     }
 
-    fun next(): NavigationState
+    fun next(): ShipState
     {
         val stateIndex = steps.firstKey()
         val state = steps[stateIndex]!!
