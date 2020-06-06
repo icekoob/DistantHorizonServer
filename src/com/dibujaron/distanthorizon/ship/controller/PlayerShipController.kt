@@ -5,19 +5,13 @@ import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.IndexedState
-import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipInputs
 
-class PlayerShipController() : ShipController {
-
-    lateinit var ship: Ship
-
-    override fun initForShip(ship: Ship) {
-        this.ship = ship
-    }
+class PlayerShipController : ShipController() {
 
     var controls: ShipInputs = ShipInputs()
-    override fun next(delta: Double, currentState: ShipState): ShipState {
+    override fun computeNextState(delta: Double): ShipState {
+        val currentState = ship.currentState
         var velocity = currentState.velocity
         var globalPos = currentState.position
         var rotation = currentState.rotation
@@ -55,6 +49,14 @@ class PlayerShipController() : ShipController {
         return emptySequence()
     }
 
+    override fun getCurrentStep(): Int {
+        return 0
+    }
+
+    override fun dockedTick(delta: Double) {
+        //player ship doesn't care if it's docked.
+    }
+
     fun receiveInputChange(shipInputs: ShipInputs) {
         if (controls == shipInputs) {
             return;
@@ -66,7 +68,7 @@ class PlayerShipController() : ShipController {
 
     fun dockOrUndock() {
         if (ship.isDocked()) {
-            ship.completeUndock()
+            ship.undock()
         } else {
             ship.attemptDock()
         }

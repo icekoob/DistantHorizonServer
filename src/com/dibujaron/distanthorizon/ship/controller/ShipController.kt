@@ -5,9 +5,16 @@ import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipInputs
 
-interface ShipController {
-    fun initForShip(ship: Ship)
-    fun next(delta: Double, currentState: ShipState): ShipState
-    fun getCurrentControls(): ShipInputs
-    fun publishScript(numSteps: Int): Sequence<IndexedState>
+abstract class ShipController {
+    lateinit var ship: Ship
+
+    fun initForShip(ship: Ship) {
+        this.ship = ship
+    }
+
+    abstract fun dockedTick(delta: Double)
+    abstract fun computeNextState(delta: Double): ShipState
+    abstract fun getCurrentControls(): ShipInputs
+    abstract fun publishScript(numSteps: Int): Sequence<IndexedState>
+    abstract fun getCurrentStep(): Int
 }

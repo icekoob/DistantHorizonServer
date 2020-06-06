@@ -76,7 +76,6 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, val endP
         val futureT = newT + tForTimeOffset(0.01)
         val futurePos = Vector2(curve.getCoordinatesAt(futureT))
         val velocity = (futurePos - pos) * 100.0
-
         val pastT = newT + tForTimeOffset(-0.01)
         val pastPos = Vector2(curve.getCoordinatesAt(pastT))
         val pastVelocity = (pos - pastPos) * 100.0

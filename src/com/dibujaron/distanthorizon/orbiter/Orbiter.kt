@@ -4,10 +4,7 @@ import com.dibujaron.distanthorizon.Vector2
 import org.json.JSONObject
 import java.lang.IllegalArgumentException
 import java.util.*
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 abstract class Orbiter(val properties: Properties) {
     val name: String = properties.getProperty("name").trim()
@@ -83,13 +80,27 @@ abstract class Orbiter(val properties: Properties) {
         return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
     }
 
+    private val posCache = TreeMap<Long, Vector2>()
     fun globalPosAtTime(timeOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
         } else {
+            val t = System.currentTimeMillis()
+            posCache.subMap(0, t).clear()
+            val k = System.currentTimeMillis() + (timeOffset * 1000).roundToLong()
+            return posCache.computeIfAbsent(k){
             val parentPos = parent.globalPosAtTime(timeOffset)
-            parentPos + relativePosAtTime(timeOffset)
+            parentPos + relativePosAtTime(timeOffset)}
+        }
+    }
+
+    fun getStar(): Orbiter{
+        val p = parent
+        if(p == null){
+            return this
+        } else {
+            return p.getStar()
         }
     }
 

@@ -5,6 +5,7 @@ import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -28,6 +29,10 @@ class Station(properties: Properties) : Orbiter(properties) {
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
     }
 
+    fun getState(): ShipState
+    {
+        return ShipState(globalPos(), globalRotation(), velocity())
+    }
     fun globalRotation(): Double {
         val vecToParent = relativePos * -1.0;
         return vecToParent.angle;

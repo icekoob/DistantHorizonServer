@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 class Ship(
     val type: ShipClass,
     initialState: ShipState,
-    val controller: ShipController
+    private val controller: ShipController
 ) {
 
     init {
@@ -49,7 +49,6 @@ class Ship(
         return retval
     }
 
-    var routeSetTime = 0L
     var tickCount = 0
 
     fun process(delta: Double) {
@@ -61,14 +60,19 @@ class Ship(
             val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
             val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
             currentState = ShipState(globalPos, rotation, velocity)
+            controller.dockedTick(delta)
         } else {
-            currentState = controller.next(delta, currentState)
+            currentState = controller.computeNextState(delta)
         }
         tickCount++
     }
 
     fun createFullShipJSON(): JSONObject {
-        val retval = createShipHeartbeatJSON()
+        val retval = JSONObject()
+        retval.put("id", uuid)
+        retval.put("velocity", currentState.velocity.toJSON())
+        retval.put("global_pos", currentState.position.toJSON())
+        retval.put("rotation", currentState.rotation)
         val controls = controller.getCurrentControls()
         retval.put("type", type.qualifiedName)
         retval.put("main_engines", controls.mainEnginesActive)
@@ -99,7 +103,8 @@ class Ship(
     fun createMovementScriptJSON(): JSONObject {
         val retval = JSONObject()
         val tps = (1 / DHServer.tickLengthSeconds).roundToInt()
-        controller.publishScript(tps * 5).forEach { retval.put(it.index.toString(), it.state.toJSON()) }
+        controller.publishScript(tps * 2).forEach { retval.put(it.index.toString(), it.state.toJSON()) }
+        retval.put("current_step", controller.getCurrentStep())
         return retval
     }
 
@@ -126,20 +131,20 @@ class Ship(
             println("Found docking match.")
             val bestShipPort = match.first
             val bestStationPort = match.second
-            completeDock(bestShipPort, bestStationPort)
+            dock(bestShipPort, bestStationPort)
         } else {
             println("Found no match to dock.")
         }
     }
 
-    fun completeDock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
+    fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
         println("docked to ${stationPort.station.name}");
         DHServer.broadcastShipDocked(this, shipPort, stationPort.station, stationPort);
     }
 
-    fun completeUndock() {
+    fun undock() {
         if (dockedToPort != null) {
             DHServer.broadcastShipUndocked(this)
         }

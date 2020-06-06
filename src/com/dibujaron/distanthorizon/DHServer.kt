@@ -31,6 +31,7 @@ object DHServer {
 
     public const val tickLengthMillis = 20L
     public const val tickLengthSeconds = tickLengthMillis / 1000.0//0.016667
+    public const val ticksPerSecond = 50
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
     private val timer = fixedRateTimer(name="mainThread", initialDelay = tickLengthMillis, period= tickLengthMillis){tick()}
@@ -60,24 +61,14 @@ object DHServer {
         if(tickCount % 50 == 0){
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
-        }
-        if(tickCount % 50 == 25) {
-            val shipHeartbeatsMessage = composeShipHeartbeatsMessage()
+        } else {
+            val shipHeartbeatsMessage = composeShipHeartbeatsMessageForTick(tickCount % 50)
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
-        //val shipsState = composeInitialShipsMessage()
-        //PlayerManager.getPlayers().forEach{it.sendInitialShipsState(shipsState)}
-        //process players
         PlayerManager.process()
-        //val totalTimeNanos = System.nanoTime() - startTime
         val totalTimeMillis = System.currentTimeMillis() - startTime
         if(totalTimeMillis > tickLengthMillis) {
             println("can't keep up! Tick took ${totalTimeMillis}ms, limit is $tickLengthMillis")
-            //println("    orbiter processing: ${orbiterTime}ms")
-            //println("    ships processing: ${shipsTime}ms")
-            //println("    compose message: ${composeTime}ms")
-            //println("    player processing: ${playerTime}ms")
-            //println("    message send time: ${messageSendTime}ms")
         }
         tickCount++
     }
@@ -88,6 +79,7 @@ object DHServer {
             config.autogenerateEtags = true
             config.asyncRequestTimeout = 10_000L
             config.enforceSsl = true
+            config.showJavalinBanner = false
         }
             .ws("/ws/") { ws ->
                 ws.onConnect { onClientConnect(it) }
@@ -111,7 +103,7 @@ object DHServer {
             PlayerManager.markForRemove(player)
             var playerShip: Ship = player.ship
             ShipManager.markForRemove(playerShip)
-            println("Player id=${player.uuid} left the game, player count is ${PlayerManager.playerCount()}")
+            println("Player id=${player.uuid} left the game, reason=${conn.reason()}. player count is ${PlayerManager.playerCount()}")
         }
     }
 
@@ -139,10 +131,10 @@ object DHServer {
         return worldStateMessage
     }
 
-    private fun composeShipHeartbeatsMessage(): JSONArray
+    private fun composeShipHeartbeatsMessageForTick(tickWithinSecond: Int): JSONArray
     {
         val ships = JSONArray()
-        ShipManager.getShips().asSequence().map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
+        ShipManager.getShipsInBucket(tickWithinSecond).map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
         return ships
     }
     fun composeInitialShipsMessage(): JSONArray

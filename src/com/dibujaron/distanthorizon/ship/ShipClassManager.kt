@@ -30,4 +30,9 @@ object ShipClassManager {
     {
         return shipClassMap[qualName]
     }
+
+    fun getShipClasses(): Collection<ShipClass>
+    {
+        return shipClassMap.values
+    }
 }

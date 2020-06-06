@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.navigation
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.ship.IndexedState
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
@@ -14,6 +15,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
     init {
         val startTime = 0.0
         val shipState = ship.currentState
+        var t = System.currentTimeMillis()
         val bezierPhase = trainPhase(startTime) { endTimeEst ->
             val endVel = destination.velocityAtTime(endTimeEst)
             val endPortGlobalPos = destination.globalPosAtTime(endTimeEst)
@@ -22,29 +24,15 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
             val targetPos = endPortGlobalPos + (myPortRelative * -1.0).rotated(endRotation)
             BezierPhase(startTime, ship, shipState, targetPos, endVel)
         }
+        println("phase training took ${System.currentTimeMillis() - t}ms")
+        t = System.currentTimeMillis()
         bezierPhase.computeStates(DHServer.tickLengthSeconds).forEach { steps[++maxStepIndex] = it}
+        println("Computing states took ${System.currentTimeMillis() - t}ms")
         val bezierDuration = steps.size * DHServer.tickLengthSeconds
         println("Bezier phase has duration $bezierDuration")
-
-        val bezierEndState = steps[maxStepIndex]!!
-        val rotationStartTime = startTime + bezierDuration
-        val rotationPhase = trainPhase(rotationStartTime){endTimeEst ->
-            val stn = destination.station
-            StationAdjacentRotationPhase(ship, rotationStartTime, bezierEndState, stn, stn.globalRotationAtTime(endTimeEst))
-        }
-        rotationPhase.computeStates(DHServer.tickLengthSeconds).forEach { steps[++maxStepIndex] = it }
-        val rotationDuration = steps.size * DHServer.tickLengthSeconds - bezierDuration
-        println("Rotation has duration $rotationDuration")
-        println("total duration is ${bezierDuration + rotationDuration}")
-
-        val rotationEndState = steps[maxStepIndex]!!
-        val waitStartTime = rotationStartTime //+ rotationDuration
-        val waitPhase = StationAdjacentWaitingPhase(ship, waitStartTime, rotationEndState, destination.station, 5.0)
-        waitPhase.computeStates(DHServer.tickLengthSeconds).forEach { steps[++maxStepIndex] = it }
-        println("wait has duration ${waitPhase.phaseDuration(DHServer.tickLengthSeconds)}")
     }
 
-    fun stepsToJSON(numToWrite: Int): JSONObject
+    fun publishScript(numToWrite: Int): Sequence<IndexedState>
     {
         val currentStep = steps.firstKey()
         var endStep = currentStep + numToWrite
@@ -52,11 +40,13 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
         if(endStep > maxStepIndex){
             endStep = maxStepIndex
         }
-        val retval = JSONObject()
-        (currentStep..endStep).asSequence().forEach {
-            retval.put(it.toString(), steps[it]!!.toJSON())
+        return (currentStep..endStep).asSequence().map {
+            IndexedState(it, steps[it]!!)
         }
-        return retval
+    }
+
+    fun currentStep(): Int {
+        return steps.firstKey()
     }
 
     fun hasNext(): Boolean
@@ -91,7 +81,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
             }
             val movingAverage = previousEstimations.asSequence().sum() / previousEstimations.size
             val diff = newEstimate - movingAverage
-            if (diff < 0.01) {
+            if (diff < 0.05) {
                 return currentPhase
             }
             previousEstimations.addLast(newEstimate)
