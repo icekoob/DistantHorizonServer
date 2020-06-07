@@ -8,10 +8,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 
-class Player(val connection: WsContext){
+class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
     val myShipController: PlayerShipController = PlayerShipController()
-    val ship: Ship = Ship(ShipClassManager.getShipClass("rijay.mockingbird")!!, ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO), myShipController)
+    val ship: Ship = Ship(
+        ShipClassManager.getShipClass("rijay.mockingbird")!!,
+        ShipColor.random(),
+        ShipColor.random(),
+        ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
+        myShipController
+    )
     var account = Account()
 
     init {
@@ -74,8 +80,7 @@ class Player(val connection: WsContext){
         sendMessage(myMessage)
     }
 
-    fun sendShipUndocked(shipUndockedMessage: JSONObject)
-    {
+    fun sendShipUndocked(shipUndockedMessage: JSONObject) {
         val myMessage = createMessage("ship_undocked")
         myMessage.put("ship_undocked", shipUndockedMessage);
         sendMessage(myMessage)

@@ -8,12 +8,15 @@ import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.ship.controller.ShipController
 import org.json.JSONObject
+import java.awt.Color
 import java.util.*
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 class Ship(
     val type: ShipClass,
+    val primaryColor: ShipColor,
+    val secondaryColor: ShipColor,
     initialState: ShipState,
     private val controller: ShipController
 ) {
@@ -85,6 +88,8 @@ class Ship(
         retval.put("main_engine_thrust", type.mainThrust)
         retval.put("manu_engine_thrust", type.manuThrust)
         retval.put("rotation_power", type.rotationPower)
+        retval.put("primary_color", primaryColor.toJSON())
+        retval.put("secondary_color", secondaryColor.toJSON())
         retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())
         return retval
     }
