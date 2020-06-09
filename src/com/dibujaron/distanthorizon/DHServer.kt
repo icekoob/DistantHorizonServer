@@ -61,8 +61,8 @@ object DHServer {
         if(tickCount % 50 == 0){
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
-        } else {
-            val shipHeartbeatsMessage = composeShipHeartbeatsMessageForTick(tickCount % 50)
+        } else if(tickCount % 50 == 25){
+            val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
         PlayerManager.process()
@@ -131,6 +131,12 @@ object DHServer {
         return worldStateMessage
     }
 
+    private fun composeShipHeartbeatsMessageForAll(): JSONArray
+    {
+        val ships = JSONArray()
+        ShipManager.getShips().map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
+        return ships
+    }
     private fun composeShipHeartbeatsMessageForTick(tickWithinSecond: Int): JSONArray
     {
         val ships = JSONArray()

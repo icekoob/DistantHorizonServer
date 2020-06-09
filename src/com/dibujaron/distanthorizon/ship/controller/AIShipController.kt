@@ -29,7 +29,7 @@ class AIShipController : ShipController() {
         val destPort = destStation.dockingPorts.random()
         val myPort = ship.myDockingPorts.random()
         val newRoute = NavigationRoute(ship, myPort, destPort)
-        println("AI ship ${ship.uuid} departing on route to ${destPort.station.displayName}")
+        println("${ship.uuid} departing for ${destPort.station.displayName}")
         currentRoute = newRoute
     }
 
@@ -47,8 +47,8 @@ class AIShipController : ShipController() {
 
     override fun computeNextState(delta: Double): ShipState {
         val route = currentRoute
-        if (route != null && route.hasNext()) {
-            return route.next()
+        if (route != null && route.hasNext(delta)) {
+            return route.next(delta)
         } else {
             dock()
             return ship.currentState
@@ -59,22 +59,17 @@ class AIShipController : ShipController() {
         return ShipInputs()
     }
 
-    override fun publishScript(numSteps: Int): Sequence<IndexedState> {
-        val route = currentRoute
-        if (route != null && route.hasNext()) {
-            return route.publishScript(numSteps)
-        } else {
-            return emptySequence()
-        }
+    override fun navigatingToTarget(): Boolean {
+        return !ship.isDocked()
     }
 
-    override fun getCurrentStep(): Int {
+    //this is called when we send our heartbeat. It'd be a good time to recalculate.
+    override fun getNavTarget(): ShipState {
         val route = currentRoute
-        if (route != null && route.hasNext()) {
-            return route.currentStep()
+        if(route == null){
+            throw IllegalStateException("not navigating currently")
         } else {
-            return 0
+            return route.getEndState()
         }
     }
-
 }

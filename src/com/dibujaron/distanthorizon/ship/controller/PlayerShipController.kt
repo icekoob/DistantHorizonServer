@@ -6,6 +6,7 @@ import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.IndexedState
 import com.dibujaron.distanthorizon.ship.ShipInputs
+import java.lang.IllegalStateException
 
 class PlayerShipController : ShipController() {
 
@@ -45,12 +46,12 @@ class PlayerShipController : ShipController() {
         return controls
     }
 
-    override fun publishScript(numSteps: Int): Sequence<IndexedState> {
-        return emptySequence()
+    override fun navigatingToTarget(): Boolean {
+        return false
     }
 
-    override fun getCurrentStep(): Int {
-        return 0
+    override fun getNavTarget(): ShipState {
+        throw IllegalStateException("getNavTarget should never be called on player ship controller")
     }
 
     override fun dockedTick(delta: Double) {

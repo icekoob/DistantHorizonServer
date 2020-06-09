@@ -100,16 +100,15 @@ class Ship(
         retval.put("velocity", currentState.velocity.toJSON())
         retval.put("global_pos", currentState.position.toJSON())
         retval.put("rotation", currentState.rotation)
-        retval.put("movement_script", createMovementScriptJSON())
+        val navigating = controller.navigatingToTarget()
+        retval.put("navigating", navigating)
+        if(navigating){
+            val target = controller.getNavTarget()
+            retval.put("targ_velocity", target.velocity.toJSON())
+            retval.put("targ_position", target.position.toJSON())
+            retval.put("targ_rotation", target.rotation)
+        }
         //todo if not manually controlled send navigation steps
-        return retval
-    }
-
-    fun createMovementScriptJSON(): JSONObject {
-        val retval = JSONObject()
-        val tps = (1 / DHServer.tickLengthSeconds).roundToInt()
-        controller.publishScript(tps * 2).forEach { retval.put(it.index.toString(), it.state.toJSON()) }
-        retval.put("current_step", controller.getCurrentStep())
         return retval
     }
 

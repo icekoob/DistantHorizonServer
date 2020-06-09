@@ -6,6 +6,7 @@ import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.awt.Color
 import java.util.*
 
 class Player(val connection: WsContext) {
@@ -13,8 +14,8 @@ class Player(val connection: WsContext) {
     val myShipController: PlayerShipController = PlayerShipController()
     val ship: Ship = Ship(
         ShipClassManager.getShipClass("rijay.mockingbird")!!,
-        ShipColor.random(),
-        ShipColor.random(),
+        ShipColor(Color(0,148,255)),
+        ShipColor(Color.WHITE),
         ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
         myShipController
     )
