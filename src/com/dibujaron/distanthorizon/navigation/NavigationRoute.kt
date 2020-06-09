@@ -8,7 +8,7 @@ import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
 import java.util.*
-const val RETRAIN_THRESHOLD = 1 * DHServer.ticksPerSecond
+const val RETRAIN_THRESHOLD = 10
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
     var currentPhase: NavigationPhase = retrain()
     var ticksSinceRetrain = 0

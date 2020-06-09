@@ -59,12 +59,8 @@ class PlayerShipController : ShipController() {
     }
 
     fun receiveInputChange(shipInputs: ShipInputs) {
-        if (controls == shipInputs) {
-            return;
-        } else {
-            controls = shipInputs
-            broadcastInputsChange()
-        }
+        controls = shipInputs
+        broadcastInputsChange()
     }
 
     fun dockOrUndock() {
