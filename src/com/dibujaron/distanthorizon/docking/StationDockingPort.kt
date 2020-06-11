@@ -11,6 +11,7 @@ class StationDockingPort(val station: Station, val relativePos: Vector2, val rot
     }
 
     fun globalPosAtTime(time: Double): Vector2 {
+        //todo I broke this on purpose but fix it later
         return station.globalPosAtTime(time) + relativePos.rotated(station.globalRotationAtTime(time))
     }
 

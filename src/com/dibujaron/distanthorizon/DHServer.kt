@@ -32,6 +32,7 @@ object DHServer {
     public const val tickLengthMillis = 20L
     public const val tickLengthSeconds = tickLengthMillis / 1000.0//0.016667
     public const val ticksPerSecond = 50
+    public val startTime = System.currentTimeMillis()
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
     private val timer = fixedRateTimer(name="mainThread", initialDelay = tickLengthMillis, period= tickLengthMillis){tick()}
@@ -175,5 +176,9 @@ object DHServer {
             println("Connection error for player id=${player.uuid}.")
             PlayerManager.markForRemove(player)
         }
+    }
+
+    fun timeSinceStart(): Long{
+        return System.currentTimeMillis() - startTime
     }
 }

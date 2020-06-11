@@ -80,8 +80,17 @@ abstract class Orbiter(val properties: Properties) {
         return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
     }
 
-    private val posCache = TreeMap<Long, Vector2>()
-    fun globalPosAtTime(timeOffset: Double): Vector2 {
+    fun globalPosAtTime(timeOffset: Double): Vector2{
+        val parent = this.parent
+        return if (parent == null) {
+            relativePos
+        } else {
+            val parentPos = parent.globalPosAtTime(timeOffset)
+            parentPos + relativePosAtTime(timeOffset)
+        }
+    }
+    /*private val posCache = TreeMap<Long, Vector2>()
+    fun globalPosAtTimeCaching(timeOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
@@ -93,7 +102,7 @@ abstract class Orbiter(val properties: Properties) {
             val parentPos = parent.globalPosAtTime(timeOffset)
             parentPos + relativePosAtTime(timeOffset)}
         }
-    }
+    }*/
 
     fun getStar(): Orbiter{
         val p = parent
@@ -108,7 +117,7 @@ abstract class Orbiter(val properties: Properties) {
         return name
     }
 
-    fun relativePosAtTime(timeOffset: Double): Vector2 { //clear cache of any values that are in the past
+    fun relativePosAtTime(timeOffset: Double): Vector2 {
         return if (relativePos.lengthSquared == 0.0) {
             relativePos
         } else {

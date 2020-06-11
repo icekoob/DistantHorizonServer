@@ -1,37 +1,24 @@
 package com.dibujaron.distanthorizon.navigation
 
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.bezier.BezierCurve
+import com.dibujaron.distanthorizon.bezier.Order
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
-import dev.benedikt.math.bezier.curve.BezierCurve
-import dev.benedikt.math.bezier.curve.DoubleBezierCurve
-import dev.benedikt.math.bezier.curve.Order
-import dev.benedikt.math.bezier.vector.Vector2D
 import java.lang.IllegalStateException
-import kotlin.math.abs
 import kotlin.math.sqrt
 
-class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, val targetState: ShipState) :
+class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private val targetState: ShipState) :
     NavigationPhase(startTime, startState, ship) {
 
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
     //makes use of a Bezier Curve.
 
-    private val curve: BezierCurve<Double, Vector2D> = initCurve()
+    private val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
     private var timeOffsetFromStart = 0.0
-    private val duration by lazy{computeDuration()}
-
-    private fun initCurve(): BezierCurve<Double, Vector2D> {
-        val c1: Vector2D = startState.position.toBezierVector()
-        val c2: Vector2D = (startState.position + startState.velocity).toBezierVector()
-        val c3: Vector2D = (targetState.position - targetState.velocity).toBezierVector()
-        val c4: Vector2D = targetState.position.toBezierVector()
-        val controlPoints = arrayListOf(c2, c3)
-        val curve = DoubleBezierCurve(Order.CUBIC, c1, c4, controlPoints)
-        curve.computeLength()
-        return curve
-    }
+    private val duration by lazy { computeDuration() }
+    private val timeToFlip by lazy { timeToFlipPoint() }
 
     override fun phaseDuration(assumedDelta: Double): Double {
         return duration
@@ -40,59 +27,110 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, val targ
     override fun getEndState(): ShipState {
         return targetState
     }
+
     //called by lazy
     fun computeDuration(): Double {
-        val a = abs(targetState.velocity.length - startState.velocity.length)
-        val u = startState.velocity.length
-        val s = curve.length
-        if(a == 0.0){
-            if(u != 0.0){
-                return s / u
-            } else {
-                return Double.POSITIVE_INFINITY
-            }
-        } else {
-            val sqrtRes = sqrt((2 * a * s) + (u * u))
-            val r1 = -1 * ((sqrtRes + u) / a)
-            if(r1.isNaN() || r1 < 0){
-                val r2 = (sqrtRes - u) / a
-                if(r2.isNaN() || r2 < 0){
-                    throw IllegalStateException("No valid result for duration")
-                } else {
-                    return r2
-                }
-            } else {
-                return r1
-            }
-        }
+        //in curve space, target vel and start vel are always pointing the same direction
+        val endSpeed = targetState.velocity.length
+        val startSpeed = startState.velocity.length
+        val curveLength = curve.length
+        val maxAccel = ship.type.mainThrust
+        val accelTime = timeToFlip
+        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
+        val decelDist = curveLength - distToFlipPoint
+        //the time it would take to accelerate from end to flip point
+        //should be the same as the time it takes to decelerate from flip point to end.
+        val decelTime = travelTime(endSpeed, maxAccel, decelDist)
+        return accelTime + decelTime
     }
 
+    //called by lazy
+    fun timeToFlipPoint(): Double {
+        val endSpeed = targetState.velocity.length
+        val startSpeed = startState.velocity.length
+        val curveLength = curve.length
+        val maxAccel = ship.type.mainThrust
+        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
+        val accelDist = distToFlipPoint
+        val accelTime = travelTime(startSpeed, maxAccel, accelDist)
+        return accelTime
+    }
+
+
     override fun hasNextStep(delta: Double): Boolean {
-        val newT = tForTimeOffset(timeOffsetFromStart + delta)
-        return newT <= 1.0
+        val newT = timeOffsetFromStart + delta
+        return newT <= duration
     }
 
     override fun step(delta: Double): ShipState {
-        val newTime = timeOffsetFromStart + delta
-        val newT = tForTimeOffset(newTime)
-        val pos = Vector2(curve.getCoordinatesAt(newT))
-        val futureT = newT + tForTimeOffset(0.01)
-        val futurePos = Vector2(curve.getCoordinatesAt(futureT))
-        val velocity = (futurePos - pos) * 100.0
-        val pastT = newT + tForTimeOffset(-0.01)
-        val pastPos = Vector2(curve.getCoordinatesAt(pastT))
-        val pastVelocity = (pos - pastPos) * 100.0
-        val requiredAccelForFiftiethOfSecond = (velocity - pastVelocity)
-        val requiredAccel = requiredAccelForFiftiethOfSecond * 50.0
-        val gravity = OrbiterManager.calculateGravity(0.0, pos)
-        val gravityCounter = gravity * -1.0
-        val totalThrust = requiredAccel + gravityCounter
-        val rotation = totalThrust.angle
-        timeOffsetFromStart = newTime
-        return ShipState(pos, rotation + Math.PI / 2, velocity)
+        val newT = timeOffsetFromStart + delta
+        val state = stateAtTime(newT)
+        timeOffsetFromStart = newT
+        return state
     }
 
-    fun tForTimeOffset(timeOffset: Double): Double {
-        return timeOffset / duration
+    private fun stateAtTime(time: Double): ShipState
+    {
+        val startSpeed = startState.velocity.length
+        val maxAccel = ship.type.mainThrust
+        val accelTime = if(time < timeToFlip) time else timeToFlip
+        val decelTime = if(time > timeToFlip) time - timeToFlip else 0.0
+        val accelDist = startSpeed * accelTime + 0.5 * maxAccel * accelTime * accelTime
+
+        //v*v = u*u + 2*a*d
+        val speedAtFlip: Double = sqrt(startSpeed * startSpeed + 2 * maxAccel * accelDist)
+        //the time it would take to accelerate from end to flip point
+        //should be the same as the time it takes to decelerate from flip point to end.
+        val decelDist = speedAtFlip * decelTime + 0.5 * -maxAccel * decelTime * decelTime
+        val totalDist = accelDist + decelDist
+        val t = curve.tForDistance(totalDist) //expensive!
+        val newPosition = curve.getCoordinatesAt(t)
+        val newVelocity = newPosition - ship.currentState.position //this is a cop out.
+
+        val gravity = OrbiterManager.calculateGravity(0.0, newPosition)
+        val gravityCounter = gravity * -1.0
+        val tangent = curve.getTangentAt(t)
+        val accelVec = tangent * maxAccel
+        val requiredAccel = if(time < timeToFlip) accelVec else accelVec * -1.0
+        val totalThrust = requiredAccel + gravityCounter
+        val rotation = totalThrust.angle
+
+        return ShipState(newPosition, rotation, newVelocity)
+    }
+
+    companion object {
+
+        fun travelTime(startSpeed: Double, accel: Double, distance: Double): Double
+        {
+            val a = accel
+            val d = distance
+            val v = startSpeed
+            if(a == 0.0){
+                if(v == 0.0){
+                    return Double.POSITIVE_INFINITY
+                } else {
+                    return d / v
+                }
+            } else {
+                val sqrtRes = sqrt((2 * a * d) + (v * v))
+                val r1 = -1 * ((sqrtRes + v) / a)
+                if (r1.isNaN() || r1 < 0) {
+                    val r2 = (sqrtRes - v) / a
+                    if (r2.isNaN() || r2 < 0) {
+                        throw IllegalStateException("No valid result for duration")
+                    } else {
+                        return r2
+                    }
+                } else {
+                    return r1
+                }
+            }
+        }
+
+        //for a given curve, the flip point is this far along the curve.
+        fun distanceFromStartToFlipPoint(startSpeed: Double, endSpeed: Double, accel: Double, curveLength: Double): Double
+        {
+            return ((accel * curveLength) + (endSpeed - startSpeed)) / (accel * 2)
+        }
     }
 }

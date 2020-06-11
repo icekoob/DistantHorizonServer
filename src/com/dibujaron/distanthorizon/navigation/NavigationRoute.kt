@@ -8,20 +8,34 @@ import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
 import java.util.*
-const val RETRAIN_THRESHOLD = 10
+const val RETRAIN_THRESHOLD = 60
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
     var currentPhase: NavigationPhase = retrain()
     var ticksSinceRetrain = 0
     private fun retrain(): NavigationPhase{
-        return trainPhase(0.0) { endTimeEst ->
+        var lastEstEndTime = 0.0
+        val retval = trainPhase(0.0) { endTimeEst ->
+
+            /*
+            val dockedTo = dockedToPort
+            val dockedFrom = myDockedPort
+            val velocity = dockedTo.getVelocity()
+            val myPortRelative = dockedFrom.relativePosition()
+            val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
+            val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
+            currentState = ShipState(globalPos, rotation, velocity)*/
             val endVel = destination.velocityAtTime(endTimeEst)
             val endPortGlobalPos = destination.globalPosAtTime(endTimeEst)
             val myPortRelative = shipPort.relativePosition()
             val endRotation = destination.globalRotationAtTime(endTimeEst) + shipPort.relativeRotation()
             val targetPos = endPortGlobalPos + (myPortRelative * -1.0).rotated(endRotation)
             val endState = ShipState(targetPos, endRotation, endVel)
+            lastEstEndTime = endTimeEst
             BezierPhase(0.0, ship, ship.currentState, endState)
         }
+        val estArrivalTime = DHServer.timeSinceStart() + (lastEstEndTime * 1000)
+        println("retrained. target pos is ${retval.getEndState().position}, will arrive at $estArrivalTime")
+        return retval
     }
 
     fun getEndState(): ShipState{
@@ -35,12 +49,12 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
 
     fun next(delta: Double): ShipState
     {
-        ticksSinceRetrain++
+        /*ticksSinceRetrain++
         if(ticksSinceRetrain > RETRAIN_THRESHOLD)
         {
             retrain()
             ticksSinceRetrain = 0
-        }
+        }*/
         return currentPhase.step(delta)
     }
 

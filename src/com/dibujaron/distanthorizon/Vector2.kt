@@ -1,6 +1,5 @@
 package com.dibujaron.distanthorizon
 
-import dev.benedikt.math.bezier.vector.Vector2D
 import org.json.JSONObject
 import kotlin.math.*
 
@@ -14,7 +13,6 @@ class Vector2(val x: Double, val y: Double) {
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
     constructor(x: Int, y: Double) : this(x.toDouble(), y)
     constructor(x: Double, y: Int) : this(x, y.toDouble())
-    constructor(v: Vector2D): this(v.x, v.y)
 
     operator fun plus(other: Vector2): Vector2 {
         return Vector2(x + other.x, y + other.y)
@@ -49,10 +47,6 @@ class Vector2(val x: Double, val y: Double) {
         retval.put("x", x)
         retval.put("y", y)
         return retval
-    }
-
-    fun toBezierVector(): Vector2D{
-        return Vector2D(x, y)
     }
 
     override fun toString(): String

@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.ship.controller
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.navigation.NavigationRoute
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.IndexedState
@@ -36,9 +37,11 @@ class AIShipController : ShipController() {
     fun dock() {
         ship.attemptDock()
         if (ship.isDocked()) {
-            nextDepartureTime = System.currentTimeMillis() + 5000 + (Math.random() * 1000).roundToInt()
+            val currentTime = System.currentTimeMillis()
+            nextDepartureTime = currentTime + 5000 + (Math.random() * 1000).roundToInt()
             val waitTime = nextDepartureTime - System.currentTimeMillis()
             println("AI ship ${ship.uuid} successfully docked at ${ship.dockedToPort!!.station.displayName}, will depart again after ${waitTime}ms")
+            println("current time is ${DHServer.timeSinceStart()}")
         } else {
             println("AI ship ${ship.uuid} should have docked but failed to dock, removing ship.")
             ShipManager.markForRemove(ship)
@@ -50,6 +53,12 @@ class AIShipController : ShipController() {
         if (route != null && route.hasNext(delta)) {
             return route.next(delta)
         } else {
+            if(route != null) {
+                val dist = (route.destination.globalPosition() - ship.currentState.position).length
+                val distFromEndState = (route.getEndState().position - ship.currentState.position).length
+                println("route complete. true destination position is ${route.destination.globalPosition()}. Current time is ${DHServer.timeSinceStart()}")
+                println("dist = $dist. end state dist = $distFromEndState")
+            }
             dock()
             return ship.currentState
         }
