@@ -13,7 +13,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
     var currentPhase: NavigationPhase = retrain()
     var ticksSinceRetrain = 0
     private fun retrain(): NavigationPhase{
-        var lastEstEndTime = 0.0
+        //var lastEstEndTime = 0.0
         val retval = trainPhase(0.0) { endTimeEst ->
 
             /*
@@ -30,11 +30,11 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
             val endRotation = destination.globalRotationAtTime(endTimeEst) + shipPort.relativeRotation()
             val targetPos = endPortGlobalPos + (myPortRelative * -1.0).rotated(endRotation)
             val endState = ShipState(targetPos, endRotation, endVel)
-            lastEstEndTime = endTimeEst
+            //lastEstEndTime = endTimeEst
             BezierPhase(0.0, ship, ship.currentState, endState)
         }
-        val estArrivalTime = DHServer.timeSinceStart() + (lastEstEndTime * 1000)
-        println("retrained. target pos is ${retval.getEndState().position}, will arrive at $estArrivalTime")
+        //val estArrivalTime = DHServer.timeSinceStart() + (lastEstEndTime * 1000)
+        //println("retrained. target pos is ${retval.getEndState().position}, will arrive at $estArrivalTime")
         return retval
     }
 
@@ -49,12 +49,12 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
 
     fun next(delta: Double): ShipState
     {
-        /*ticksSinceRetrain++
+        ticksSinceRetrain++
         if(ticksSinceRetrain > RETRAIN_THRESHOLD)
         {
             retrain()
             ticksSinceRetrain = 0
-        }*/
+        }
         return currentPhase.step(delta)
     }
 

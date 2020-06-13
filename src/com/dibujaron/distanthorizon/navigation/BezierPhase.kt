@@ -64,12 +64,12 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
 
     override fun step(delta: Double): ShipState {
         val newT = timeOffsetFromStart + delta
-        val state = stateAtTime(newT)
+        val state = stateAtTime(newT, delta)
         timeOffsetFromStart = newT
         return state
     }
 
-    private fun stateAtTime(time: Double): ShipState
+    private fun stateAtTime(time: Double, timeDelta: Double): ShipState
     {
         val startSpeed = startState.velocity.length
         val maxAccel = ship.type.mainThrust
@@ -85,11 +85,11 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         val totalDist = accelDist + decelDist
         val t = curve.tForDistance(totalDist) //expensive!
         val newPosition = curve.getCoordinatesAt(t)
-        val newVelocity = newPosition - ship.currentState.position //this is a cop out.
+        val newVelocity = (newPosition - ship.currentState.position) * timeDelta //this is a cop out.
 
         val gravity = OrbiterManager.calculateGravity(0.0, newPosition)
         val gravityCounter = gravity * -1.0
-        val tangent = curve.getTangentAt(t)
+        val tangent = newVelocity.normalized()
         val accelVec = tangent * maxAccel
         val requiredAccel = if(time < timeToFlip) accelVec else accelVec * -1.0
         val totalThrust = requiredAccel + gravityCounter

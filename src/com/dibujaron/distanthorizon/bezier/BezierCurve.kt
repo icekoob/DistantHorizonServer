@@ -65,6 +65,7 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
 
         return result!!
     }
+    //val coordinateLengthCache: ArrayList<VectorWithDistance>
     fun computeLength() {
         val fraction = 1.0 / this.resolution
 
