@@ -14,8 +14,7 @@ object ShipManager {
     private val shipsToRemove = LinkedList<Ship>()
 
     init {
-        (0..5).asSequence()
-            .map { OrbiterManager.getStations().random() }
+        OrbiterManager.getStations().asSequence()
             .map { it.getState() }
             .map { Ship(ShipClassManager.getShipClasses().random(), ShipColor.random(), ShipColor.random(), it, AIShipController()) }
             .forEach { shipsToAdd.add(it) }

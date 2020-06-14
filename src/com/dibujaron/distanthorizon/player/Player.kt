@@ -39,6 +39,7 @@ class Player(val connection: WsContext) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
                 ship.buyResourceFromStation(commodity, account, quantity)
+                println("bought $quantity of $commodity from station, new balance is ${account.balance}")
                 sendTradeMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
@@ -46,6 +47,7 @@ class Player(val connection: WsContext) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, account, quantity)
+                println("sold $quantity of $commodity to station, new balance is ${account.balance}")
                 sendTradeMenuMessage()
             }
         }

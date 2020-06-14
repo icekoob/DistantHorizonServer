@@ -42,6 +42,9 @@ class PlayerShipController : ShipController() {
         return ShipState(globalPos, rotation, velocity)
     }
 
+    override fun getHoldOccupied(): Int {
+        return ship.holdOccupied()
+    }
     override fun getCurrentControls(): ShipInputs {
         return controls
     }

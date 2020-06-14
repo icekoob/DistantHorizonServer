@@ -62,10 +62,9 @@ object DHServer {
         if(tickCount % 50 == 0){
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
-        } else if(tickCount % 50 == 25){
-            val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
-            PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
+        val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
+        PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         PlayerManager.process()
         val totalTimeMillis = System.currentTimeMillis() - startTime
         if(totalTimeMillis > tickLengthMillis) {

@@ -71,13 +71,10 @@ class Ship(
     }
 
     fun createFullShipJSON(): JSONObject {
-        val retval = JSONObject()
-        retval.put("id", uuid)
-        retval.put("velocity", currentState.velocity.toJSON())
-        retval.put("global_pos", currentState.position.toJSON())
-        retval.put("rotation", currentState.rotation)
+        val retval = createShipHeartbeatJSON()
         val controls = controller.getCurrentControls()
         retval.put("type", type.qualifiedName)
+        retval.put("hold_size", type.holdSize)
         retval.put("main_engines", controls.mainEnginesActive)
         retval.put("port_thrusters", controls.portThrustersActive)
         retval.put("stbd_thrusters", controls.stbdThrustersActive)
@@ -100,6 +97,7 @@ class Ship(
         retval.put("velocity", currentState.velocity.toJSON())
         retval.put("global_pos", currentState.position.toJSON())
         retval.put("rotation", currentState.rotation)
+        retval.put("hold_occupied", controller.getHoldOccupied())
         val navigating = controller.navigatingToTarget()
         retval.put("navigating", navigating)
         if(navigating){
@@ -113,10 +111,10 @@ class Ship(
     }
 
     fun attemptDock() {
-        val maxDockDist = 10000.0//10000.0//50.0
+        val maxDockDist = 500.0//10000.0//10000.0//50.0
         val maxDistSquared = maxDockDist.pow(2)
 
-        val maxClosingSpeed = 100000.0//5000.0//500.0
+        val maxClosingSpeed = 500.0//100000.0//5000.0//500.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
         val match = OrbiterManager.getStations().asSequence()
@@ -132,7 +130,6 @@ class Ship(
             .minBy { it.third }
 
         if (match != null) {
-            println("Found docking match.")
             val bestShipPort = match.first
             val bestStationPort = match.second
             dock(bestShipPort, bestStationPort)
@@ -144,7 +141,6 @@ class Ship(
     fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
-        println("docked to ${stationPort.station.name}");
         DHServer.broadcastShipDocked(this, shipPort, stationPort.station, stationPort);
     }
 

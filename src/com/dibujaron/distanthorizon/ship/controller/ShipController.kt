@@ -16,4 +16,5 @@ abstract class ShipController {
     abstract fun getCurrentControls(): ShipInputs
     abstract fun navigatingToTarget(): Boolean
     abstract fun getNavTarget(): ShipState
+    abstract fun getHoldOccupied(): Int
 }

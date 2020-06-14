@@ -18,7 +18,6 @@ class ShipColor(val baseColor: Color) {
             val r = (Math.random() * 256.0).toInt()
             val g = (Math.random() * 256.0).toInt()
             val b = (Math.random() * 256.0).toInt()
-            println("chose random color $r,$g,$b")
             return ShipColor(Color(r, g, b))
         }
     }

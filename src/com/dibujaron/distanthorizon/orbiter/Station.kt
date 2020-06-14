@@ -29,6 +29,11 @@ class Station(properties: Properties) : Orbiter(properties) {
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
     }
 
+    override fun process(delta: Double) {
+        super.process(delta)
+        commodityStores.values.forEach{it.process(delta)}
+    }
+
     fun getState(): ShipState
     {
         return ShipState(globalPos(), globalRotation(), velocity())
@@ -84,7 +89,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         }
         val purchasePrice = store.buyPrice() * purchaseQuantity
         buyingAccount.balance = buyingAccount.balance - purchasePrice
-        //store.quantityAvailable -= purchaseQuantity
+        store.quantityAvailable -= purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
         ship.hold[store.identifyingName] = holdStore + purchaseQuantity
     }
@@ -102,7 +107,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         //now do it
         val purchasePrice = store.sellPrice() * purchaseQuantity
         buyingAccount.balance = buyingAccount.balance + purchasePrice
-        //store.quantityAvailable += purchaseQuantity
+        store.quantityAvailable += purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
         ship.hold[store.identifyingName] = holdStore - purchaseQuantity
     }
