@@ -7,6 +7,9 @@ import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
+import java.lang.StringBuilder
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private val targetState: ShipState) :
@@ -71,8 +74,11 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
 
     var previousT: Double = 0.0
     var previousPreviousT: Double = 0.0
+    var diagnosticBuilder = StringBuilder()
     private fun stateAtTime(time: Double, timeDelta: Double): ShipState
     {
+        diagnosticBuilder = StringBuilder()
+        val t1 = System.currentTimeMillis()
         val startSpeed = startState.velocity.length
         val maxAccel = ship.type.mainThrust
         val accelTime = if(time < timeToFlip) time else timeToFlip
@@ -87,11 +93,19 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         val totalDist = accelDist + decelDist
 
         val previousTDelta = previousT - previousPreviousT
-        val t = curve.tForDistance(totalDist, notLessThan = previousT, notMoreThan = (previousT + 0.1 + previousTDelta * 5)) //expensive!
+        val t2 = System.currentTimeMillis()
+        diagnosticBuilder.append("preparation=${t2-t1} ")
+        val t = curve.tForDistance(totalDist, notLessThan = previousT, notMoreThan = (previousT + max(0.1, previousTDelta * 5)) )//expensive!
+        val t3 = System.currentTimeMillis()
+        diagnosticBuilder.append("tForDistance=${t3-t2} ")
         val newPosition = curve.getCoordinatesAt(t)
+        val t4 = System.currentTimeMillis()
+        diagnosticBuilder.append("getCoordsAt=${t4-t3} ")
         val newVelocity = (newPosition - ship.currentState.position) * timeDelta //this is a cop out.
 
         val gravity = OrbiterManager.calculateGravity(0.0, newPosition)
+        val t5 = System.currentTimeMillis()
+        diagnosticBuilder.append("gravity=${t5-t4}")
         val gravityCounter = gravity * -1.0
         val tangent = newVelocity.normalized()
         val accelVec = tangent * maxAccel

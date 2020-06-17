@@ -17,4 +17,5 @@ abstract class ShipController {
     abstract fun navigatingToTarget(): Boolean
     abstract fun getNavTarget(): ShipState
     abstract fun getHoldOccupied(): Int
+    abstract fun getDiagnostic(): String;
 }

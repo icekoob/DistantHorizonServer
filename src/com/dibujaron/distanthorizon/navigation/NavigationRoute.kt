@@ -39,6 +39,16 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
         return currentPhase.step(delta)
     }
 
+    fun getDiagnostic(): String
+    {
+        val cp = currentPhase
+        if(cp is BezierPhase){
+            return cp.diagnosticBuilder.toString()
+        } else {
+            return "current phase is ${cp.javaClass}";
+        }
+    }
+
     companion object {
 
         protected fun trainPhase(

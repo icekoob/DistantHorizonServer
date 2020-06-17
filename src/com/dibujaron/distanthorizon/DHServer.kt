@@ -29,6 +29,9 @@ object DHServer {
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
     public var debug = false
+    public var retrainsThisTick = 0
+    var docksThisTick = 0
+    var undocksThisTick = 0
     private val timer = fixedRateTimer(name="mainThread", initialDelay = TICK_LENGTH_MILLIS, period= TICK_LENGTH_MILLIS){tick()}
     private val javalin = initJavalin()
     var lastTickTime = 0L
@@ -81,8 +84,14 @@ object DHServer {
                 println("World state messages: ${t3 - t2}")
                 println("Ship heartbeat messages: ${t4 - t3}")
                 println("Player processing: ${t5-t4}")
+                println("Retrains this tick: $retrainsThisTick")
+                println("docks this tick: $docksThisTick")
+                println("undocks this tick: $undocksThisTick")
             }
         }
+        retrainsThisTick = 0
+        docksThisTick = 0
+        undocksThisTick = 0
         tickCount++
     }
 
@@ -165,6 +174,7 @@ object DHServer {
 
     fun broadcastShipDocked(ship: Ship, shipPort: ShipDockingPort, station: Station, stationPort: DockingPort)
     {
+        docksThisTick++
         val dockedMessage = JSONObject()
         dockedMessage.put("id", ship.uuid)
         dockedMessage.put("station_identifying_name", station.name)
@@ -175,6 +185,7 @@ object DHServer {
 
     fun broadcastShipUndocked(ship: Ship)
     {
+        undocksThisTick++
         val undockedMessage = ship.createShipHeartbeatJSON()
         PlayerManager.getPlayers().forEach { it.sendShipUndocked(undockedMessage) }
     }

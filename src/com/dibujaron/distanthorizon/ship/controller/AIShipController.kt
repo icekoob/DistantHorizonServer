@@ -5,6 +5,7 @@ import com.dibujaron.distanthorizon.navigation.NavigationRoute
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.*
 import java.lang.IllegalStateException
+import java.lang.StringBuilder
 import kotlin.math.roundToInt
 
 class AIShipController : ShipController() {
@@ -12,12 +13,30 @@ class AIShipController : ShipController() {
     var nextDepartureTime = System.currentTimeMillis()
     var currentRoute: NavigationRoute? = null
     var fakeHoldOccupied: Int = 0
+
+    var diagnosticBuilder = StringBuilder()
+    override fun getDiagnostic(): String {
+        val cr = currentRoute;
+        if(cr != null){
+            return "active: " + cr.getDiagnostic()
+        } else {
+            return "docked: " + diagnosticBuilder.toString();
+        }
+    }
+
     override fun dockedTick(delta: Double, coursePlottingAllowed: Boolean) {
+        diagnosticBuilder = StringBuilder()
+        val t1 = System.currentTimeMillis()
         if (System.currentTimeMillis() > nextDepartureTime && coursePlottingAllowed) {
             plotNewCourse()
+            val t2 = System.currentTimeMillis()
+            diagnosticBuilder.append("plotting=${t2 - t1} ")
             fakeHoldOccupied = (Math.random() * ship.holdCapacity).toInt()
             ship.undock()
+            val t3 = System.currentTimeMillis()
+            diagnosticBuilder.append("undocking=${t3-t2} ")
         }
+
     }
 
     fun plotNewCourse() {

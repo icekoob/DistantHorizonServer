@@ -12,9 +12,9 @@ import kotlin.math.pow
 class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val controlPoints: Collection<Vector2>,
                        val resolution: Int ){
 
+    val MIN_MEANINGFUL_DIFFERENCE_IN_T = 2.0.pow(-10)
     val knots = this.from to this.to
     val points: List<Vector2>
-
 
     //this is a mapping from [0..resolution] to the length
     //e.g. lengthCache[x] = distance from start to t(x/resolution)
@@ -83,7 +83,7 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
         var i = 0
         var priorM = 0.0
         val t = System.currentTimeMillis()
-        while(lowerLimit < upperLimit){
+        while(lowerLimit < upperLimit && ((upperLimit - lowerLimit) > MIN_MEANINGFUL_DIFFERENCE_IN_T)){
             val m = (lowerLimit + upperLimit) / 2.0
             if(m == priorM){
                 if(debug) println("got repeated m in $i iterations")

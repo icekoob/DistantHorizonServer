@@ -49,6 +49,10 @@ class PlayerShipController : ShipController() {
         return controls
     }
 
+    override fun getDiagnostic(): String {
+        return ""
+    }
+
     override fun navigatingToTarget(): Boolean {
         return false
     }

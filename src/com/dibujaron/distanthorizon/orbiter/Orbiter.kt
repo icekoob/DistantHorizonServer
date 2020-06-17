@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.orbiter
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import org.json.JSONObject
 import java.lang.IllegalArgumentException
@@ -14,13 +15,14 @@ abstract class Orbiter(val properties: Properties) {
     var parent: Planet? = null;
 
     var orbitalSpeed: Double = 0.0
-    var relativePos: Vector2 = Vector2(0,0)
+    var relativePos: Vector2 = Vector2(0, 0)
     var orbitalRadius: Double = 0.0
     var angularVelocity: Double = 0.0
 
-    open fun scale(): Double{
+    open fun scale(): Double {
         return 1.0
     }
+
     //called after all of the orbiters have loaded from file.
     fun initialize() {
         if (!initialized) {
@@ -42,7 +44,7 @@ abstract class Orbiter(val properties: Properties) {
 
                 }
             }
-            if(orbitalRadius > 0){
+            if (orbitalRadius > 0) {
                 angularVelocity = orbitalSpeed / orbitalRadius
             } else {
                 angularVelocity = 0.0
@@ -80,7 +82,21 @@ abstract class Orbiter(val properties: Properties) {
         return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
     }
 
-   fun globalPosAtTime(timeOffset: Double): Vector2{
+    private var currentPosCached = Vector2(0, 0)
+    private var currentPosCacheTick = -1
+    fun globalPosAtTime(timeOffset: Double): Vector2 {
+        return if (timeOffset == 0.0) {
+            if (currentPosCacheTick < DHServer.tickCount) {
+                currentPosCached = computeGlobalPosAtTime(timeOffset)
+                currentPosCacheTick = DHServer.tickCount
+            }
+            currentPosCached
+        } else {
+            computeGlobalPosAtTime(timeOffset)
+        }
+    }
+
+    private fun computeGlobalPosAtTime(timeOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
@@ -89,24 +105,28 @@ abstract class Orbiter(val properties: Properties) {
             parentPos + relativePosAtTime(timeOffset)
         }
     }
-    /*private val posCache = TreeMap<Long, Vector2>()
-    fun globalPosAtTime(timeOffset: Double): Vector2 {
+
+    /*private val posCache = TreeMap<Int, Vector2>()
+    fun globalPosAtTime(timeOffsetSeconds: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
         } else {
-            val t = System.currentTimeMillis()
-            posCache.subMap(0, t).clear()
-            val k = System.currentTimeMillis() + (timeOffset * 1000).roundToLong()
-            return posCache.computeIfAbsent(k){
-            val parentPos = parent.globalPosAtTime(timeOffset)
-            parentPos + relativePosAtTime(timeOffset)}
+            if(posCache.size > 100 && posCache.firstKey() < DHServer.tickCount){
+                posCache.subMap(0, DHServer.tickCount).clear()
+            }
+            val ticksInFuture: Int = (timeOffsetSeconds * DHServer.TICKS_PER_SECOND).roundToInt()
+            val key = DHServer.tickCount + ticksInFuture
+            posCache.computeIfAbsent(key) {
+                val parentPos = parent.globalPosAtTime(timeOffsetSeconds)
+                parentPos + relativePosAtTime(timeOffsetSeconds)
+            }
         }
     }*/
 
-    fun getStar(): Orbiter{
+    fun getStar(): Orbiter {
         val p = parent
-        if(p == null){
+        if (p == null) {
             return this
         } else {
             return p.getStar()
@@ -135,7 +155,7 @@ fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): V
     if (properties.containsKey("posX") && properties.containsKey("posY")) {
         val posX = properties.getProperty("posX").toDouble()
         val posY = properties.getProperty("posY").toDouble()
-        val retval = Vector2(posX,posY) * parentScale
+        val retval = Vector2(posX, posY) * parentScale
         return retval;
     } else if (properties.containsKey("orbitalRadius")) {
         val orbitalRadius = properties.getProperty("orbitalRadius").toInt()

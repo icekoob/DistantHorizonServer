@@ -66,7 +66,13 @@ class Ship(
             currentState = ShipState(globalPos, rotation, velocity)
             controller.dockedTick(delta, coursePlottingAllowed)
         } else {
-            currentState = controller.computeNextState(delta)
+            val nextStateResult = controller.computeNextState(delta)
+            currentState = nextStateResult
+        }
+        val timeTaken = System.currentTimeMillis() - startTime
+        if(timeTaken > 2 && DHServer.debug){
+            println("ship took $timeTaken to process, diagnostic is:")
+            println(controller.getDiagnostic())
         }
         tickCount++
     }
