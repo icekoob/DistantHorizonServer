@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.bezier
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
@@ -19,12 +20,7 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
     //e.g. lengthCache[x] = distance from start to t(x/resolution)
     val coordinateLengthCache: ArrayList<VectorWithDistance>
 
-    private var computedLength: Double? = null
-
-    val length: Double get() {
-        if (this.computedLength == null) this.computeLength()
-        return this.computedLength!!
-    }
+    val length: Double
 
     init {
         if (this.controlPoints.size != this.order.controlPoints) {
@@ -40,18 +36,25 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
         points.add(to)
         this.points = points.toList()
         coordinateLengthCache = ArrayList(this.resolution + 1)
-        this.computeLength()
+
+        //compute the length.
+        val fraction = 1.0 / this.resolution
+        var length = 0.0
+        var lastCoordinates = this.from
+        coordinateLengthCache.add(VectorWithDistance(this.from,0.0))
+        for (i in 1..this.resolution) {
+            val coordinates = this.getCoordinatesAt(fraction * i)
+            length += (lastCoordinates - coordinates).length
+            coordinateLengthCache.add(VectorWithDistance(coordinates, length))
+            lastCoordinates = coordinates
+        }
+
+        this.length = length
     }
 
     fun getCoordinatesAt(t: Double) : Vector2 {
         return this.getCoordinatesAt(t, this.order, this.points)
     }
-
-    fun getTangentAt(t: Double) : Vector2 {
-        val newPoints = (0 until this.order.degree).map { (this.points[it + 1] - this.points[it]) * (1.0 * this.order.degree) }
-        return this.getCoordinatesAt(t, this.order.previous!!, newPoints).normalized()
-    }
-
     private fun getCoordinatesAt(t: Double, order: Order, points: List<Vector2>) : Vector2 {
         var result : Vector2? = null
 
@@ -65,22 +68,6 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
 
         return result!!
     }
-    //val coordinateLengthCache: ArrayList<VectorWithDistance>
-    fun computeLength() {
-        val fraction = 1.0 / this.resolution
-
-        var length = 0.0
-        var lastCoordinates = this.from
-        coordinateLengthCache.add(VectorWithDistance(this.from,0.0))
-        for (i in 1..this.resolution) {
-            val coordinates = this.getCoordinatesAt(fraction * i)
-            length += (lastCoordinates - coordinates).length
-            coordinateLengthCache.add(VectorWithDistance(coordinates, length))
-            lastCoordinates = coordinates
-        }
-
-        this.computedLength = length
-    }
     fun distanceForT(t: Double): Double
     {
         val lower = (t * this.resolution).toInt() //this is the lower
@@ -90,11 +77,12 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
         val distanceFromClosest = (posForT - closestCached).length
         return cached.distanceFromStart + distanceFromClosest
     }
-    fun tForDistance(distanceFromStart: Double, debug: Boolean = false): Double{
-        var lowerLimit = 0.0
-        var upperLimit = 1.0
+    fun tForDistance(distanceFromStart: Double, notLessThan: Double = 0.0, notMoreThan: Double = 1.0, debug: Boolean = false): Double{
+        var lowerLimit = if(notLessThan > 0.0) notLessThan else 0.0
+        var upperLimit = if(notMoreThan < 1.0) notMoreThan else 1.0
         var i = 0
         var priorM = 0.0
+        val t = System.currentTimeMillis()
         while(lowerLimit < upperLimit){
             val m = (lowerLimit + upperLimit) / 2.0
             if(m == priorM){
@@ -114,6 +102,10 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
             priorM = m
             i++
         }
+        val diff = System.currentTimeMillis() - t
+        if(diff > 1 && DHServer.debug){
+            println("Bezier next state took $diff ms, i=$i")
+        }
         if(debug) println("lower limit is same as upper limit after $i iterations")
         return lowerLimit
     }
@@ -126,7 +118,7 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
             val c3: Vector2 = (targetState.position - targetState.velocity)
             val c4: Vector2 = targetState.position
             val controlPoints = arrayListOf(c2, c3)
-            return BezierCurve(Order.CUBIC, c1, c4, controlPoints, 100)
+            return BezierCurve(Order.CUBIC, c1, c4, controlPoints, resolution)
         }
     }
 }

@@ -54,16 +54,17 @@ class Ship(
 
     var tickCount = 0
 
-    fun process(delta: Double) {
+    fun process(delta: Double, coursePlottingAllowed: Boolean) {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
+        val startTime = System.currentTimeMillis()
         if (dockedTo != null && dockedFrom != null) {
             val velocity = dockedTo.getVelocity()
             val myPortRelative = dockedFrom.relativePosition()
             val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
             val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
             currentState = ShipState(globalPos, rotation, velocity)
-            controller.dockedTick(delta)
+            controller.dockedTick(delta, coursePlottingAllowed)
         } else {
             currentState = controller.computeNextState(delta)
         }

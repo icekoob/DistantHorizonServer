@@ -8,6 +8,8 @@ import kotlin.collections.HashMap
 import kotlin.math.pow
 
 object OrbiterManager {
+    public const val MIN_GRAVITY_FORCE_CUTOFF = 0.001
+
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
     private val planetsMap: HashMap<String, Planet> = HashMap()
     private val stationsMap: HashMap<String, Station> = HashMap()
@@ -45,7 +47,7 @@ object OrbiterManager {
     fun calculateGravity(timeOffset: Double, globalPosAtTime: Vector2): Vector2 {
         var accel = Vector2(0, 0)
         getPlanets().asSequence()
-            .map {
+            .forEach {
                 val planetPosAtTime = it.globalPosAtTime(timeOffset)
                 val offset = (planetPosAtTime - globalPosAtTime)
                 var rSquared = offset.lengthSquared
@@ -53,9 +55,10 @@ object OrbiterManager {
                     rSquared = it.minRadiusSquared.toDouble()
                 }
                 val forceMag = gravityConstant * it.mass / rSquared
-                offset.normalized() * forceMag
+                if(forceMag > MIN_GRAVITY_FORCE_CUTOFF) {
+                    accel += (offset.normalized() * forceMag)
+                }
             }
-            .forEach { accel += it }
         return accel
     }
 

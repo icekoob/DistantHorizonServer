@@ -3,27 +3,14 @@ package com.dibujaron.distanthorizon.navigation
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
-import com.dibujaron.distanthorizon.ship.IndexedState
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
-import org.json.JSONObject
 import java.util.*
-const val RETRAIN_THRESHOLD = 60
+//const val RETRAIN_THRESHOLD = 60
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
     var currentPhase: NavigationPhase = retrain()
-    var ticksSinceRetrain = 0
     private fun retrain(): NavigationPhase{
-        //var lastEstEndTime = 0.0
         val retval = trainPhase(0.0) { endTimeEst ->
-
-            /*
-            val dockedTo = dockedToPort
-            val dockedFrom = myDockedPort
-            val velocity = dockedTo.getVelocity()
-            val myPortRelative = dockedFrom.relativePosition()
-            val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
-            val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
-            currentState = ShipState(globalPos, rotation, velocity)*/
             val endVel = destination.velocityAtTime(endTimeEst)
             val endPortGlobalPos = destination.globalPosAtTime(endTimeEst)
             val myPortRelative = shipPort.relativePosition()
@@ -49,12 +36,6 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
 
     fun next(delta: Double): ShipState
     {
-        ticksSinceRetrain++
-        if(ticksSinceRetrain > RETRAIN_THRESHOLD)
-        {
-            retrain()
-            ticksSinceRetrain = 0
-        }
         return currentPhase.step(delta)
     }
 
@@ -73,13 +54,13 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
                 }
                 val previousEstimate = previousEstimations.last
                 val currentPhase = endTimeToPhaseFunc(previousEstimate)
-                val newEstimate = currentPhase.endTime(DHServer.tickLengthSeconds)
+                val newEstimate = currentPhase.endTime(DHServer.TICK_LENGTH_SECONDS)
                 if (newEstimate.isNaN()) {
                     throw IllegalStateException("Phase produced NaN time estimate.")
                 }
                 val movingAverage = previousEstimations.asSequence().sum() / previousEstimations.size
                 val diff = newEstimate - movingAverage
-                if (diff < 0.05) {
+                if (diff < 0.1) {
                     return currentPhase
                 }
                 previousEstimations.addLast(newEstimate)

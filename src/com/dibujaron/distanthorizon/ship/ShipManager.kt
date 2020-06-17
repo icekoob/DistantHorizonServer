@@ -2,8 +2,6 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
-import com.dibujaron.distanthorizon.player.Player
-import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.controller.AIShipController
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -16,7 +14,15 @@ object ShipManager {
     init {
         OrbiterManager.getStations().asSequence()
             .map { it.getState() }
-            .map { Ship(ShipClassManager.getShipClasses().random(), ShipColor.random(), ShipColor.random(), it, AIShipController()) }
+            .map {
+                Ship(
+                    ShipClassManager.getShipClasses().random(),
+                    ShipColor.random(),
+                    ShipColor.random(),
+                    it,
+                    AIShipController()
+                )
+            }
             .forEach { shipsToAdd.add(it) }
     }
 
@@ -25,20 +31,20 @@ object ShipManager {
     }
 
     fun getShipsInBucket(bucket: Int): Sequence<Ship> {
-        if(bucket < 0 || bucket > DHServer.ticksPerSecond){
+        if (bucket < 0 || bucket > DHServer.TICKS_PER_SECOND) {
             throw IllegalArgumentException("bucket must be between 0 and ticks per second")
         } else {
-            val numBuckets = DHServer.ticksPerSecond
-            return shipMap.entries.asSequence().filter{(it.key.hashCode() % numBuckets) == bucket }.map{it.value}
+            val numBuckets = DHServer.TICKS_PER_SECOND
+            return shipMap.entries.asSequence().filter { (it.key.hashCode() % numBuckets) == bucket }.map { it.value }
         }
     }
 
-    fun process(deltaSeconds: Double) {
+    fun process(deltaSeconds: Double, coursePlottingAllowed: Boolean) {
         shipsToRemove.forEach { shipMap.remove(it.uuid) }
         shipsToRemove.clear()
         shipsToAdd.forEach { shipMap.put(it.uuid, it) }
         shipsToAdd.clear()
-        getShips().forEach { it.process(deltaSeconds) }
+        getShips().forEach { it.process(deltaSeconds, coursePlottingAllowed) }
     }
 
     fun markForAdd(ship: Ship) {

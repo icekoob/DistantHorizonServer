@@ -12,8 +12,8 @@ class AIShipController : ShipController() {
     var nextDepartureTime = System.currentTimeMillis()
     var currentRoute: NavigationRoute? = null
     var fakeHoldOccupied: Int = 0
-    override fun dockedTick(delta: Double) {
-        if (System.currentTimeMillis() > nextDepartureTime) {
+    override fun dockedTick(delta: Double, coursePlottingAllowed: Boolean) {
+        if (System.currentTimeMillis() > nextDepartureTime && coursePlottingAllowed) {
             plotNewCourse()
             fakeHoldOccupied = (Math.random() * ship.holdCapacity).toInt()
             ship.undock()
@@ -35,7 +35,7 @@ class AIShipController : ShipController() {
         ship.attemptDock()
         if (ship.isDocked()) {
             val currentTime = System.currentTimeMillis()
-            nextDepartureTime = currentTime + 5000 + (Math.random() * 1000).roundToInt()
+            nextDepartureTime = currentTime + 5000 + (Math.random() * 10000).roundToInt()
         } else {
             println("AI ship ${ship.uuid} should have docked but failed to dock, removing ship.")
             ShipManager.markForRemove(ship)

@@ -13,7 +13,7 @@ class BezierTest {
         val curve = BezierCurve.fromStates(startState, endState, 100)
         val length = curve.length
         println("length is ${curve.length}")
-        val tForDist = curve.tForDistance(1000.0, true)
+        val tForDist = curve.tForDistance(1000.0, 0.0, 1.0,true)
         println("t for 1000 is $tForDist")
     }
 
@@ -24,7 +24,7 @@ class BezierTest {
         val curve = BezierCurve.fromStates(startState, endState, 100)
         val length = curve.length
         println("length is ${curve.length}")
-        val tForDist = curve.tForDistance(1000.0, true)
+        val tForDist = curve.tForDistance(1000.0, 0.0,1.0,true)
         println("t for 1000 is $tForDist")
     }
 

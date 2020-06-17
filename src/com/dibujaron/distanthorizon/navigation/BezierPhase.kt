@@ -69,6 +69,8 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         return state
     }
 
+    var previousT: Double = 0.0
+    var previousPreviousT: Double = 0.0
     private fun stateAtTime(time: Double, timeDelta: Double): ShipState
     {
         val startSpeed = startState.velocity.length
@@ -83,7 +85,9 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         //should be the same as the time it takes to decelerate from flip point to end.
         val decelDist = speedAtFlip * decelTime + 0.5 * -maxAccel * decelTime * decelTime
         val totalDist = accelDist + decelDist
-        val t = curve.tForDistance(totalDist) //expensive!
+
+        val previousTDelta = previousT - previousPreviousT
+        val t = curve.tForDistance(totalDist, notLessThan = previousT, notMoreThan = (previousT + 0.1 + previousTDelta * 5)) //expensive!
         val newPosition = curve.getCoordinatesAt(t)
         val newVelocity = (newPosition - ship.currentState.position) * timeDelta //this is a cop out.
 
@@ -95,6 +99,8 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         val totalThrust = requiredAccel + gravityCounter
         val rotation = totalThrust.angle
 
+        previousPreviousT = previousT
+        previousT = t
         return ShipState(newPosition, rotation, newVelocity)
     }
 

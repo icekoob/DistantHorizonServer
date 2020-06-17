@@ -80,7 +80,7 @@ abstract class Orbiter(val properties: Properties) {
         return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
     }
 
-    fun globalPosAtTime(timeOffset: Double): Vector2{
+   fun globalPosAtTime(timeOffset: Double): Vector2{
         val parent = this.parent
         return if (parent == null) {
             relativePos
@@ -90,7 +90,7 @@ abstract class Orbiter(val properties: Properties) {
         }
     }
     /*private val posCache = TreeMap<Long, Vector2>()
-    fun globalPosAtTimeCaching(timeOffset: Double): Vector2 {
+    fun globalPosAtTime(timeOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
