@@ -39,6 +39,8 @@ object DHServer {
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
     val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
+    val dockingSpeed = serverProperties.getProperty("docking.speed", "500.0").toDouble()
+    val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS, period = TICK_LENGTH_MILLIS) { tick() }
     var lastTickTime = 0L

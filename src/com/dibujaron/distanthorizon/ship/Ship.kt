@@ -117,7 +117,7 @@ class Ship(
         return retval
     }
 
-    fun attemptDock(maxDockDist: Double = 500.0, maxClosingSpeed: Double = 500.0) {
+    fun attemptDock(maxDockDist: Double = DHServer.dockingDist, maxClosingSpeed: Double = DHServer.dockingSpeed) {
         val maxDistSquared = maxDockDist.pow(2)
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
