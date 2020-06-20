@@ -117,11 +117,8 @@ class Ship(
         return retval
     }
 
-    fun attemptDock() {
-        val maxDockDist = 500.0//10000.0//10000.0//50.0
+    fun attemptDock(maxDockDist: Double = 500.0, maxClosingSpeed: Double = 500.0) {
         val maxDistSquared = maxDockDist.pow(2)
-
-        val maxClosingSpeed = 500.0//100000.0//5000.0//500.0
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
         val match = OrbiterManager.getStations().asSequence()

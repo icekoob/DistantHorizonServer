@@ -11,7 +11,6 @@ object ShipClassManager {
     init {
         File("./shipclasses/").walk()
             .filter { it.name.endsWith(".properties") }
-            .onEach{println(it.name)}
             .map { FileReader(it) }
             .map { loadProperties(it) }
             .map { ShipClass(it) }

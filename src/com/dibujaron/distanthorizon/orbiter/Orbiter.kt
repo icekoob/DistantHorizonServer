@@ -27,7 +27,6 @@ abstract class Orbiter(val properties: Properties) {
     fun initialize() {
         if (!initialized) {
             if (parentName.isEmpty()) {
-                println("Initialized orbiter $name as stationary object at position $relativePos.")
                 relativePos = loadStartingPositionAndScale(properties, 1.0)
                 orbitalSpeed = 0.0
                 orbitalRadius = relativePos.length
@@ -49,7 +48,6 @@ abstract class Orbiter(val properties: Properties) {
             } else {
                 angularVelocity = 0.0
             }
-            println("Initialized orbiter $name with parent $parent at relative position $relativePos")
             initialized = true;
         }
     }

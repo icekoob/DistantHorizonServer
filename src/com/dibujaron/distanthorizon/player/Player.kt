@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.player
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
@@ -13,7 +14,7 @@ class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
     val myShipController: PlayerShipController = PlayerShipController()
     val ship: Ship = Ship(
-        ShipClassManager.getShipClass("rijay.mockingbird")!!,
+        ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
         ShipColor(Color(0,148,255)),
         ShipColor(Color.WHITE),
         ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
@@ -22,6 +23,7 @@ class Player(val connection: WsContext) {
     var account = Account()
 
     init {
+        println("initializing player with default starting ship ${DHServer.playerStartingShip}")
         ShipManager.markForAdd(ship)
     }
 

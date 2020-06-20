@@ -51,12 +51,12 @@ class AIShipController : ShipController() {
     }
 
     fun dock() {
-        ship.attemptDock()
+        ship.attemptDock(2000.0, 2000.0)
         if (ship.isDocked()) {
             val currentTime = System.currentTimeMillis()
             nextDepartureTime = currentTime + 5000 + (Math.random() * 10000).roundToInt()
         } else {
-            println("AI ship ${ship.uuid} should have docked but failed to dock, removing ship.")
+            println("AI ship ${ship.uuid} should have docked but failed to dock.")
             ShipManager.markForRemove(ship)
             //spawn a new one
             ShipManager.markForAdd(Ship(ShipClassManager.getShipClasses().random(), ShipColor.random(), ShipColor.random(), currentRoute!!.destination.station.getState(), AIShipController()))

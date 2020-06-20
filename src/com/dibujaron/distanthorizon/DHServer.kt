@@ -12,12 +12,15 @@ import io.javalin.Javalin
 import io.javalin.websocket.*
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.FileReader
 import java.lang.IllegalStateException
+import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
 
 fun main() {
-    thread{DHServer.commandLoop()}
+    thread { DHServer.commandLoop() }
 }
 
 object DHServer {
@@ -26,24 +29,29 @@ object DHServer {
     public const val TICK_LENGTH_SECONDS = TICK_LENGTH_MILLIS / 1000.0//0.016667
     public const val TICKS_PER_SECOND = 50
     public val startTime = System.currentTimeMillis()
+
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
     public var debug = false
     public var retrainsThisTick = 0
     var docksThisTick = 0
     var undocksThisTick = 0
-    private val timer = fixedRateTimer(name="mainThread", initialDelay = TICK_LENGTH_MILLIS, period= TICK_LENGTH_MILLIS){tick()}
-    private val javalin = initJavalin()
+    val serverProperties: Properties = loadProperties()
+    private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
+    val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
+    val timer =
+        fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS, period = TICK_LENGTH_MILLIS) { tick() }
     var lastTickTime = 0L
     var tickCount = 0
-    fun commandLoop(){
-        while(!shuttingDown) {
+
+    fun commandLoop() {
+        while (!shuttingDown) {
             val command = readLine()
-            if(command == "stop"){
+            if (command == "stop") {
                 shuttingDown = true;
                 timer.cancel()
                 javalin.stop()
-            } else if(command == "debug") {
+            } else if (command == "debug") {
                 debug = !debug;
                 println("debug: $debug")
             } else {
@@ -52,7 +60,8 @@ object DHServer {
         }
     }
 
-    private fun tick(){
+    var previousTickTime = 0L
+    private fun tick() {
         val startTime = System.currentTimeMillis()
         val deltaSeconds = (startTime - lastTickTime) / 1000.0
         lastTickTime = startTime
@@ -63,12 +72,12 @@ object DHServer {
         ShipManager.process(deltaSeconds, !isWorldStateMessageTick && !isShipStateMessageTick)
         val t2 = System.currentTimeMillis()
         //send messages
-        if(isWorldStateMessageTick){
+        if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
-            PlayerManager.getPlayers().forEach{it.sendWorldState(worldStateMessage)}
+            PlayerManager.getPlayers().forEach { it.sendWorldState(worldStateMessage) }
         }
         val t3 = System.currentTimeMillis();
-        if(isShipStateMessageTick) {
+        if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
@@ -76,26 +85,30 @@ object DHServer {
         PlayerManager.process()
         val t5 = System.currentTimeMillis();
         val totalTimeMillis = System.currentTimeMillis() - startTime
-        if(totalTimeMillis > TICK_LENGTH_MILLIS) {
-            println("can't keep up! Tick took ${totalTimeMillis}ms, limit is $TICK_LENGTH_MILLIS")
-            if(debug){
+        if (totalTimeMillis > TICK_LENGTH_MILLIS) {
+            if (debug) {
                 println("Orbiter manager processing: ${t1 - startTime}")
                 println("Ship processing: ${t2 - t1}")
                 println("World state messages: ${t3 - t2}")
                 println("Ship heartbeat messages: ${t4 - t3}")
-                println("Player processing: ${t5-t4}")
+                println("Player processing: ${t5 - t4}")
                 println("Retrains this tick: $retrainsThisTick")
                 println("docks this tick: $docksThisTick")
                 println("undocks this tick: $undocksThisTick")
+            }
+            if(previousTickTime > TICK_LENGTH_MILLIS){
+                println("Warning, slow ticks: this tick $totalTimeMillis ms, previous tick $previousTickTime ms, limit is 20 ms")
             }
         }
         retrainsThisTick = 0
         docksThisTick = 0
         undocksThisTick = 0
+        previousTickTime = totalTimeMillis
         tickCount++
     }
 
-    fun initJavalin(): Javalin {
+    fun initJavalin(port: Int): Javalin {
+        println("initializing javalin on port $port")
         return Javalin.create { config ->
             config.defaultContentType = "application/json"
             config.autogenerateEtags = true
@@ -108,7 +121,7 @@ object DHServer {
                 ws.onClose { onClientDisconnect(it) }
                 ws.onBinaryMessage() { onMessageReceived(it) }
                 ws.onError { onSocketError(it) }
-            }.start(25611)
+            }.start(port)
     }
 
     private fun onClientConnect(conn: WsConnectContext) {
@@ -140,8 +153,7 @@ object DHServer {
         }
     }
 
-    fun composeWorldStateMessage(): JSONObject
-    {
+    fun composeWorldStateMessage(): JSONObject {
         val worldStateMessage = JSONObject()
         val planets = JSONArray()
         OrbiterManager.getPlanets().asSequence().map { it.createOrbiterJson() }.forEach { planets.put(it) }
@@ -153,27 +165,25 @@ object DHServer {
         return worldStateMessage
     }
 
-    private fun composeShipHeartbeatsMessageForAll(): JSONArray
-    {
+    private fun composeShipHeartbeatsMessageForAll(): JSONArray {
         val ships = JSONArray()
         ShipManager.getShips().map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
         return ships
     }
-    private fun composeShipHeartbeatsMessageForTick(tickWithinSecond: Int): JSONArray
-    {
+
+    private fun composeShipHeartbeatsMessageForTick(tickWithinSecond: Int): JSONArray {
         val ships = JSONArray()
         ShipManager.getShipsInBucket(tickWithinSecond).map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
         return ships
     }
-    fun composeInitialShipsMessage(): JSONArray
-    {
+
+    fun composeInitialShipsMessage(): JSONArray {
         val ships = JSONArray()
         ShipManager.getShips().asSequence().map { it.createFullShipJSON() }.forEach { ships.put(it) }
         return ships
     }
 
-    fun broadcastShipDocked(ship: Ship, shipPort: ShipDockingPort, station: Station, stationPort: DockingPort)
-    {
+    fun broadcastShipDocked(ship: Ship, shipPort: ShipDockingPort, station: Station, stationPort: DockingPort) {
         docksThisTick++
         val dockedMessage = JSONObject()
         dockedMessage.put("id", ship.uuid)
@@ -183,8 +193,7 @@ object DHServer {
         PlayerManager.getPlayers().forEach { it.sendShipDocked(dockedMessage) }
     }
 
-    fun broadcastShipUndocked(ship: Ship)
-    {
+    fun broadcastShipUndocked(ship: Ship) {
         undocksThisTick++
         val undockedMessage = ship.createShipHeartbeatJSON()
         PlayerManager.getPlayers().forEach { it.sendShipUndocked(undockedMessage) }
@@ -201,7 +210,19 @@ object DHServer {
         }
     }
 
-    fun timeSinceStart(): Long{
+    fun timeSinceStart(): Long {
         return System.currentTimeMillis() - startTime
+    }
+
+    fun loadProperties(): Properties {
+        val p = Properties()
+        val f = File("./server.properties")
+        if(f.exists()) {
+            println("Found server properties file.")
+            p.load(FileReader(f))
+        } else {
+            println("Found no server properties file, using defaults.")
+        }
+        return p
     }
 }

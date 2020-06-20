@@ -34,8 +34,4 @@ class ShipClass(
             )
         }
         .map { ShipClassDockingPort(it.first, it.second) }.toList()
-
-    init {
-        println("Initialized ship class $qualifiedName with ${dockingPorts.size} docking ports.")
-    }
 }
