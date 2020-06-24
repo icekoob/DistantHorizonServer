@@ -33,9 +33,16 @@ class Player(val connection: WsContext) {
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
             myShipController.receiveInputChange(inputs)
-        } else if (messageType == "dock_or_undock") {
-            myShipController.dockOrUndock()
-            sendTradeMenuMessage()
+        } else if (messageType == "dock") {
+            if(!ship.isDocked()) {
+                myShipController.dockOrUndock()
+                sendTradeMenuMessage()
+            }
+        } else if (messageType == "undock") {
+            if(ship.isDocked()) {
+                myShipController.dockOrUndock()
+                sendTradeMenuMessage()
+            }
         } else if (messageType == "purchase_from_station") {
             if (ship.isDocked()) {
                 val commodity = message.getString("commodity_name")
