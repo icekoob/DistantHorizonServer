@@ -23,7 +23,7 @@ object ShipManager {
                     AIShipController()
                 )
             }
-            .forEach { shipsToAdd.add(it) }
+            .forEach{ shipsToAdd.add(it) }
     }
 
     fun getShips(): Collection<Ship> {

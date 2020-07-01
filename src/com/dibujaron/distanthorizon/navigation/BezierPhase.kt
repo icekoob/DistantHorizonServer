@@ -2,32 +2,28 @@ package com.dibujaron.distanthorizon.navigation
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.bezier.BezierCurve
-import com.dibujaron.distanthorizon.bezier.Order
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
-import java.lang.StringBuilder
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sqrt
 
-class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private val targetState: ShipState) :
-    NavigationPhase(startTime, startState, ship) {
+class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipState, private val targetState: ShipState){
 
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
     //makes use of a Bezier Curve.
 
-    private val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
+    val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
     private var timeOffsetFromStart = 0.0
-    private val duration by lazy { computeDuration() }
-    private val timeToFlip by lazy { timeToFlipPoint() }
+    val timeToFlip by lazy { timeToFlipPoint() }
+    val duration by lazy { computeDuration() }
 
-    override fun phaseDuration(assumedDelta: Double): Double {
+    fun phaseDuration(assumedDelta: Double): Double {
         return duration
     }
 
-    override fun getEndState(): ShipState {
+    fun getEndState(): ShipState {
         return targetState
     }
 
@@ -43,69 +39,68 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
         val decelDist = curveLength - distToFlipPoint
         //the time it would take to accelerate from end to flip point
         //should be the same as the time it takes to decelerate from flip point to end.
-        val decelTime = travelTime(endSpeed, maxAccel, decelDist)
+        val decelTime = travelTimeConstantAccel(endSpeed, maxAccel, decelDist)
         return accelTime + decelTime
     }
 
     //called by lazy
-    fun timeToFlipPoint(): Double {
+    private fun timeToFlipPoint(): Double {
         val endSpeed = targetState.velocity.length
         val startSpeed = startState.velocity.length
         val curveLength = curve.length
         val maxAccel = ship.type.mainThrust
         val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
-        val accelDist = distToFlipPoint
-        val accelTime = travelTime(startSpeed, maxAccel, accelDist)
-        return accelTime
+        return travelTimeConstantAccel(startSpeed, maxAccel, distToFlipPoint)
     }
 
 
-    override fun hasNextStep(delta: Double): Boolean {
-        val newT = timeOffsetFromStart + delta
-        return newT <= duration
+    fun hasNextStep(delta: Double): Boolean {
+        //return totalDistSoFar(timeOffsetFromStart + delta) <= curve.length
+        return timeOffsetFromStart + delta <= duration
     }
 
-    override fun step(delta: Double): ShipState {
+    fun timeSinceStart(): Double {
+        return timeOffsetFromStart
+    }
+
+    fun step(delta: Double): ShipState {
         val newT = timeOffsetFromStart + delta
         val state = stateAtTime(newT, delta)
         timeOffsetFromStart = newT
         return state
     }
 
-    var previousT: Double = 0.0
-    var previousPreviousT: Double = 0.0
-    var diagnosticBuilder = StringBuilder()
-    private fun stateAtTime(time: Double, timeDelta: Double): ShipState
-    {
-        diagnosticBuilder = StringBuilder()
-        val t1 = System.currentTimeMillis()
+    private fun totalDistSoFar(time: Double): Double {
         val startSpeed = startState.velocity.length
         val maxAccel = ship.type.mainThrust
-        val accelTime = if(time < timeToFlip) time else timeToFlip
-        val decelTime = if(time > timeToFlip) time - timeToFlip else 0.0
-        val accelDist = startSpeed * accelTime + 0.5 * maxAccel * accelTime * accelTime
-
+        val accelTimeSoFar = if(time < timeToFlip) time else timeToFlip
+        val decelTimeSoFar = if(time > timeToFlip) time - timeToFlip else 0.0
+        val accelTimeTotal = timeToFlip
+        val accelDistSoFar = startSpeed * accelTimeSoFar + 0.5 * maxAccel * accelTimeSoFar * accelTimeSoFar
+        val accelDistTotal = startSpeed * accelTimeTotal + 0.5 * maxAccel * accelTimeTotal * accelTimeTotal
         //v*v = u*u + 2*a*d
-        val speedAtFlip: Double = sqrt(startSpeed * startSpeed + 2 * maxAccel * accelDist)
+        val speedAtFlip: Double = sqrt(startSpeed * startSpeed + 2 * maxAccel * accelDistTotal)
         //the time it would take to accelerate from end to flip point
         //should be the same as the time it takes to decelerate from flip point to end.
-        val decelDist = speedAtFlip * decelTime + 0.5 * -maxAccel * decelTime * decelTime
-        val totalDist = accelDist + decelDist
+        val decelDistSoFar = speedAtFlip * decelTimeSoFar + 0.5 * -maxAccel * decelTimeSoFar * decelTimeSoFar
+        return accelDistSoFar + decelDistSoFar
+    }
+    //these can only be initialized from zero if starting from zero! breaks recalculation.
+    var previousT: Double = 0.0
+    var previousPreviousT: Double = 0.0
+    var previousPosition: Vector2 = startState.position
+    private fun stateAtTime(time: Double, timeDelta: Double): ShipState
+    {
+        val maxAccel = ship.type.mainThrust
+        val totalDistSoFar = totalDistSoFar(time)
 
         val previousTDelta = previousT - previousPreviousT
-        val t2 = System.currentTimeMillis()
-        diagnosticBuilder.append("preparation=${t2-t1} ")
-        val t = curve.tForDistance(totalDist, notLessThan = previousT, notMoreThan = (previousT + max(0.1, previousTDelta * 5)) )//expensive!
-        val t3 = System.currentTimeMillis()
-        diagnosticBuilder.append("tForDistance=${t3-t2} ")
+        val notMoreThan = (previousT + max(0.1, previousTDelta * 5))
+        val t = curve.tForDistance(totalDistSoFar, notLessThan = previousT, notMoreThan = notMoreThan)//expensive!
         val newPosition = curve.getCoordinatesAt(t)
-        val t4 = System.currentTimeMillis()
-        diagnosticBuilder.append("getCoordsAt=${t4-t3} ")
-        val newVelocity = (newPosition - ship.currentState.position) * timeDelta //this is a cop out.
+        val newVelocity = (newPosition - previousPosition) / timeDelta //this is a cop out.
 
         val gravity = OrbiterManager.calculateGravity(0.0, newPosition)
-        val t5 = System.currentTimeMillis()
-        diagnosticBuilder.append("gravity=${t5-t4}")
         val gravityCounter = gravity * -1.0
         val tangent = newVelocity.normalized()
         val accelVec = tangent * maxAccel
@@ -115,12 +110,18 @@ class BezierPhase(startTime: Double, ship: Ship, startState: ShipState, private 
 
         previousPreviousT = previousT
         previousT = t
+        previousPosition = newPosition
         return ShipState(newPosition, rotation, newVelocity)
+    }
+
+    fun endTime(assumedDelta: Double): Double
+    {
+        return startTime + phaseDuration(assumedDelta)
     }
 
     companion object {
 
-        fun travelTime(startSpeed: Double, accel: Double, distance: Double): Double
+        fun travelTimeConstantAccel(startSpeed: Double, accel: Double, distance: Double): Double
         {
             val a = accel
             val d = distance

@@ -71,6 +71,16 @@ class AIShipController : ShipController() {
         if (route != null && route.hasNext(delta)) {
             return route.next(delta)
         } else {
+            if(route != null && route.destination.station.name == "Stn_Innerstellar Launch"){
+                val distToTarget = (route.getEndState().position - ship.currentState.position).length
+                val distToStation = (route.destination.station.globalPos() - ship.currentState.position).length
+                val duration = route.currentPhase.phaseDuration(0.0)
+                val elapsedTime = route.currentPhase.timeSinceStart()
+                //elapsed time is right. computed duration is wrong?
+                val timeError = elapsedTime - duration
+                val timeErrorPercent = timeError / duration
+                println("route to ISL complete. distance error=$distToStation, time error=$timeError, percentage=$timeErrorPercent")
+            }
             dock()
             return ship.currentState
         }
@@ -96,7 +106,7 @@ class AIShipController : ShipController() {
     companion object {
         fun computeNextDeparture(): Long
         {
-            return System.currentTimeMillis() + 10000 + (Math.random() * 10000).roundToInt()
+            return System.currentTimeMillis() + 5000 + (Math.random() * 10000).roundToInt()
         }
     }
 }

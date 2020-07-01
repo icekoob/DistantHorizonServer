@@ -36,12 +36,12 @@ class Player(val connection: WsContext) {
         } else if (messageType == "dock") {
             if(!ship.isDocked()) {
                 myShipController.dockOrUndock()
-                sendTradeMenuMessage()
+                sendStationMenuMessage()
             }
         } else if (messageType == "undock") {
             if(ship.isDocked()) {
                 myShipController.dockOrUndock()
-                sendTradeMenuMessage()
+                sendStationMenuMessage()
             }
         } else if (messageType == "purchase_from_station") {
             if (ship.isDocked()) {
@@ -49,7 +49,7 @@ class Player(val connection: WsContext) {
                 val quantity = message.getInt("quantity")
                 ship.buyResourceFromStation(commodity, account, quantity)
                 println("bought $quantity of $commodity from station, new balance is ${account.balance}")
-                sendTradeMenuMessage()
+                sendStationMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
             if (ship.isDocked()) {
@@ -57,17 +57,17 @@ class Player(val connection: WsContext) {
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, account, quantity)
                 println("sold $quantity of $commodity to station, new balance is ${account.balance}")
-                sendTradeMenuMessage()
+                sendStationMenuMessage()
             }
         }
     }
 
-    fun sendTradeMenuMessage() {
+    fun sendStationMenuMessage() {
         val dockedTo = ship.dockedToPort
         if (dockedTo != null) {
             val dockedToStation = dockedTo.station
             val stationInfo = dockedToStation.createdShopMessage();
-            val myMessage = createMessage("trade_menu_info")
+            val myMessage = createMessage("station_menu_info")
             myMessage.put("station_info", stationInfo)
             myMessage.put("player_balance", account.balance)
             myMessage.put("hold_space", ship.holdCapacity - ship.holdOccupied())
@@ -75,7 +75,7 @@ class Player(val connection: WsContext) {
             myMessage.put("hold_contents", holdInfo)
             sendMessage(myMessage)
         } else {
-            val myMessage = createMessage("trade_menu_close")
+            val myMessage = createMessage("station_menu_close")
             sendMessage(myMessage)
         }
     }

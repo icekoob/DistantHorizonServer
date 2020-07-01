@@ -12,8 +12,7 @@ import kotlin.math.pow
 class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val controlPoints: Collection<Vector2>,
                        val resolution: Int ){
 
-    val MIN_MEANINGFUL_DIFFERENCE_IN_T = 2.0.pow(-10)
-    val knots = this.from to this.to
+    val MIN_MEANINGFUL_DIFFERENCE_IN_T = 10.0.pow(-7)
     val points: List<Vector2>
 
     //this is a mapping from [0..resolution] to the length
@@ -90,7 +89,6 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
                 return m
             }
             val distanceForM = distanceForT(m)
-            //println("$m, $distanceForM")
             if(distanceForM < distanceFromStart){
                 lowerLimit = m
             } else if (distanceForM > distanceFromStart){
