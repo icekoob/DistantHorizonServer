@@ -10,7 +10,7 @@ import kotlin.math.roundToInt
 
 class AIShipController : ShipController() {
 
-    var nextDepartureTime = System.currentTimeMillis()
+    var nextDepartureTime = computeNextDeparture()
     var currentRoute: NavigationRoute? = null
     var fakeHoldOccupied: Int = 0
 
@@ -53,8 +53,7 @@ class AIShipController : ShipController() {
     fun dock() {
         ship.attemptDock(2000.0, 2000.0)
         if (ship.isDocked()) {
-            val currentTime = System.currentTimeMillis()
-            nextDepartureTime = currentTime + 5000 + (Math.random() * 10000).roundToInt()
+            nextDepartureTime = computeNextDeparture()
         } else {
             println("AI ship ${ship.uuid} should have docked but failed to dock.")
             ShipManager.markForRemove(ship)
@@ -92,6 +91,12 @@ class AIShipController : ShipController() {
             throw IllegalStateException("not navigating currently")
         } else {
             return route.getEndState()
+        }
+    }
+    companion object {
+        fun computeNextDeparture(): Long
+        {
+            return System.currentTimeMillis() + 10000 + (Math.random() * 10000).roundToInt()
         }
     }
 }

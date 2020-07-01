@@ -185,13 +185,9 @@ object DHServer {
         return ships
     }
 
-    fun broadcastShipDocked(ship: Ship, shipPort: ShipDockingPort, station: Station, stationPort: DockingPort) {
+    fun broadcastShipDocked(ship: Ship) {
         docksThisTick++
-        val dockedMessage = JSONObject()
-        dockedMessage.put("id", ship.uuid)
-        dockedMessage.put("station_identifying_name", station.name)
-        dockedMessage.put("ship_port", shipPort.toJSON())
-        dockedMessage.put("station_port", stationPort.toJSON());
+        val dockedMessage = ship.createDockedMessage()
         PlayerManager.getPlayers().forEach { it.sendShipDocked(dockedMessage) }
     }
 

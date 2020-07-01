@@ -104,24 +104,6 @@ abstract class Orbiter(val properties: Properties) {
         }
     }
 
-    /*private val posCache = TreeMap<Int, Vector2>()
-    fun globalPosAtTime(timeOffsetSeconds: Double): Vector2 {
-        val parent = this.parent
-        return if (parent == null) {
-            relativePos
-        } else {
-            if(posCache.size > 100 && posCache.firstKey() < DHServer.tickCount){
-                posCache.subMap(0, DHServer.tickCount).clear()
-            }
-            val ticksInFuture: Int = (timeOffsetSeconds * DHServer.TICKS_PER_SECOND).roundToInt()
-            val key = DHServer.tickCount + ticksInFuture
-            posCache.computeIfAbsent(key) {
-                val parentPos = parent.globalPosAtTime(timeOffsetSeconds)
-                parentPos + relativePosAtTime(timeOffsetSeconds)
-            }
-        }
-    }*/
-
     fun getStar(): Orbiter {
         val p = parent
         if (p == null) {

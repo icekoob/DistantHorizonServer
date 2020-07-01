@@ -1,6 +1,7 @@
 package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
@@ -9,6 +10,7 @@ import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.ship.controller.ShipController
 import org.json.JSONObject
 import java.awt.Color
+import java.lang.IllegalStateException
 import java.util.*
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -95,6 +97,10 @@ class Ship(
         retval.put("primary_color", primaryColor.toJSON())
         retval.put("secondary_color", secondaryColor.toJSON())
         retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())
+        retval.put("docked", isDocked())
+        if(isDocked()){
+            retval.put("docked_info", createDockedMessage())
+        }
         return retval
     }
 
@@ -145,7 +151,23 @@ class Ship(
     fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
-        DHServer.broadcastShipDocked(this, shipPort, stationPort.station, stationPort);
+        DHServer.broadcastShipDocked(this)
+    }
+
+    fun createDockedMessage(): JSONObject
+    {
+        val myPort: DockingPort? = this.myDockedPort
+        val stationPort: StationDockingPort? = this.dockedToPort;
+        if(myPort == null || stationPort == null){
+            throw IllegalStateException("Creating docked message but not docked.")
+        } else {
+            val dockedMessage = JSONObject()
+            dockedMessage.put("id", uuid)
+            dockedMessage.put("station_identifying_name", stationPort.station.name)
+            dockedMessage.put("ship_port", myPort.toJSON())
+            dockedMessage.put("station_port", stationPort.toJSON())
+            return dockedMessage
+        }
     }
 
     fun undock() {
