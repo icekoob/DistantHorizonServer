@@ -11,15 +11,15 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
     var currentPhase: BezierPhase = retrain()
     var ticksSinceRetrain = 0
     private fun retrain(): BezierPhase {
-        return trainPhase(0.0) { endTimeEst ->
-            val endVel = destination.velocityAtTime(endTimeEst)
-            val endPortGlobalPos = destination.globalPosAtTime(endTimeEst)
+        return trainPhase(0) { endTickEst ->
+            val endVel = destination.velocityAtTick(endTickEst)
+            val endPortGlobalPos = destination.globalPosAtTick(endTickEst)
             val myPortRelative = shipPort.relativePosition()
-            val endRotation = destination.globalRotationAtTime(endTimeEst) + shipPort.relativeRotation()
+            val endRotation = destination.globalRotationAtTick(endTickEst) + shipPort.relativeRotation() //why do I keep having to offset by pi here
             val targetPos = endPortGlobalPos + (myPortRelative * -1.0).rotated(endRotation)
             val endState = ShipState(targetPos, endRotation, endVel)
             //lastEstEndTime = endTimeEst
-            BezierPhase(0.0, ship, ship.currentState, endState)
+            BezierPhase(0.0, ship.type.mainThrust, ship.currentState, endState)
         }
     }
 
@@ -51,22 +51,22 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
     companion object {
 
         protected fun trainPhase(
-            startTime: Double,
-            endTimeToPhaseFunc: (endTime: Double) -> BezierPhase
+            startTick: Int,
+            endTickToPhaseFunc: (endTick: Double) -> BezierPhase
         ): BezierPhase {
             var iterations = 0
             val previousEstimations = LinkedList<Double>()
-            previousEstimations.addLast(startTime)
+            previousEstimations.addLast(startTick.toDouble())
             while (iterations < 100000) {
                 if (iterations > 6) {
                     previousEstimations.pollFirst()
                 }
                 val previousEstimate = previousEstimations.last
-                val currentPhase = endTimeToPhaseFunc(previousEstimate)
-                val newEstimate = currentPhase.endTime(DHServer.TICK_LENGTH_SECONDS)
-                if (newEstimate.isNaN()) {
+                val currentPhase = endTickToPhaseFunc(previousEstimate)
+                val newEstimate = startTick + currentPhase.durationTicks
+                /*if (newEstimate.isNaN()) {
                     throw IllegalStateException("Phase produced NaN time estimate.")
-                }
+                }*/
                 val movingAverage = previousEstimations.asSequence().sum() / previousEstimations.size
                 val diff = newEstimate - movingAverage
                 if (diff < 0.1) {

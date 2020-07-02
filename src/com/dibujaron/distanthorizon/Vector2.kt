@@ -26,6 +26,10 @@ class Vector2(val x: Double, val y: Double) {
         return Vector2(x * other, y * other)
     }
 
+    operator fun times(other: Int): Vector2 {
+        return Vector2(x * other, y * other)
+    }
+
     operator fun div(other: Double): Vector2 {
         return Vector2(x / other, y / other)
     }

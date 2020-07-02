@@ -48,6 +48,11 @@ class Station(properties: Properties) : Orbiter(properties) {
         return vecToParentAtTime.angle
     }
 
+    fun globalRotationAtTick(tickOffset: Double): Double {
+        val vecToParentAtTime = relativePosAtTick(tickOffset) * -1.0
+        return vecToParentAtTime.angle
+    }
+
     override fun createOrbiterJson(): JSONObject {
         val retval = super.createOrbiterJson()
         return retval

@@ -37,7 +37,7 @@ class PlayerShipController : ShipController() {
         } else if (controls.tillerRight) {
             rotation += type.rotationPower * delta
         }
-        velocity += OrbiterManager.calculateGravity(0.0, globalPos) * delta
+        velocity += OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
         globalPos += velocity * delta
         return ShipState(globalPos, rotation, velocity)
     }

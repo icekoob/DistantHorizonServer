@@ -10,6 +10,7 @@ import kotlin.math.roundToInt
 
 class AIShipController : ShipController() {
 
+    val ONLY_MAIN_SYSTEM = false
     var nextDepartureTime = computeNextDeparture()
     var currentRoute: NavigationRoute? = null
     var fakeHoldOccupied: Int = 0
@@ -42,7 +43,7 @@ class AIShipController : ShipController() {
     fun plotNewCourse() {
         val stations = OrbiterManager.getStations().asSequence().filter {
             !ship.isDocked() || ship.dockedToPort!!.station != it
-        }/*.filter{ it.getStar().name == "S-Regalis" }*/.toList()
+        }.filter{ !ONLY_MAIN_SYSTEM || it.getStar().name == "S-Regalis" }.toList()
         val destStation = stations.random()
         val destPort = destStation.dockingPorts.random()
         val myPort = ship.myDockingPorts.random()
@@ -71,15 +72,15 @@ class AIShipController : ShipController() {
         if (route != null && route.hasNext(delta)) {
             return route.next(delta)
         } else {
-            if(route != null && route.destination.station.name == "Stn_Innerstellar Launch"){
+            if(route != null /*&& route.destination.station.name == "Stn_Innerstellar Launch"*/){
                 val distToTarget = (route.getEndState().position - ship.currentState.position).length
                 val distToStation = (route.destination.station.globalPos() - ship.currentState.position).length
-                val duration = route.currentPhase.phaseDuration(0.0)
-                val elapsedTime = route.currentPhase.timeSinceStart()
+                val duration = route.currentPhase.durationTicks
+                val elapsedTime = route.currentPhase.ticksSinceStart
                 //elapsed time is right. computed duration is wrong?
                 val timeError = elapsedTime - duration
                 val timeErrorPercent = timeError / duration
-                println("route to ISL complete. distance error=$distToStation, time error=$timeError, percentage=$timeErrorPercent")
+                println("route complete. target error=$distToTarget, true error=$distToStation, finalT=${route.currentPhase.previousT}")
             }
             dock()
             return ship.currentState

@@ -1,27 +1,26 @@
 package com.dibujaron.distanthorizon.navigation
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.bezier.BezierCurve
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.sqrt
 
-class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipState, private val targetState: ShipState){
+class BezierPhase(val startTime: Double, val mainThrust: Double, val startState: ShipState, private val targetState: ShipState){
 
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
     //makes use of a Bezier Curve.
 
     val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
-    private var timeOffsetFromStart = 0.0
+    var ticksSinceStart = 0
     val timeToFlip by lazy { timeToFlipPoint() }
     val duration by lazy { computeDuration() }
-
-    fun phaseDuration(assumedDelta: Double): Double {
-        return duration
-    }
+    val durationTicks by lazy {duration * DHServer.TICKS_PER_SECOND}
 
     fun getEndState(): ShipState {
         return targetState
@@ -33,7 +32,7 @@ class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipSta
         val endSpeed = targetState.velocity.length
         val startSpeed = startState.velocity.length
         val curveLength = curve.length
-        val maxAccel = ship.type.mainThrust
+        val maxAccel = mainThrust
         val accelTime = timeToFlip
         val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
         val decelDist = curveLength - distToFlipPoint
@@ -48,7 +47,7 @@ class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipSta
         val endSpeed = targetState.velocity.length
         val startSpeed = startState.velocity.length
         val curveLength = curve.length
-        val maxAccel = ship.type.mainThrust
+        val maxAccel = mainThrust
         val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
         return travelTimeConstantAccel(startSpeed, maxAccel, distToFlipPoint)
     }
@@ -56,23 +55,20 @@ class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipSta
 
     fun hasNextStep(delta: Double): Boolean {
         //return totalDistSoFar(timeOffsetFromStart + delta) <= curve.length
-        return timeOffsetFromStart + delta <= duration
+        return ticksSinceStart < durationTicks
     }
 
     fun timeSinceStart(): Double {
-        return timeOffsetFromStart
+        return ticksSinceStart.toDouble() * DHServer.TICK_LENGTH_SECONDS
     }
 
     fun step(delta: Double): ShipState {
-        val newT = timeOffsetFromStart + delta
-        val state = stateAtTime(newT, delta)
-        timeOffsetFromStart = newT
-        return state
+        return stateForTick(ticksSinceStart++)
     }
 
     private fun totalDistSoFar(time: Double): Double {
         val startSpeed = startState.velocity.length
-        val maxAccel = ship.type.mainThrust
+        val maxAccel = mainThrust
         val accelTimeSoFar = if(time < timeToFlip) time else timeToFlip
         val decelTimeSoFar = if(time > timeToFlip) time - timeToFlip else 0.0
         val accelTimeTotal = timeToFlip
@@ -89,18 +85,19 @@ class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipSta
     var previousT: Double = 0.0
     var previousPreviousT: Double = 0.0
     var previousPosition: Vector2 = startState.position
-    private fun stateAtTime(time: Double, timeDelta: Double): ShipState
+    private fun stateForTick(tick: Int): ShipState
     {
-        val maxAccel = ship.type.mainThrust
+        val maxAccel = mainThrust
+        val time = tick * DHServer.TICK_LENGTH_SECONDS
         val totalDistSoFar = totalDistSoFar(time)
 
         val previousTDelta = previousT - previousPreviousT
         val notMoreThan = (previousT + max(0.1, previousTDelta * 5))
         val t = curve.tForDistance(totalDistSoFar, notLessThan = previousT, notMoreThan = notMoreThan)//expensive!
         val newPosition = curve.getCoordinatesAt(t)
-        val newVelocity = (newPosition - previousPosition) / timeDelta //this is a cop out.
+        val newVelocity = (newPosition - previousPosition) / DHServer.TICK_LENGTH_SECONDS //this is a cop out.
 
-        val gravity = OrbiterManager.calculateGravity(0.0, newPosition)
+        val gravity = OrbiterManager.calculateGravityAtTick(0.0, newPosition)
         val gravityCounter = gravity * -1.0
         val tangent = newVelocity.normalized()
         val accelVec = tangent * maxAccel
@@ -114,10 +111,10 @@ class BezierPhase(val startTime: Double, val ship: Ship, val startState: ShipSta
         return ShipState(newPosition, rotation, newVelocity)
     }
 
-    fun endTime(assumedDelta: Double): Double
+    /*fun endTime(assumedDelta: Double): Double
     {
         return startTime + phaseDuration(assumedDelta)
-    }
+    }*/
 
     companion object {
 

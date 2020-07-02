@@ -17,8 +17,8 @@ abstract class Orbiter(val properties: Properties) {
     var orbitalSpeed: Double = 0.0
     var relativePos: Vector2 = Vector2(0, 0)
     var orbitalRadius: Double = 0.0
-    var angularVelocity: Double = 0.0
-
+    var angularVelocityPerSecond: Double = 0.0
+    var angularVelocityPerTick: Double = 0.0
     open fun scale(): Double {
         return 1.0
     }
@@ -44,10 +44,11 @@ abstract class Orbiter(val properties: Properties) {
                 }
             }
             if (orbitalRadius > 0) {
-                angularVelocity = orbitalSpeed / orbitalRadius
+                angularVelocityPerSecond = orbitalSpeed / orbitalRadius
             } else {
-                angularVelocity = 0.0
+                angularVelocityPerSecond = 0.0
             }
+            angularVelocityPerTick = angularVelocityPerSecond / DHServer.TICKS_PER_SECOND
             initialized = true;
         }
     }
@@ -57,30 +58,34 @@ abstract class Orbiter(val properties: Properties) {
         retval.put("name", name)
         retval.put("relative_pos", relativePos.toJSON())
         retval.put("orbital_radius", orbitalRadius)
-        retval.put("angular_velocity", angularVelocity)
+        retval.put("angular_velocity", angularVelocityPerSecond)
         retval.put("angular_pos", relativePos.angle)
         retval.put("parent", parentName)
         return retval
     }
 
     open fun process(delta: Double) {
-        relativePos = relativePosAtTime(delta) //this is tricky but correct.
+        relativePos = relativePosAtTick(1.0) //this is tricky but correct.
     }
 
 
     fun globalPos(): Vector2 {
-        return globalPosAtTime(0.0)
+        return globalPosAtTick(0.0)
     }
 
     fun velocity(): Vector2 {
-        return velocityAtTime(0.0)
+        return velocityAtTick(0.0)
     }
 
-    fun velocityAtTime(timeOffset: Double): Vector2 {
+    /*fun velocityAtTime(timeOffset: Double): Vector2 {
         return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
+    }*/
+
+    fun velocityAtTick(tickOffset: Double): Vector2 {
+        return (globalPosAtTick(tickOffset + 1) - globalPosAtTick(tickOffset)) * DHServer.TICKS_PER_SECOND
     }
 
-    private var currentPosCached = Vector2(0, 0)
+    /*private var currentPosCached = Vector2(0, 0)
     private var currentPosCacheTick = -1
     fun globalPosAtTime(timeOffset: Double): Vector2 {
         return if (timeOffset == 0.0) {
@@ -92,9 +97,20 @@ abstract class Orbiter(val properties: Properties) {
         } else {
             computeGlobalPosAtTime(timeOffset)
         }
+    }*/
+
+    fun globalPosAtTick(tickOffset: Double): Vector2
+    {
+        val parent = this.parent
+        return if (parent == null) {
+            relativePos
+        } else {
+            val parentPos = parent.globalPosAtTick(tickOffset)
+            parentPos + relativePosAtTick(tickOffset)
+        }
     }
 
-    private fun computeGlobalPosAtTime(timeOffset: Double): Vector2 {
+    /*private fun computeGlobalPosAtTime(timeOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
@@ -102,7 +118,7 @@ abstract class Orbiter(val properties: Properties) {
             val parentPos = parent.globalPosAtTime(timeOffset)
             parentPos + relativePosAtTime(timeOffset)
         }
-    }
+    }*/
 
     fun getStar(): Orbiter {
         val p = parent
@@ -122,11 +138,23 @@ abstract class Orbiter(val properties: Properties) {
             relativePos
         } else {
             val angleFromParent: Double = relativePos.angle
-            val angleOffset: Double = angularVelocity * timeOffset
+            val angleOffset: Double = angularVelocityPerSecond * timeOffset
             val newAngle = angleFromParent + angleOffset
             val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
             newAngleVector * orbitalRadius
 
+        }
+    }
+
+    fun relativePosAtTick(tickOffset: Double): Vector2 {
+        return if (relativePos.lengthSquared == 0.0) {
+            relativePos
+        } else {
+            val angleFromParent: Double = relativePos.angle
+            val angleOffset: Double = angularVelocityPerTick * tickOffset
+            val newAngle = angleFromParent + angleOffset
+            val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
+            newAngleVector * orbitalRadius
         }
     }
 }
