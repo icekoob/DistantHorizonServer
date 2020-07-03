@@ -53,11 +53,6 @@ class Station(properties: Properties) : Orbiter(properties) {
         return vecToParentAtTime.angle
     }
 
-    override fun createOrbiterJson(): JSONObject {
-        val retval = super.createOrbiterJson()
-        return retval
-    }
-
     fun createdShopMessage(): JSONObject {
         val retval = JSONObject()
         retval.put("identifying_name", name)

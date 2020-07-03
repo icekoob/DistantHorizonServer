@@ -1,10 +1,8 @@
-package com.dibujaron.distanthorizon.bezier
+package com.dibujaron.distanthorizon.navigation
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.navigation.BezierNavigationPhase
-import com.dibujaron.distanthorizon.navigation.BezierPhase
-import com.dibujaron.distanthorizon.navigation.NavigationRoute
+import com.dibujaron.distanthorizon.bezier.BezierCurve
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.ship.controller.AIShipController
@@ -19,7 +17,11 @@ class BezierTest {
         DHServer.timer.cancel()
         val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
         val endState = ShipState(Vector2(1000,1000), 0.0, Vector2(0, 10))
-        val curve = BezierCurve.fromStates(startState, endState, 100)
+        val curve = BezierCurve.fromStates(
+            startState,
+            endState,
+            100
+        )
         println("length is ${curve.length}")
         val tForDist = curve.tForDistance(1000.0, 0.0, 1.0,true)
         println("t for 1000 is $tForDist")
@@ -30,7 +32,11 @@ class BezierTest {
         DHServer.timer.cancel()
         val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
         val endState = ShipState(Vector2(1000000,1000000), 0.0, Vector2(0, 10))
-        val curve = BezierCurve.fromStates(startState, endState, 100)
+        val curve = BezierCurve.fromStates(
+            startState,
+            endState,
+            100
+        )
         println("length is ${curve.length}")
         val tForDist = curve.tForDistance(1000.0, 0.0,1.0,true)
         println("t for 1000 is $tForDist")
@@ -41,7 +47,11 @@ class BezierTest {
         DHServer.timer.cancel()
         val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
         val endState = ShipState(Vector2(1000000,1000000), 0.0, Vector2(0, 10))
-        val curve = BezierCurve.fromStates(startState, endState, 100)
+        val curve = BezierCurve.fromStates(
+            startState,
+            endState,
+            100
+        )
         val length = curve.length
         val t = System.currentTimeMillis()
         val n = 100000
@@ -57,7 +67,11 @@ class BezierTest {
         DHServer.timer.cancel()
         val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
         val endState = ShipState(Vector2(1000000,1000000), 0.0, Vector2(0, 10))
-        val curve = BezierCurve.fromStates(startState, endState, 100)
+        val curve = BezierCurve.fromStates(
+            startState,
+            endState,
+            100
+        )
         val tForDist = curve.tForDistance(curve.length, 0.0,1.0,true)
         assert(tForDist > 0.99)
     }
@@ -139,8 +153,8 @@ class BezierTest {
 
         assert(iterations == expectedIterations)
         assert(finalT > 0.99)
-        assert(targetError < 15)
-        assert(trueError < 15)
+        assert(targetError < 1)
+        assert(trueError < 1)
         assert(dockingPositionError < 1)
         assert(durationError < 1)
     }
@@ -232,5 +246,82 @@ class BezierTest {
         assert(errorTrueFromPhase < 1)
         assert(errorTrueFromIndependent < 1)
         assert(errorIndependentFromPhase < 1)
+    }
+
+    @Test
+    fun testInternalConsistencySimple(){
+        val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
+        val endState = ShipState(Vector2(1000000,1000000), 0.0, Vector2(0, 10))
+        val phase = BezierNavigationPhase(120.0, startState, endState)
+        val totalTicks = phase.durationTicks
+        val totalDistance = phase.curve.length
+        val ticksCalculatedFromDistance = phase.distanceToTick(totalDistance)
+        val distanceCalculatedFromTicks = phase.tickToDistance(totalTicks)
+        val ticksDiff = abs(ticksCalculatedFromDistance - totalTicks)
+        val distanceDiff = abs(distanceCalculatedFromTicks - totalDistance)
+        assert(ticksDiff < 1)
+        assert(distanceDiff < 1)
+    }
+
+    @Test
+    fun testInternalConsistencyComplex(){
+        DHServer.timer.cancel()
+        val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
+        val destinationStation = OrbiterManager.getStations().asSequence().first()
+        val destinationPort = destinationStation.dockingPorts[0]
+        val ship = Ship(
+            ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
+            ShipColor(Color.WHITE),
+            ShipColor(Color.WHITE),
+            startState,
+            AIShipController()
+        )
+        val shipPort = ship.myDockingPorts[0]
+        val phase = NavigationRoute.trainPhase(0){ endTickEst ->
+            val endVel = destinationPort.velocityAtTick(endTickEst)
+            val endPortGlobalPos = destinationPort.globalPosAtTick(endTickEst)
+            val endRotation = destinationPort.globalRotationAtTick(endTickEst) + shipPort.relativeRotation() //why do I keep having to offset by pi here
+            val targetPos = endPortGlobalPos + (shipPort.relativePosition() * -1.0).rotated(endRotation)
+            val endState = ShipState(targetPos, endRotation, endVel)
+            //lastEstEndTime = endTimeEst
+            BezierNavigationPhase(ship.type.mainThrust, ship.currentState, endState)
+        }
+
+        val totalTicks = phase.durationTicks
+        val totalDistance = phase.curve.length
+        val ticksCalculatedFromDistance = phase.distanceToTick(totalDistance)
+        val distanceCalculatedFromTicks = phase.tickToDistance(totalTicks)
+        val ticksDiff = abs(ticksCalculatedFromDistance - totalTicks)
+        val distanceDiff = abs(distanceCalculatedFromTicks - totalDistance)
+        assert(ticksDiff < 1)
+        assert(distanceDiff < 1)
+    }
+
+    /*@Test
+    fun testDistancesIncrease(){
+        val startState = ShipState(Vector2.ZERO, 0.0, Vector2(10, 0))
+        val endState = ShipState(Vector2(1000000,1000000), 0.0, Vector2(0, 10))
+        val phase = BezierNavigationPhase(120.0, startState, endState)
+        val totalTicks = phase.durationTicks
+        var tick = 0
+        var previousDistance = -1.0
+        while(tick < totalTicks - 20){
+            val distanceForTick = phase.tickToDistance(tick.toDouble())
+            assert(distanceForTick > previousDistance)
+            previousDistance = distanceForTick
+            tick++
+        }
+    }*/
+
+    @Test
+    fun testBrokenCase(){
+        val startState = ShipState(Vector2(370.3135133488556,5939.524868390795), 1.1923423021903654, Vector2(-238.24546115404246,-51.577506844978416))
+        val endState = ShipState(Vector2(-1391.4597195718295,3647.05336697827), -0.29780613657586685, Vector2(-98.99333910130963,-94.18126809296155))
+        val phase = BezierNavigationPhase(60.0, startState, endState)
+        while(phase.hasNextStep()){
+            val distance = phase.tickToDistance(phase.ticksSinceStart.toDouble())
+            assert(distance < phase.curve.length)
+            phase.step()
+        }
     }
 }

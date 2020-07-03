@@ -57,7 +57,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
                 }*/
                 val movingAverage = previousEstimations.asSequence().sum() / previousEstimations.size
                 val diff = newEstimate - movingAverage
-                if (diff < 0.1) {
+                if (diff < 0.01) {
                     return currentPhase
                 }
                 previousEstimations.addLast(newEstimate)

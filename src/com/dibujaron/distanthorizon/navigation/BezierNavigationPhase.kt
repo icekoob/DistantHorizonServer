@@ -6,6 +6,8 @@ import com.dibujaron.distanthorizon.bezier.BezierCurve
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipState, val endState: ShipState)
@@ -17,6 +19,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
 
     //flip point information
     val flipPointDistance = ((accelPerTick * curve.length) + (endSpeedTicks - startSpeedTicks)) / (accelPerTick * 2)
+    //val flipPointDistanceNew = ((2 * accelPerTick * curve.length) - (startSpeedTicks*startSpeedTicks) + (endSpeedTicks*endSpeedTicks)) / (accelPerTick * 4)
     val flipTick = distanceToTick(flipPointDistance)
     val speedAtFlip = sqrt((startSpeedTicks * startSpeedTicks) + (2 * accelPerTick * flipPointDistance))
 
@@ -28,6 +31,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
     var ticksSinceStart = 0
     fun hasNextStep(): Boolean{
         return ticksSinceStart < durationTicks
+        //return previousT < 0.999999
     }
 
     fun step(): ShipState
@@ -57,7 +61,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
     }
 
 
-    private fun tickToDistance(tick: Double): Double
+    fun tickToDistance(tick: Double): Double
     {
         val accelTicksSoFar = if(tick < flipTick) tick else flipTick
         val decelTicksSoFar = if(tick > flipTick) tick - flipTick else 0.0
@@ -67,7 +71,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
         return accelDistance + decelDistance
     }
 
-    private fun distanceToTick(distance: Double): Double
+    fun distanceToTick(distance: Double): Double
     {
         val accelDistanceSoFar = if(distance < flipPointDistance) distance else flipPointDistance
         val decelDistanceSoFar = if(distance > flipPointDistance) distance - flipPointDistance else 0.0
@@ -87,15 +91,13 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
             } else {
                 val rootResult = sqrt((2 * acceleration * displacement) + (initialVelocity * initialVelocity))
                 val r1 = -1 * ((rootResult + initialVelocity) / acceleration)
-                return if (r1.isNaN() || r1 < 0) {
-                    val r2 = (rootResult - initialVelocity) / acceleration
-                    if (r2.isNaN() || r2 < 0) {
-                        throw IllegalStateException("No valid result for duration")
-                    } else {
-                        r2
-                    }
+                val r2 = (rootResult - initialVelocity) / acceleration
+                if(r1.isNaN() || r1 < 0){
+                    return r2
+                } else if(r2.isNaN() || r2 < 0){
+                    return r1
                 } else {
-                    r1
+                    return min(r1, r2)
                 }
             }
         }

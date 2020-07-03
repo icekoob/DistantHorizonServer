@@ -77,27 +77,9 @@ abstract class Orbiter(val properties: Properties) {
         return velocityAtTick(0.0)
     }
 
-    /*fun velocityAtTime(timeOffset: Double): Vector2 {
-        return globalPosAtTime(timeOffset + 1) - globalPosAtTime(timeOffset)
-    }*/
-
     fun velocityAtTick(tickOffset: Double): Vector2 {
         return (globalPosAtTick(tickOffset + 1) - globalPosAtTick(tickOffset)) * DHServer.TICKS_PER_SECOND
     }
-
-    /*private var currentPosCached = Vector2(0, 0)
-    private var currentPosCacheTick = -1
-    fun globalPosAtTime(timeOffset: Double): Vector2 {
-        return if (timeOffset == 0.0) {
-            if (currentPosCacheTick < DHServer.tickCount) {
-                currentPosCached = computeGlobalPosAtTime(timeOffset)
-                currentPosCacheTick = DHServer.tickCount
-            }
-            currentPosCached
-        } else {
-            computeGlobalPosAtTime(timeOffset)
-        }
-    }*/
 
     fun globalPosAtTick(tickOffset: Double): Vector2
     {
@@ -109,16 +91,6 @@ abstract class Orbiter(val properties: Properties) {
             parentPos + relativePosAtTick(tickOffset)
         }
     }
-
-    /*private fun computeGlobalPosAtTime(timeOffset: Double): Vector2 {
-        val parent = this.parent
-        return if (parent == null) {
-            relativePos
-        } else {
-            val parentPos = parent.globalPosAtTime(timeOffset)
-            parentPos + relativePosAtTime(timeOffset)
-        }
-    }*/
 
     fun getStar(): Orbiter {
         val p = parent
@@ -152,11 +124,6 @@ abstract class Orbiter(val properties: Properties) {
         } else {
             val angleOffset: Double = angularVelocityPerTick * tickOffset
             relativePos.rotated(angleOffset)
-            /*val angleFromParent: Double = relativePos.angle
-            val angleOffset: Double = angularVelocityPerTick * tickOffset
-            val newAngle = angleFromParent + angleOffset
-            val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
-            newAngleVector * orbitalRadius*/
         }
     }
 }
