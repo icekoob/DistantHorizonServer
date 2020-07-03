@@ -150,11 +150,13 @@ abstract class Orbiter(val properties: Properties) {
         return if (relativePos.lengthSquared == 0.0) {
             relativePos
         } else {
-            val angleFromParent: Double = relativePos.angle
+            val angleOffset: Double = angularVelocityPerTick * tickOffset
+            relativePos.rotated(angleOffset)
+            /*val angleFromParent: Double = relativePos.angle
             val angleOffset: Double = angularVelocityPerTick * tickOffset
             val newAngle = angleFromParent + angleOffset
             val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
-            newAngleVector * orbitalRadius
+            newAngleVector * orbitalRadius*/
         }
     }
 }

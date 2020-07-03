@@ -13,7 +13,7 @@ object OrbiterManager {
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
     private val planetsMap: HashMap<String, Planet> = HashMap()
     private val stationsMap: HashMap<String, Station> = HashMap()
-    private const val gravityConstantFudge = 10.0
+    private const val gravityConstantFudge = 50.0
     val gravityConstant = 6.67408 * 10.0.pow(-11.0) * gravityConstantFudge
 
     fun process(deltaSeconds: Double) {

@@ -28,12 +28,11 @@ object DHServer {
     public const val TICK_LENGTH_MILLIS = 20L
     public const val TICK_LENGTH_SECONDS = TICK_LENGTH_MILLIS / 1000.0//0.016667
     public const val TICKS_PER_SECOND = 50
-    public val startTime = System.currentTimeMillis()
 
     //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
     private var shuttingDown = false
-    public var debug = false
-    public var retrainsThisTick = 0
+    var debug = false
+    var retrainsThisTick = 0
     var docksThisTick = 0
     var undocksThisTick = 0
     val serverProperties: Properties = loadProperties()
@@ -43,7 +42,6 @@ object DHServer {
     val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS, period = TICK_LENGTH_MILLIS) { tick() }
-    var lastTickTime = 0L
     var tickCount = 0
 
     fun commandLoop() {
@@ -62,50 +60,28 @@ object DHServer {
         }
     }
 
-    var previousTickTime = 0L
+    var lastTickTime = 0L
     private fun tick() {
-        val startTime = System.currentTimeMillis()
-        val deltaSeconds = (startTime - lastTickTime) / 1000.0
-        lastTickTime = startTime
+        val tickStartTime = System.currentTimeMillis()
+        val deltaSeconds = (tickStartTime - lastTickTime) / 1000.0
+        lastTickTime = tickStartTime
         OrbiterManager.process(deltaSeconds)
         val isWorldStateMessageTick = tickCount % 50 == 0
         val isShipStateMessageTick = tickCount % 50 == 25
-        val t1 = System.currentTimeMillis()
         ShipManager.process(deltaSeconds, !isWorldStateMessageTick && !isShipStateMessageTick)
-        val t2 = System.currentTimeMillis()
         //send messages
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach { it.sendWorldState(worldStateMessage) }
         }
-        val t3 = System.currentTimeMillis();
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
-        val t4 = System.currentTimeMillis();
         PlayerManager.process()
-        val t5 = System.currentTimeMillis();
-        val totalTimeMillis = System.currentTimeMillis() - startTime
-        if (totalTimeMillis > TICK_LENGTH_MILLIS) {
-            if (debug) {
-                println("Orbiter manager processing: ${t1 - startTime}")
-                println("Ship processing: ${t2 - t1}")
-                println("World state messages: ${t3 - t2}")
-                println("Ship heartbeat messages: ${t4 - t3}")
-                println("Player processing: ${t5 - t4}")
-                println("Retrains this tick: $retrainsThisTick")
-                println("docks this tick: $docksThisTick")
-                println("undocks this tick: $undocksThisTick")
-            }
-            if(previousTickTime > TICK_LENGTH_MILLIS){
-                println("Warning, slow ticks: this tick $totalTimeMillis ms, previous tick $previousTickTime ms, limit is 20 ms")
-            }
-        }
         retrainsThisTick = 0
         docksThisTick = 0
         undocksThisTick = 0
-        previousTickTime = totalTimeMillis
         tickCount++
     }
 
@@ -206,10 +182,6 @@ object DHServer {
             println("Connection error for player id=${player.uuid}.")
             PlayerManager.markForRemove(player)
         }
-    }
-
-    fun timeSinceStart(): Long {
-        return System.currentTimeMillis() - startTime
     }
 
     fun loadProperties(): Properties {

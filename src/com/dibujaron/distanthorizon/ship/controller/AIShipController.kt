@@ -1,6 +1,5 @@
 package com.dibujaron.distanthorizon.ship.controller
 
-import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.navigation.NavigationRoute
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.*
@@ -10,7 +9,7 @@ import kotlin.math.roundToInt
 
 class AIShipController : ShipController() {
 
-    val ONLY_MAIN_SYSTEM = false
+    val ONLY_MAIN_SYSTEM = true
     var nextDepartureTime = computeNextDeparture()
     var currentRoute: NavigationRoute? = null
     var fakeHoldOccupied: Int = 0
@@ -73,14 +72,11 @@ class AIShipController : ShipController() {
             return route.next(delta)
         } else {
             if(route != null /*&& route.destination.station.name == "Stn_Innerstellar Launch"*/){
-                val distToTarget = (route.getEndState().position - ship.currentState.position).length
-                val distToStation = (route.destination.station.globalPos() - ship.currentState.position).length
+                val distToTarget = (route.getEndState().position - ship.currentState.position).length.roundToInt()
+                val distToStation = (route.destination.station.globalPos() - ship.currentState.position).length.roundToInt()
                 val duration = route.currentPhase.durationTicks
                 val elapsedTime = route.currentPhase.ticksSinceStart
-                //elapsed time is right. computed duration is wrong?
-                val timeError = elapsedTime - duration
-                val timeErrorPercent = timeError / duration
-                println("route complete. target error=$distToTarget, true error=$distToStation, finalT=${route.currentPhase.previousT}")
+                println("route complete. target error=$distToTarget, true error=$distToStation, finalT=${route.currentPhase.previousT}, true ticks=$elapsedTime, expected ticks=$duration")
             }
             dock()
             return ship.currentState

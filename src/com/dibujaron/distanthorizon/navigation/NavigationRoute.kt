@@ -1,46 +1,34 @@
 package com.dibujaron.distanthorizon.navigation
 
-import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.util.*
-const val RETRAIN_THRESHOLD = 60 * 5
+
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
-    var currentPhase: BezierPhase = retrain()
-    var ticksSinceRetrain = 0
-    private fun retrain(): BezierPhase {
-        return trainPhase(0) { endTickEst ->
+    var currentPhase: BezierNavigationPhase = trainPhase(0) { endTickEst ->
             val endVel = destination.velocityAtTick(endTickEst)
             val endPortGlobalPos = destination.globalPosAtTick(endTickEst)
             val myPortRelative = shipPort.relativePosition()
             val endRotation = destination.globalRotationAtTick(endTickEst) + shipPort.relativeRotation() //why do I keep having to offset by pi here
             val targetPos = endPortGlobalPos + (myPortRelative * -1.0).rotated(endRotation)
             val endState = ShipState(targetPos, endRotation, endVel)
-            //lastEstEndTime = endTimeEst
-            BezierPhase(0.0, ship.type.mainThrust, ship.currentState, endState)
+            BezierNavigationPhase(ship.type.mainThrust, ship.currentState, endState)
         }
-    }
 
     fun getEndState(): ShipState{
-        return currentPhase.getEndState()
+        return currentPhase.endState
     }
 
     fun hasNext(delta: Double): Boolean
     {
-        return currentPhase.hasNextStep(delta)
+        return currentPhase.hasNextStep()
     }
 
     fun next(delta: Double): ShipState
     {
-        /*if(ticksSinceRetrain > RETRAIN_THRESHOLD){
-            currentPhase = retrain()
-            ticksSinceRetrain = 0
-        } else {
-            ticksSinceRetrain++
-        }*/
-        return currentPhase.step(delta)
+        return currentPhase.step()
     }
 
     fun getDiagnostic(): String
@@ -50,10 +38,10 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
 
     companion object {
 
-        protected fun trainPhase(
+        fun trainPhase(
             startTick: Int,
-            endTickToPhaseFunc: (endTick: Double) -> BezierPhase
-        ): BezierPhase {
+            endTickToPhaseFunc: (endTick: Double) -> BezierNavigationPhase
+        ): BezierNavigationPhase {
             var iterations = 0
             val previousEstimations = LinkedList<Double>()
             previousEstimations.addLast(startTick.toDouble())

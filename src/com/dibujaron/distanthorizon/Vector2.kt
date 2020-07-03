@@ -34,6 +34,10 @@ class Vector2(val x: Double, val y: Double) {
         return Vector2(x / other, y / other)
     }
 
+    operator fun div(other: Int): Vector2 {
+        return Vector2(x / other, y / other)
+    }
+
     //credit to Johan Larsson/StackOverflow
     fun rotated(radians: Double): Vector2 {
         val ca: Double = cos(radians);

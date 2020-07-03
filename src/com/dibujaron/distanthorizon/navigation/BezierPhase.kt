@@ -4,104 +4,99 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.bezier.BezierCurve
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
-import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-class BezierPhase(val startTime: Double, val mainThrust: Double, val startState: ShipState, private val targetState: ShipState){
+@Deprecated("use BezierNavigationPhase instead")
+class BezierPhase(val mainEngineThrust: Double, val startState: ShipState, private val targetState: ShipState){
 
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
     //makes use of a Bezier Curve.
 
     val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
     var ticksSinceStart = 0
-    val timeToFlip by lazy { timeToFlipPoint() }
-    val duration by lazy { computeDuration() }
-    val durationTicks by lazy {duration * DHServer.TICKS_PER_SECOND}
-
+    val tickToFlip: Int by lazy { ticksToFlipPoint() }
+    val durationTicks by lazy {computeDurationTicks() }
+    val durationTicksInt: Int by lazy {ceil(durationTicks).toInt()}
+    val accelPerTick = mainEngineThrust / (DHServer.TICKS_PER_SECOND * DHServer.TICKS_PER_SECOND)
     fun getEndState(): ShipState {
         return targetState
     }
 
     //called by lazy
-    fun computeDuration(): Double {
+    fun computeDurationTicks(): Double {
         //in curve space, target vel and start vel are always pointing the same direction
-        val endSpeed = targetState.velocity.length
-        val startSpeed = startState.velocity.length
+        val endSpeedTicks = targetState.velocityTicks.length
+        val startSpeedTicks = startState.velocityTicks.length
         val curveLength = curve.length
-        val maxAccel = mainThrust
-        val accelTime = timeToFlip
-        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
+        val accelTicks = tickToFlip
+        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeedTicks, endSpeedTicks, accelPerTick, curveLength)
         val decelDist = curveLength - distToFlipPoint
         //the time it would take to accelerate from end to flip point
         //should be the same as the time it takes to decelerate from flip point to end.
-        val decelTime = travelTimeConstantAccel(endSpeed, maxAccel, decelDist)
-        return accelTime + decelTime
+        val decelTicks = travelTimeConstantAccel(endSpeedTicks, accelPerTick, decelDist)
+        return accelTicks + decelTicks
     }
 
     //called by lazy
-    private fun timeToFlipPoint(): Double {
-        val endSpeed = targetState.velocity.length
-        val startSpeed = startState.velocity.length
+    private fun ticksToFlipPoint(): Int {
+        val endSpeedTicks = targetState.velocityTicks.length
+        val startSpeedTicks = startState.velocityTicks.length
         val curveLength = curve.length
-        val maxAccel = mainThrust
-        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeed, endSpeed, maxAccel, curveLength)
-        return travelTimeConstantAccel(startSpeed, maxAccel, distToFlipPoint)
+        val maxAccel = accelPerTick
+        val distToFlipPoint = distanceFromStartToFlipPoint(startSpeedTicks, endSpeedTicks, accelPerTick, curveLength)
+        return travelTimeConstantAccel(startSpeedTicks, maxAccel, distToFlipPoint).roundToInt()
     }
 
 
     fun hasNextStep(delta: Double): Boolean {
         //return totalDistSoFar(timeOffsetFromStart + delta) <= curve.length
-        return ticksSinceStart < durationTicks
-    }
-
-    fun timeSinceStart(): Double {
-        return ticksSinceStart.toDouble() * DHServer.TICK_LENGTH_SECONDS
+        return ticksSinceStart < durationTicksInt
     }
 
     fun step(delta: Double): ShipState {
         return stateForTick(ticksSinceStart++)
     }
 
-    private fun totalDistSoFar(time: Double): Double {
-        val startSpeed = startState.velocity.length
-        val maxAccel = mainThrust
-        val accelTimeSoFar = if(time < timeToFlip) time else timeToFlip
-        val decelTimeSoFar = if(time > timeToFlip) time - timeToFlip else 0.0
-        val accelTimeTotal = timeToFlip
-        val accelDistSoFar = startSpeed * accelTimeSoFar + 0.5 * maxAccel * accelTimeSoFar * accelTimeSoFar
-        val accelDistTotal = startSpeed * accelTimeTotal + 0.5 * maxAccel * accelTimeTotal * accelTimeTotal
+    private fun totalDistSoFar(tick: Int): Double {
+        val startSpeedTicks = startState.velocityTicks.length
+        val accelTicksSoFar = if(tick < tickToFlip) tick else tickToFlip
+        val decelTicksSoFar = if(tick > tickToFlip) tick - tickToFlip else 0
+        val accelTimeTotal = tickToFlip
+        val accelDistSoFar = startSpeedTicks * accelTicksSoFar + 0.5 * accelPerTick * accelTicksSoFar * accelTicksSoFar
+        val accelDistTotal = startSpeedTicks * accelTimeTotal + 0.5 * accelPerTick * accelTimeTotal * accelTimeTotal
         //v*v = u*u + 2*a*d
-        val speedAtFlip: Double = sqrt(startSpeed * startSpeed + 2 * maxAccel * accelDistTotal)
+        val speedAtFlip: Double = sqrt(startSpeedTicks * startSpeedTicks + 2 * accelPerTick * accelDistTotal)
         //the time it would take to accelerate from end to flip point
         //should be the same as the time it takes to decelerate from flip point to end.
-        val decelDistSoFar = speedAtFlip * decelTimeSoFar + 0.5 * -maxAccel * decelTimeSoFar * decelTimeSoFar
+        val decelDistSoFar = speedAtFlip * decelTicksSoFar + 0.5 * -accelPerTick * decelTicksSoFar * decelTicksSoFar
         return accelDistSoFar + decelDistSoFar
     }
+
+
     //these can only be initialized from zero if starting from zero! breaks recalculation.
     var previousT: Double = 0.0
     var previousPreviousT: Double = 0.0
     var previousPosition: Vector2 = startState.position
     private fun stateForTick(tick: Int): ShipState
     {
-        val maxAccel = mainThrust
-        val time = tick * DHServer.TICK_LENGTH_SECONDS
-        val totalDistSoFar = totalDistSoFar(time)
+        val totalDistSoFar = totalDistSoFar(tick)
 
         val previousTDelta = previousT - previousPreviousT
         val notMoreThan = (previousT + max(0.1, previousTDelta * 5))
         val t = curve.tForDistance(totalDistSoFar, notLessThan = previousT, notMoreThan = notMoreThan)//expensive!
         val newPosition = curve.getCoordinatesAt(t)
-        val newVelocity = (newPosition - previousPosition) / DHServer.TICK_LENGTH_SECONDS //this is a cop out.
+        val newVelocity = (newPosition - previousPosition) / DHServer.TICK_LENGTH_SECONDS //convert back to seconds
 
         val gravity = OrbiterManager.calculateGravityAtTick(0.0, newPosition)
         val gravityCounter = gravity * -1.0
         val tangent = newVelocity.normalized()
-        val accelVec = tangent * maxAccel
-        val requiredAccel = if(time < timeToFlip) accelVec else accelVec * -1.0
+        val accelVec = tangent * accelPerTick
+        val requiredAccel = if(tick < tickToFlip) accelVec else accelVec * -1.0
         val totalThrust = requiredAccel + gravityCounter
         val rotation = totalThrust.angle
 
