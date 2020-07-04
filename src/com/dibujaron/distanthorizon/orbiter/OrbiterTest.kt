@@ -77,14 +77,10 @@ class OrbiterTest {
             //lastEstEndTime = endTimeEst
             BezierNavigationPhase(ship.type.mainThrust, ship.currentState, endState)
         }
-        val expectedIterations = phase.durationTicks.toInt() + 1
-        var iterations = 0
         while(phase.hasNextStep()){
             phase.step()
             OrbiterManager.process(DHServer.TICK_LENGTH_SECONDS)
-            iterations++
         }
-        assert(iterations == expectedIterations)
 
         val truePosition = port.globalPosition()
         val positionError = (expectedPosition - truePosition).length
@@ -126,6 +122,44 @@ class OrbiterTest {
 
         val truePosition = port.globalPosition()
         val positionError = (expectedPosition - truePosition).length
+        println("error: $positionError")
+        assert(positionError < 1)
+    }
+
+    @Test
+    fun testDockingPositionDrift(){
+        DHServer.timer.cancel()
+        val station = OrbiterManager.getStations().asSequence().first()
+        val port = station.dockingPorts[0]
+
+        val ship = Ship(
+            ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
+            ShipColor(Color.WHITE),
+            ShipColor(Color.WHITE),
+            ShipState(Vector2.ZERO, 0.0, Vector2(10, 0)),
+            AIShipController()
+        )
+
+        val shipPort = ship.myDockingPorts[0]
+        var expectedDockingPosition = Vector2.ZERO
+        val phase = NavigationRoute.trainPhase(0){ endTickEst ->
+            val endVel = port.velocityAtTick(endTickEst)
+            val endPortGlobalPos = port.globalPosAtTick(endTickEst)
+            val endRotation = port.globalRotationAtTick(endTickEst) + shipPort.relativeRotation() //why do I keep having to offset by pi here
+            val targetPos = endPortGlobalPos + (shipPort.relativePosition() * -1.0).rotated(endRotation)
+            expectedDockingPosition = targetPos
+            val endState = ShipState(targetPos, endRotation, endVel)
+            //lastEstEndTime = endTimeEst
+            BezierNavigationPhase(ship.type.mainThrust, ship.currentState, endState)
+        }
+
+        var result = phase.startState
+        repeat(phase.durationTicks.toInt()) {
+            result = phase.step()
+            OrbiterManager.process(DHServer.TICK_LENGTH_SECONDS)
+        }
+
+        val positionError = (result.position - expectedDockingPosition).length
         println("error: $positionError")
         assert(positionError < 1)
     }

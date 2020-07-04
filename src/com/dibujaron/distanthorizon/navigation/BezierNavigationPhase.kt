@@ -30,7 +30,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
     val durationTicks = distanceToTick(curve.length)
     var ticksSinceStart = 0
     fun hasNextStep(): Boolean{
-        return ticksSinceStart < durationTicks
+        return ticksSinceStart <= durationTicks
         //return previousT < 0.999999
     }
 
@@ -42,7 +42,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
     private fun stateForTick(tick: Int): ShipState
     {
         val distance = tickToDistance(tick.toDouble())
-        val t = curve.tForDistance(distance, previousT, 1.0)
+        val t = curve.tForDistance(distance, 0.0, 1.0)
         val position = curve.getCoordinatesAt(t)
         val velocity = (position - previousPosition) / DHServer.TICK_LENGTH_SECONDS //convert back to seconds
 

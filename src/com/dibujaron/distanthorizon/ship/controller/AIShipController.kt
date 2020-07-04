@@ -73,10 +73,10 @@ class AIShipController : ShipController() {
         } else {
             if(route != null /*&& route.destination.station.name == "Stn_Innerstellar Launch"*/){
                 val distToTarget = (route.getEndState().position - ship.currentState.position).length.roundToInt()
-                val distToStation = (route.destination.station.globalPos() - ship.currentState.position).length.roundToInt()
-                val duration = route.currentPhase.durationTicks
-                val elapsedTime = route.currentPhase.ticksSinceStart
-                println("route complete. target error=$distToTarget, true error=$distToStation, finalT=${route.currentPhase.previousT}, true ticks=$elapsedTime, expected ticks=$duration")
+                val expectedDockingPosition = route.destination.globalPosition() + (route.shipPort.relativePosition() * -1.0).rotated(route.getEndState().rotation)
+                val trueError = (expectedDockingPosition - ship.currentState.position).length.roundToInt()
+                val elapsedTime = (route.currentPhase.ticksSinceStart)
+                println("route complete. target error=$distToTarget, true error=$trueError, ticks=$elapsedTime")
             }
             dock()
             return ship.currentState

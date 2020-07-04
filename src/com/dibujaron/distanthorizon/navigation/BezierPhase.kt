@@ -6,10 +6,7 @@ import com.dibujaron.distanthorizon.bezier.BezierCurve
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.ShipState
 import java.lang.IllegalStateException
-import kotlin.math.ceil
-import kotlin.math.max
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
+import kotlin.math.*
 
 @Deprecated("use BezierNavigationPhase instead")
 class BezierPhase(val mainEngineThrust: Double, val startState: ShipState, private val targetState: ShipState){
@@ -127,15 +124,17 @@ class BezierPhase(val mainEngineThrust: Double, val startState: ShipState, priva
             } else {
                 val sqrtRes = sqrt((2 * a * d) + (v * v))
                 val r1 = -1 * ((sqrtRes + v) / a)
+                val r2 = (sqrtRes - v) / a
                 if (r1.isNaN() || r1 < 0) {
-                    val r2 = (sqrtRes - v) / a
                     if (r2.isNaN() || r2 < 0) {
                         throw IllegalStateException("No valid result for duration")
                     } else {
                         return r2
                     }
-                } else {
+                } else if(r2.isNaN() || r2 < 0){
                     return r1
+                } else {
+                    return min(r1, r2)
                 }
             }
         }
