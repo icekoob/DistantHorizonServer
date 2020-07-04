@@ -112,8 +112,8 @@ class BezierCurve(val order: Order, val from: Vector2, val to: Vector2, val cont
         class VectorWithDistance(val position: Vector2, val distanceFromStart: Double)
         fun fromStates(startState: ShipState, targetState: ShipState, resolution: Int): BezierCurve{
             val c1: Vector2 = startState.position
-            val c2: Vector2 = (startState.position + startState.velocity)
-            val c3: Vector2 = (targetState.position - targetState.velocity)
+            val c2: Vector2 = (startState.position + (startState.velocity * 10))
+            val c3: Vector2 = (targetState.position - (targetState.velocity * 10))
             val c4: Vector2 = targetState.position
             val controlPoints = arrayListOf(c2, c3)
             return BezierCurve(Order.CUBIC, c1, c4, controlPoints, resolution)

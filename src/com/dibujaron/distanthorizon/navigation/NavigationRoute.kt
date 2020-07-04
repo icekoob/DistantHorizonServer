@@ -7,7 +7,10 @@ import com.dibujaron.distanthorizon.ship.ShipState
 import java.util.*
 
 class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destination: StationDockingPort) {
-    var currentPhase: BezierNavigationPhase = trainPhase(0) { endTickEst ->
+    var currentPhase: BezierNavigationPhase = retrain()
+    fun retrain(): BezierNavigationPhase
+    {
+        return trainPhase(0) { endTickEst ->
             val endVel = destination.velocityAtTick(endTickEst)
             val endPortGlobalPos = destination.globalPosAtTick(endTickEst)
             val myPortRelative = shipPort.relativePosition()
@@ -16,6 +19,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
             val endState = ShipState(targetPos, endRotation, endVel)
             BezierNavigationPhase(ship.type.mainThrust, ship.currentState, endState)
         }
+    }
 
     fun getEndState(): ShipState{
         return currentPhase.endState
@@ -30,6 +34,7 @@ class NavigationRoute(var ship: Ship, var shipPort: ShipDockingPort, var destina
     {
         return currentPhase.step()
     }
+
 
     fun getDiagnostic(): String
     {
