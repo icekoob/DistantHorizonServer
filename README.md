@@ -4,6 +4,4 @@ While running, the url was http://distant-horizon.io or http://distanthorizon.io
 Now documented at: http://dibujaron.com/distant-horizon
 
 Repositories: 
-https://github.com/Dibujaron/DistantHorizonServer/
-https://github.com/Dibujaron/DistantHorizonClient/
-https://github.com/Dibujaron/DistantHorizonBalancer/
+https://github.com/Dibujaron/DistantHorizonServer/, https://github.com/Dibujaron/DistantHorizonClient/, https://github.com/Dibujaron/DistantHorizonBalancer/
