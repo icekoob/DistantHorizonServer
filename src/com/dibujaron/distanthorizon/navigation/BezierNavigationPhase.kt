@@ -10,7 +10,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
-class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipState, val endState: ShipState)
+class BezierNavigationPhase(mainEngineThrust: Double, val startState: ShipState, val endState: ShipState)
 {
     val curve: BezierCurve = BezierCurve.fromStates(startState, endState, 100)
     val accelPerTick: Double = mainEngineThrust / (DHServer.TICKS_PER_SECOND * DHServer.TICKS_PER_SECOND)
@@ -25,13 +25,13 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
 
     var previousT: Double = 0.0
     var previousPosition: Vector2 = startState.position
-
+    var previousDistance: Double = 0.0
     //duration
     val durationTicks = distanceToTick(curve.length)
     var ticksSinceStart = 0
     fun hasNextStep(): Boolean{
-        return ticksSinceStart <= durationTicks
-        //return previousT < 0.999999
+        //return ticksSinceStart <= durationTicks
+        return previousDistance < curve.length
     }
 
     fun step(): ShipState
@@ -57,6 +57,7 @@ class BezierNavigationPhase(val mainEngineThrust: Double, val startState: ShipSt
 
         previousT = t
         previousPosition = position
+        previousDistance = distance
         return ShipState(position, rotation, velocity)
     }
 

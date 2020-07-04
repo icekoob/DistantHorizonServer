@@ -11,7 +11,7 @@ abstract class ShipController {
         this.ship = ship
     }
 
-    abstract fun dockedTick(delta: Double, coursePlottingAllowed: Boolean)
+    abstract fun shouldUndock(delta: Double, coursePlottingAllowed: Boolean): Boolean
     abstract fun computeNextState(delta: Double): ShipState
     abstract fun getCurrentControls(): ShipInputs
     abstract fun navigatingToTarget(): Boolean

@@ -1,5 +1,7 @@
 package com.dibujaron.distanthorizon.ship.controller
 
+import com.dibujaron.distanthorizon.docking.ShipDockingPort
+import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.navigation.NavigationRoute
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.ship.*
@@ -24,19 +26,14 @@ class AIShipController : ShipController() {
         }
     }
 
-    override fun dockedTick(delta: Double, coursePlottingAllowed: Boolean) {
-        diagnosticBuilder = StringBuilder()
-        val t1 = System.currentTimeMillis()
+    override fun shouldUndock(delta: Double, coursePlottingAllowed: Boolean): Boolean {
         if (System.currentTimeMillis() > nextDepartureTime && coursePlottingAllowed) {
             plotNewCourse()
-            val t2 = System.currentTimeMillis()
-            diagnosticBuilder.append("plotting=${t2 - t1} ")
             fakeHoldOccupied = (Math.random() * ship.holdCapacity).toInt()
-            ship.undock()
-            val t3 = System.currentTimeMillis()
-            diagnosticBuilder.append("undocking=${t3-t2} ")
+            return true;
+        } else {
+            return false;
         }
-
     }
 
     fun plotNewCourse() {
@@ -48,10 +45,24 @@ class AIShipController : ShipController() {
         val myPort = ship.myDockingPorts.random()
         val newRoute = NavigationRoute(ship, myPort, destPort)
         currentRoute = newRoute
+        ticksNavigating = 0
+        targetTicks = destStation.ticks
     }
 
-    fun dock() {
+    fun dock(){
         ship.attemptDock(2000.0, 2000.0)
+        if (ship.isDocked()) {
+            nextDepartureTime = computeNextDeparture()
+        } else {
+            println("AI ship ${ship.uuid} should have docked but failed to dock.")
+            ShipManager.markForRemove(ship)
+            //spawn a new one
+            ShipManager.markForAdd(Ship(ShipClassManager.getShipClasses().random(), ShipColor.random(), ShipColor.random(), currentRoute!!.destination.station.getState(), AIShipController()))
+        }
+    }
+
+    fun dock(myPort: ShipDockingPort, targetPort: StationDockingPort) {
+        ship.dock(myPort, targetPort)
         if (ship.isDocked()) {
             nextDepartureTime = computeNextDeparture()
         } else {
@@ -66,9 +77,12 @@ class AIShipController : ShipController() {
         return fakeHoldOccupied
     }
 
+    var ticksNavigating = 0
+    var targetTicks = 0
     override fun computeNextState(delta: Double): ShipState {
         val route = currentRoute
         if (route != null && route.hasNext(delta)) {
+            ticksNavigating++
             return route.next(delta)
         } else {
             if(route != null /*&& route.destination.station.name == "Stn_Innerstellar Launch"*/){
@@ -76,9 +90,14 @@ class AIShipController : ShipController() {
                 val expectedDockingPosition = route.destination.globalPosition() + (route.shipPort.relativePosition() * -1.0).rotated(route.getEndState().rotation)
                 val trueError = (expectedDockingPosition - ship.currentState.position).length.roundToInt()
                 val elapsedTime = (route.currentPhase.ticksSinceStart)
-                println("route complete. target error=$distToTarget, true error=$trueError, ticks=$elapsedTime")
+                val targetElapsedTicks = route.destination.station.ticks - targetTicks
+                val tickDiff = ticksNavigating - targetElapsedTicks
+                val destinationTravelInTick = (route.destination.station.globalPosAtTick(1.0) - route.destination.globalPosAtTick(0.0)).length.roundToInt()
+                println("route complete. target error=$distToTarget, true error=$trueError, tickDiff=$tickDiff, target travels $destinationTravelInTick in one tick")
+                dock(route.shipPort, route.destination)
+            } else {
+                dock()
             }
-            dock()
             return ship.currentState
         }
     }

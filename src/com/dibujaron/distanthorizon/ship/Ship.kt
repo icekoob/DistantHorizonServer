@@ -61,15 +61,18 @@ class Ship(
         val dockedFrom = myDockedPort
         val startTime = System.currentTimeMillis()
         if (dockedTo != null && dockedFrom != null) {
-            val velocity = dockedTo.getVelocity()
-            val myPortRelative = dockedFrom.relativePosition()
-            val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
-            val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
-            currentState = ShipState(globalPos, rotation, velocity)
-            controller.dockedTick(delta, coursePlottingAllowed)
+            if(controller.shouldUndock(delta, coursePlottingAllowed)){
+                undock()
+                currentState = controller.computeNextState(delta)
+            } else {
+                val velocity = dockedTo.getVelocity()
+                val myPortRelative = dockedFrom.relativePosition()
+                val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
+                val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
+                currentState = ShipState(globalPos, rotation, velocity)
+            }
         } else {
-            val nextStateResult = controller.computeNextState(delta)
-            currentState = nextStateResult
+            currentState = controller.computeNextState(delta)
         }
         val timeTaken = System.currentTimeMillis() - startTime
         if(timeTaken > 2 && DHServer.debug){

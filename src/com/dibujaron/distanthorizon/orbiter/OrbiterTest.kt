@@ -163,4 +163,32 @@ class OrbiterTest {
         println("error: $positionError")
         assert(positionError < 1)
     }
+
+    @Test
+    fun testKnownPositionDrift(){
+        DHServer.timer.cancel()
+        val station = OrbiterManager.getStations().asSequence().first()
+        val port = station.dockingPorts[0]
+
+        val ship = Ship(
+            ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
+            ShipColor(Color.WHITE),
+            ShipColor(Color.WHITE),
+            ShipState(Vector2.ZERO, 0.0, Vector2(10, 0)),
+            AIShipController()
+        )
+
+        val startState = ShipState(Vector2(-118.23776432029061,1908.6427847005539), 0.7404478346016786, Vector2(-68.26590446020333,-149.55021296808582))
+        val endState = ShipState(Vector2(-444.6872120090582,5767.165063624374), -5.97540415928624, Vector2(-205.5312943091849,-131.17748068816582))
+        val phase = BezierNavigationPhase(120.0, startState, endState)
+
+        var result = phase.startState
+        while(phase.hasNextStep()){
+            result = phase.step()
+        }
+
+        val positionError = (result.position - endState.position).length
+        println("error: $positionError")
+        assert(positionError < 1)
+    }
 }

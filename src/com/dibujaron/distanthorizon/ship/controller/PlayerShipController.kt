@@ -61,8 +61,8 @@ class PlayerShipController : ShipController() {
         throw IllegalStateException("getNavTarget should never be called on player ship controller")
     }
 
-    override fun dockedTick(delta: Double, coursePlottingAllowed: Boolean) {
-        //player ship doesn't care if it's docked.
+    override fun shouldUndock(delta: Double, coursePlottingAllowed: Boolean): Boolean {
+        return false;
     }
 
     fun receiveInputChange(shipInputs: ShipInputs) {

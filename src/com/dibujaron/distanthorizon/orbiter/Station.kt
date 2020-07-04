@@ -16,7 +16,7 @@ class Station(properties: Properties) : Orbiter(properties) {
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
     val description = properties.getProperty("description").trim()
-
+    public var ticks = 0
     private val commodityStores: Map<String, CommodityStore> = CommodityType
         .values()
         .asSequence()
@@ -32,6 +32,7 @@ class Station(properties: Properties) : Orbiter(properties) {
     override fun process(delta: Double) {
         super.process(delta)
         commodityStores.values.forEach{it.process(delta)}
+        ticks++
     }
 
     fun getState(): ShipState
