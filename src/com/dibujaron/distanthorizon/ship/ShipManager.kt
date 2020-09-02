@@ -39,12 +39,12 @@ object ShipManager {
         }
     }
 
-    fun process(deltaSeconds: Double, coursePlottingAllowed: Boolean) {
+    fun process(deltaSeconds: Double) {
         shipsToRemove.forEach { shipMap.remove(it.uuid) }
         shipsToRemove.clear()
         shipsToAdd.forEach { shipMap.put(it.uuid, it) }
         shipsToAdd.clear()
-        getShips().forEach { it.process(deltaSeconds, coursePlottingAllowed) }
+        getShips().forEach { it.process(deltaSeconds) }
     }
 
     fun markForAdd(ship: Ship) {

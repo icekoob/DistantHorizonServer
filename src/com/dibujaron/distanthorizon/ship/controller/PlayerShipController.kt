@@ -3,14 +3,33 @@ package com.dibujaron.distanthorizon.ship.controller
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.IndexedState
 import com.dibujaron.distanthorizon.ship.ShipInputs
+import org.json.JSONObject
 import java.lang.IllegalStateException
 
 class PlayerShipController : ShipController() {
 
+    override fun getType(): ControllerType {
+        return ControllerType.PLAYER
+    }
+
+    override fun getHeartbeat(): JSONObject {
+        val retval = JSONObject()
+        retval.put("main_engines", controls.mainEnginesActive)
+        retval.put("port_thrusters", controls.portThrustersActive)
+        retval.put("stbd_thrusters", controls.stbdThrustersActive)
+        retval.put("fore_thrusters", controls.foreThrustersActive)
+        retval.put("aft_thrusters", controls.aftThrustersActive)
+        retval.put("rotating_left", controls.tillerLeft)
+        retval.put("rotating_right", controls.tillerRight)
+        return retval
+    }
+
     var controls: ShipInputs = ShipInputs()
+
     override fun computeNextState(delta: Double): ShipState {
         val currentState = ship.currentState
         var velocity = currentState.velocity
@@ -42,26 +61,7 @@ class PlayerShipController : ShipController() {
         return ShipState(globalPos, rotation, velocity)
     }
 
-    override fun getHoldOccupied(): Int {
-        return ship.holdOccupied()
-    }
-    override fun getCurrentControls(): ShipInputs {
-        return controls
-    }
-
-    override fun getDiagnostic(): String {
-        return ""
-    }
-
-    override fun navigatingToTarget(): Boolean {
-        return false
-    }
-
-    override fun getNavTarget(): ShipState {
-        throw IllegalStateException("getNavTarget should never be called on player ship controller")
-    }
-
-    override fun shouldUndock(delta: Double, coursePlottingAllowed: Boolean): Boolean {
+    override fun undockRequested(delta: Double): Boolean {
         return false;
     }
 

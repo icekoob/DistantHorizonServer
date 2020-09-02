@@ -9,11 +9,9 @@ import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.ship.controller.ShipController
 import org.json.JSONObject
-import java.awt.Color
 import java.lang.IllegalStateException
 import java.util.*
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 class Ship(
     val type: ShipClass,
@@ -56,12 +54,12 @@ class Ship(
 
     var tickCount = 0
 
-    fun process(delta: Double, coursePlottingAllowed: Boolean) {
+    fun process(delta: Double) {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
         val startTime = System.currentTimeMillis()
         if (dockedTo != null && dockedFrom != null) {
-            if(controller.shouldUndock(delta, coursePlottingAllowed)){
+            if(controller.undockRequested(delta)){
                 undock()
                 currentState = controller.computeNextState(delta)
             } else {
@@ -74,26 +72,13 @@ class Ship(
         } else {
             currentState = controller.computeNextState(delta)
         }
-        val timeTaken = System.currentTimeMillis() - startTime
-        if(timeTaken > 2 && DHServer.debug){
-            println("ship took $timeTaken to process, diagnostic is:")
-            println(controller.getDiagnostic())
-        }
         tickCount++
     }
 
     fun createFullShipJSON(): JSONObject {
         val retval = createShipHeartbeatJSON()
-        val controls = controller.getCurrentControls()
         retval.put("type", type.qualifiedName)
         retval.put("hold_size", type.holdSize)
-        retval.put("main_engines", controls.mainEnginesActive)
-        retval.put("port_thrusters", controls.portThrustersActive)
-        retval.put("stbd_thrusters", controls.stbdThrustersActive)
-        retval.put("fore_thrusters", controls.foreThrustersActive)
-        retval.put("aft_thrusters", controls.aftThrustersActive)
-        retval.put("rotating_left", controls.tillerLeft)
-        retval.put("rotating_right", controls.tillerRight)
         retval.put("main_engine_thrust", type.mainThrust)
         retval.put("manu_engine_thrust", type.manuThrust)
         retval.put("rotation_power", type.rotationPower)
@@ -113,16 +98,9 @@ class Ship(
         retval.put("velocity", currentState.velocity.toJSON())
         retval.put("global_pos", currentState.position.toJSON())
         retval.put("rotation", currentState.rotation)
-        retval.put("hold_occupied", controller.getHoldOccupied())
-        val navigating = controller.navigatingToTarget()
-        retval.put("navigating", navigating)
-        if(navigating){
-            val target = controller.getNavTarget()
-            retval.put("targ_velocity", target.velocity.toJSON())
-            retval.put("targ_position", target.position.toJSON())
-            retval.put("targ_rotation", target.rotation)
-        }
-        //todo if not manually controlled send navigation steps
+        retval.put("hold_occupied", holdOccupied())
+        retval.put("controller_type", controller.getType().toJSON())
+        retval.put("controller_heartbeat", controller.getHeartbeat())
         return retval
     }
 

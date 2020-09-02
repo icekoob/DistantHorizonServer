@@ -2,7 +2,7 @@ package com.dibujaron.distanthorizon.ship.controller
 
 import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.ship.Ship
-import com.dibujaron.distanthorizon.ship.ShipInputs
+import org.json.JSONObject
 
 abstract class ShipController {
     lateinit var ship: Ship
@@ -11,11 +11,8 @@ abstract class ShipController {
         this.ship = ship
     }
 
-    abstract fun shouldUndock(delta: Double, coursePlottingAllowed: Boolean): Boolean
+    abstract fun undockRequested(delta: Double): Boolean
     abstract fun computeNextState(delta: Double): ShipState
-    abstract fun getCurrentControls(): ShipInputs
-    abstract fun navigatingToTarget(): Boolean
-    abstract fun getNavTarget(): ShipState
-    abstract fun getHoldOccupied(): Int
-    abstract fun getDiagnostic(): String;
+    abstract fun getType(): ControllerType
+    abstract fun getHeartbeat(): JSONObject
 }

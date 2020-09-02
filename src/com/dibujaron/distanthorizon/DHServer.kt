@@ -66,14 +66,14 @@ object DHServer {
         val deltaSeconds = (tickStartTime - lastTickTime) / 1000.0
         lastTickTime = tickStartTime
         OrbiterManager.process(deltaSeconds)
-        val isWorldStateMessageTick = tickCount % 50 == 0
-        val isShipStateMessageTick = tickCount % 50 == 25
-        ShipManager.process(deltaSeconds, !isWorldStateMessageTick && !isShipStateMessageTick)
+        ShipManager.process(deltaSeconds)
         //send messages
+        val isWorldStateMessageTick = tickCount % 50 == 0
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach { it.sendWorldState(worldStateMessage) }
         }
+        val isShipStateMessageTick = tickCount % 50 == 25
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }

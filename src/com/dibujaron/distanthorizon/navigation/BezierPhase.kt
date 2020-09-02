@@ -14,7 +14,7 @@ class BezierPhase(val mainEngineThrust: Double, val startState: ShipState, priva
     //a phase that navigates a smooth curve from startPos with startVel to endPos with endVel
     //makes use of a Bezier Curve.
 
-    val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 100)
+    val curve: BezierCurve = BezierCurve.fromStates(startState, targetState, 1000)
     var ticksSinceStart = 0
     val tickToFlip: Int by lazy { ticksToFlipPoint() }
     val durationTicks by lazy {computeDurationTicks() }
@@ -51,8 +51,8 @@ class BezierPhase(val mainEngineThrust: Double, val startState: ShipState, priva
 
 
     fun hasNextStep(delta: Double): Boolean {
-        //return totalDistSoFar(timeOffsetFromStart + delta) <= curve.length
-        return ticksSinceStart < durationTicksInt
+        return totalDistSoFar(ticksSinceStart) <= curve.length
+        //return ticksSinceStart < durationTicksInt
     }
 
     fun step(delta: Double): ShipState {

@@ -114,7 +114,6 @@ abstract class Orbiter(val properties: Properties) {
             val newAngle = angleFromParent + angleOffset
             val newAngleVector = Vector2(cos(newAngle), sin(newAngle))
             newAngleVector * orbitalRadius
-
         }
     }
 

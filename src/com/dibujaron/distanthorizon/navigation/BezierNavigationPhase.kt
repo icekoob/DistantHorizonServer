@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 
 class BezierNavigationPhase(mainEngineThrust: Double, val startState: ShipState, val endState: ShipState)
 {
-    val curve: BezierCurve = BezierCurve.fromStates(startState, endState, 100)
+    val curve: BezierCurve = BezierCurve.fromStates(startState, endState, 1000)
     val accelPerTick: Double = mainEngineThrust / (DHServer.TICKS_PER_SECOND * DHServer.TICKS_PER_SECOND)
     val startSpeedTicks = startState.velocityTicks.length
     val endSpeedTicks = endState.velocityTicks.length
@@ -25,6 +25,7 @@ class BezierNavigationPhase(mainEngineThrust: Double, val startState: ShipState,
 
     var previousT: Double = 0.0
     var previousPosition: Vector2 = startState.position
+    var previousPreviousPosition: Vector2 = startState.position
     var previousDistance: Double = 0.0
     //duration
     val durationTicks = distanceToTick(curve.length)
@@ -44,18 +45,20 @@ class BezierNavigationPhase(mainEngineThrust: Double, val startState: ShipState,
         val distance = tickToDistance(tick.toDouble())
         val t = curve.tForDistance(distance, 0.0, 1.0)
         val position = curve.getCoordinatesAt(t)
-        val velocity = (position - previousPosition) / DHServer.TICK_LENGTH_SECONDS //convert back to seconds
-
+        val velocity = (position - previousPosition) * DHServer.TICK_LENGTH_SECONDS //convert back to seconds
         //this is rotation.
-        val gravity = OrbiterManager.calculateGravityAtTick(0.0, position)
+        val previousVelocity = (previousPosition - previousPreviousPosition) * DHServer.TICK_LENGTH_SECONDS
+        val turningForce = velocity - previousVelocity
+        val gravity = OrbiterManager.calculateGravityAtTick(0.0, position) * DHServer.TICK_LENGTH_SECONDS
         val gravityCounter = gravity * -1.0
         val tangent = velocity.normalized()
         val accelVec = tangent * accelPerTick
         val requiredAccel = if(tick < flipTick) accelVec else accelVec * -1.0
-        val totalThrust = requiredAccel + gravityCounter
+        val totalThrust = requiredAccel + gravityCounter + turningForce
         val rotation = totalThrust.angle
 
         previousT = t
+        previousPreviousPosition = previousPosition
         previousPosition = position
         previousDistance = distance
         return ShipState(position, rotation, velocity)
