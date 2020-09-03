@@ -112,7 +112,19 @@ class Player(val connection: WsContext) {
 
     fun sendInitialShipsState(ships: JSONArray) {
         val myMessage = createMessage("ships_initial_state")
-        myMessage.put("ships_initial_state", ships)
+        myMessage.put("ships_added", ships)
+        sendMessage(myMessage)
+    }
+
+    fun sendShipsAdded(shipsAdded: JSONArray) {
+        val myMessage = createMessage("ships_added")
+        myMessage.put("ships_added", shipsAdded)
+        sendMessage(myMessage)
+    }
+
+    fun sendShipsRemoved(shipsRemoved: JSONArray) {
+        val myMessage = createMessage("ships_removed")
+        myMessage.put("ships_removed", shipsRemoved)
         sendMessage(myMessage)
     }
 

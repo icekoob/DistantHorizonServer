@@ -1,20 +1,19 @@
 package com.dibujaron.distanthorizon
 
-import com.dibujaron.distanthorizon.docking.DockingPort
-import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
-import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
-import io.javalin.websocket.*
+import io.javalin.websocket.WsBinaryMessageContext
+import io.javalin.websocket.WsCloseContext
+import io.javalin.websocket.WsConnectContext
+import io.javalin.websocket.WsErrorContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileReader
-import java.lang.IllegalStateException
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
@@ -149,16 +148,22 @@ object DHServer {
         return ships
     }
 
-    private fun composeShipHeartbeatsMessageForTick(tickWithinSecond: Int): JSONArray {
-        val ships = JSONArray()
-        ShipManager.getShipsInBucket(tickWithinSecond).map { it.createShipHeartbeatJSON() }.forEach { ships.put(it) }
-        return ships
+    fun composeInitialShipsMessage(): JSONArray {
+        return composeMessageForShipsAdded(ShipManager.getShips())
     }
 
-    fun composeInitialShipsMessage(): JSONArray {
-        val ships = JSONArray()
-        ShipManager.getShips().asSequence().map { it.createFullShipJSON() }.forEach { ships.put(it) }
-        return ships
+    fun composeMessageForShipsAdded(inputShips: Collection<Ship>): JSONArray
+    {
+        val outputShips = JSONArray()
+        inputShips.asSequence().map{it.createFullShipJSON()}.forEach { outputShips.put(it) }
+        return outputShips
+    }
+
+    fun composeMessageForShipsRemoved(inputShips: Collection<Ship>): JSONArray
+    {
+        val outputShips = JSONArray()
+        inputShips.asSequence().map{it.uuid}.forEach { outputShips.put(it) }
+        return outputShips
     }
 
     fun broadcastShipDocked(ship: Ship) {

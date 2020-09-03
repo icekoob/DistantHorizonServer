@@ -2,8 +2,8 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.controller.AIShipController
-import java.lang.IllegalArgumentException
 import java.util.*
 
 object ShipManager {
@@ -23,7 +23,7 @@ object ShipManager {
                     AIShipController()
                 )
             }
-            .forEach{ shipsToAdd.add(it) }
+            .forEach { shipsToAdd.add(it) }
     }
 
     fun getShips(): Collection<Ship> {
@@ -40,10 +40,18 @@ object ShipManager {
     }
 
     fun process(deltaSeconds: Double) {
-        shipsToRemove.forEach { shipMap.remove(it.uuid) }
-        shipsToRemove.clear()
-        shipsToAdd.forEach { shipMap.put(it.uuid, it) }
-        shipsToAdd.clear()
+        if (!shipsToRemove.isEmpty()) {
+            val shipsRemovedMessage = DHServer.composeMessageForShipsRemoved(shipsToRemove)
+            PlayerManager.getPlayers().asSequence().forEach { it.sendShipsRemoved(shipsRemovedMessage) }
+            shipsToRemove.forEach { shipMap.remove(it.uuid) }
+            shipsToRemove.clear()
+        }
+        if(!shipsToAdd.isEmpty()) {
+            shipsToAdd.forEach { shipMap[it.uuid] = it }
+            val shipsAddedMessage = DHServer.composeMessageForShipsAdded(shipsToAdd)
+            PlayerManager.getPlayers().asSequence().forEach { it.sendShipsAdded(shipsAddedMessage) }
+            shipsToAdd.clear()
+        }
         getShips().forEach { it.process(deltaSeconds) }
     }
 

@@ -2,8 +2,6 @@ package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
 import io.javalin.websocket.WsContext
-import org.json.JSONArray
-import org.json.JSONObject
 import java.util.*
 import kotlin.collections.HashMap
 
