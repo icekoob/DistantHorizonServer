@@ -11,7 +11,7 @@ class ShipState(val position: Vector2, val rotation: Double, val velocity: Vecto
     {
         val retval = JSONObject()
         retval.put("global_position", position.toJSON())
-        retval.put("rotation", rotation)
+        retval.put("global_rotation", rotation)
         retval.put("velocity", velocity.toJSON())
         return retval
     }

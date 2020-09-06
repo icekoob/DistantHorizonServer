@@ -12,7 +12,7 @@ import java.util.*
 
 class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
-    val myShipController: PlayerShipController = PlayerShipController()
+    private val myShipController: PlayerShipController = PlayerShipController()
     val ship: Ship = Ship(
         ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
         ShipColor(Color(0,148,255)),
@@ -28,7 +28,6 @@ class Player(val connection: WsContext) {
     }
 
     fun onMessageFromClient(message: JSONObject) {
-        //so far we only have one client message, and it's inputs.
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
@@ -107,12 +106,6 @@ class Player(val connection: WsContext) {
     fun sendShipHeartbeats(shipHeartbeats: JSONArray) {
         val myMessage = createMessage("ship_heartbeats")
         myMessage.put("ship_heartbeats", shipHeartbeats)
-        sendMessage(myMessage)
-    }
-
-    fun sendInitialShipsState(ships: JSONArray) {
-        val myMessage = createMessage("ships_initial_state")
-        myMessage.put("ships_added", ships)
         sendMessage(myMessage)
     }
 

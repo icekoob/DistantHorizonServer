@@ -3,7 +3,6 @@ package com.dibujaron.distanthorizon.orbiter
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Account
-import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONArray
@@ -29,9 +28,8 @@ class Station(properties: Properties) : Orbiter(properties) {
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
     }
 
-    override fun process(delta: Double) {
-        super.process(delta)
-        commodityStores.values.forEach{it.process(delta)}
+    override fun tick() {
+        commodityStores.values.forEach{it.tick()}
         ticks++
     }
 

@@ -17,6 +17,7 @@ import java.io.FileReader
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
+import kotlin.math.ceil
 
 fun main() {
     thread { DHServer.commandLoop() }
@@ -24,24 +25,31 @@ fun main() {
 
 object DHServer {
 
-    public const val TICK_LENGTH_MILLIS = 20L
-    public const val TICK_LENGTH_SECONDS = TICK_LENGTH_MILLIS / 1000.0//0.016667
-    public const val TICKS_PER_SECOND = 50
+    const val TICK_LENGTH_SECONDS = 1.0/60.0
+    const val TICK_LENGTH_MILLIS = 1000.0/60.0
+    val TICK_LENGTH_MILLIS_CEIL = ceil(TICK_LENGTH_MILLIS).toLong()
+    const val TICKS_PER_SECOND = 60
 
-    //private const val tickLengthNanos = (tickLengthSeconds * 1000000000).toLong()
+    const val WORLD_HEARTBEATS_EVERY = 60
+    const val WORLD_HEARTBEAT_TICK_OFFSET = 0
+
+    const val SHIP_HEARTBEATS_EVERY = 60
+    const val SHIP_HEARTBEAT_TICK_OFFSET = 30
+
     private var shuttingDown = false
     var debug = false
-    var retrainsThisTick = 0
-    var docksThisTick = 0
-    var undocksThisTick = 0
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
     val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
     val dockingSpeed = serverProperties.getProperty("docking.speed", "500.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
     val timer =
-        fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS, period = TICK_LENGTH_MILLIS) { tick() }
-    var tickCount = 0
+        fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
+    private var tickCount = 0
+
+    fun getCurrentTick(): Int {
+        return tickCount
+    }
 
     fun commandLoop() {
         while (!shuttingDown) {
@@ -59,28 +67,36 @@ object DHServer {
         }
     }
 
-    var lastTickTime = 0L
+    var lastTickTime = System.currentTimeMillis()
+    var accumulator = 0.0
+
+    private fun mainLoop() {
+        val tickTime = System.currentTimeMillis()
+        val delta = tickTime - lastTickTime
+        accumulator += delta
+        var count = 0
+        while(accumulator >= TICK_LENGTH_MILLIS){
+            tick()
+            count++
+            accumulator -= TICK_LENGTH_MILLIS
+        }
+        lastTickTime = tickTime
+    }
+
     private fun tick() {
-        val tickStartTime = System.currentTimeMillis()
-        val deltaSeconds = (tickStartTime - lastTickTime) / 1000.0
-        lastTickTime = tickStartTime
-        OrbiterManager.process(deltaSeconds)
-        ShipManager.process(deltaSeconds)
-        //send messages
-        val isWorldStateMessageTick = tickCount % 50 == 0
+        OrbiterManager.tick()
+        ShipManager.tick()
+        val isWorldStateMessageTick = tickCount % WORLD_HEARTBEATS_EVERY == WORLD_HEARTBEAT_TICK_OFFSET
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach { it.sendWorldState(worldStateMessage) }
         }
-        val isShipStateMessageTick = tickCount % 50 == 25
+        val isShipStateMessageTick = tickCount % SHIP_HEARTBEATS_EVERY == SHIP_HEARTBEAT_TICK_OFFSET
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
         }
-        PlayerManager.process()
-        retrainsThisTick = 0
-        docksThisTick = 0
-        undocksThisTick = 0
+        PlayerManager.tick()
         tickCount++
     }
 
@@ -148,10 +164,6 @@ object DHServer {
         return ships
     }
 
-    fun composeInitialShipsMessage(): JSONArray {
-        return composeMessageForShipsAdded(ShipManager.getShips())
-    }
-
     fun composeMessageForShipsAdded(inputShips: Collection<Ship>): JSONArray
     {
         val outputShips = JSONArray()
@@ -167,13 +179,11 @@ object DHServer {
     }
 
     fun broadcastShipDocked(ship: Ship) {
-        docksThisTick++
         val dockedMessage = ship.createDockedMessage()
         PlayerManager.getPlayers().forEach { it.sendShipDocked(dockedMessage) }
     }
 
     fun broadcastShipUndocked(ship: Ship) {
-        undocksThisTick++
         val undockedMessage = ship.createShipHeartbeatJSON()
         PlayerManager.getPlayers().forEach { it.sendShipUndocked(undockedMessage) }
     }

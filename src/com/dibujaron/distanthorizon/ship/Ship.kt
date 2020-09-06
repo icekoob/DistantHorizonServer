@@ -2,14 +2,13 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.docking.DockingPort
-import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.ship.controller.ShipController
 import org.json.JSONObject
-import java.lang.IllegalStateException
 import java.util.*
 import kotlin.math.pow
 
@@ -54,14 +53,13 @@ class Ship(
 
     var tickCount = 0
 
-    fun process(delta: Double) {
+    fun tick() {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
-        val startTime = System.currentTimeMillis()
         if (dockedTo != null && dockedFrom != null) {
-            if(controller.undockRequested(delta)){
+            if(controller.isRequestingUndock()){
                 undock()
-                currentState = controller.computeNextState(delta)
+                currentState = controller.computeNextState()
             } else {
                 val velocity = dockedTo.getVelocity()
                 val myPortRelative = dockedFrom.relativePosition()
@@ -70,7 +68,7 @@ class Ship(
                 currentState = ShipState(globalPos, rotation, velocity)
             }
         } else {
-            currentState = controller.computeNextState(delta)
+            currentState = controller.computeNextState()
         }
         tickCount++
     }
@@ -125,11 +123,11 @@ class Ship(
             val bestStationPort = match.second
             dock(bestShipPort, bestStationPort)
         } else {
-            println("Found no match to dock.")
+            println("ship $uuid Found no match to dock.")
         }
     }
 
-    fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
+    private fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
         DHServer.broadcastShipDocked(this)

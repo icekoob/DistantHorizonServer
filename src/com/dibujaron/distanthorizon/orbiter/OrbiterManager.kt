@@ -16,8 +16,8 @@ object OrbiterManager {
     private const val gravityConstantFudge = 25.0
     val gravityConstant = 6.67408 * 10.0.pow(-11.0) * gravityConstantFudge
 
-    fun process(deltaSeconds: Double) {
-        getOrbiters().forEach { it.process(deltaSeconds) }
+    fun tick() {
+        getOrbiters().forEach { it.tick() }
     }
 
     fun getPlanet(name: String): Planet? {

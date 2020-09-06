@@ -3,7 +3,7 @@ package com.dibujaron.distanthorizon.ship
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.ship.controller.AIShipController
+import com.dibujaron.distanthorizon.ship.controller.ai.SimpleStraightLineController
 import java.util.*
 
 object ShipManager {
@@ -20,7 +20,7 @@ object ShipManager {
                     ShipColor.random(),
                     ShipColor.random(),
                     it,
-                    AIShipController()
+                    SimpleStraightLineController()
                 )
             }
             .forEach { shipsToAdd.add(it) }
@@ -39,7 +39,7 @@ object ShipManager {
         }
     }
 
-    fun process(deltaSeconds: Double) {
+    fun tick() {
         if (!shipsToRemove.isEmpty()) {
             val shipsRemovedMessage = DHServer.composeMessageForShipsRemoved(shipsToRemove)
             PlayerManager.getPlayers().asSequence().forEach { it.sendShipsRemoved(shipsRemovedMessage) }
@@ -52,7 +52,7 @@ object ShipManager {
             PlayerManager.getPlayers().asSequence().forEach { it.sendShipsAdded(shipsAddedMessage) }
             shipsToAdd.clear()
         }
-        getShips().forEach { it.process(deltaSeconds) }
+        getShips().forEach { it.tick() }
     }
 
     fun markForAdd(ship: Ship) {

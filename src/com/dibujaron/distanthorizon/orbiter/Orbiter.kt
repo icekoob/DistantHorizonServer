@@ -3,9 +3,10 @@ package com.dibujaron.distanthorizon.orbiter
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import org.json.JSONObject
-import java.lang.IllegalArgumentException
 import java.util.*
-import kotlin.math.*
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 abstract class Orbiter(val properties: Properties) {
     val name: String = properties.getProperty("name").trim()
@@ -64,7 +65,7 @@ abstract class Orbiter(val properties: Properties) {
         return retval
     }
 
-    open fun process(delta: Double) {
+    open fun tick() {
         relativePos = relativePosAtTick(1.0) //this is tricky but correct.
     }
 

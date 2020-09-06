@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.orbiter
 
+import com.dibujaron.distanthorizon.DHServer
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.roundToInt
@@ -16,7 +17,7 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
         if (initialQuantity > 0) (price * 10).roundToInt() else -1 * (price * 10).roundToInt()
     var quantityAvailable: Int = initialQuantity
 
-    var lastUpdateTime = 0L
+    var lastUpdateTick = 0
     fun createStoreJson(): JSONObject {
         val retval = JSONObject()
         retval.put("identifying_name", identifyingName)
@@ -26,9 +27,9 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
         return retval
     }
 
-    fun process(delta: Double) {
-        val now = System.currentTimeMillis()
-        if (now - lastUpdateTime > UPDATE_TIME_MILLIS) {
+    fun tick() {
+        val currentTick = DHServer.getCurrentTick()
+        if (currentTick - lastUpdateTick > UPDATE_TIME_TICKS) {
             var newQty = quantityAvailable + productionConsumptionRate
             if (newQty > initialQuantity) {
                 newQty = initialQuantity
@@ -36,11 +37,11 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
                 newQty = 0
             }
             quantityAvailable = newQty
-            lastUpdateTime = now
+            lastUpdateTick = currentTick
         }
     }
 
     companion object {
-        const val UPDATE_TIME_MILLIS = 5 * 1000
+        const val UPDATE_TIME_TICKS = 5 * 60
     }
 }

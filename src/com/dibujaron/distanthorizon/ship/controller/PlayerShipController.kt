@@ -1,14 +1,12 @@
 package com.dibujaron.distanthorizon.ship.controller
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
-import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.ship.IndexedState
 import com.dibujaron.distanthorizon.ship.ShipInputs
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
-import java.lang.IllegalStateException
 
 class PlayerShipController : ShipController() {
 
@@ -30,7 +28,8 @@ class PlayerShipController : ShipController() {
 
     var controls: ShipInputs = ShipInputs()
 
-    override fun computeNextState(delta: Double): ShipState {
+    override fun computeNextState(): ShipState {
+        val delta = DHServer.TICK_LENGTH_SECONDS
         val currentState = ship.currentState
         var velocity = currentState.velocity
         var globalPos = currentState.position
@@ -61,7 +60,7 @@ class PlayerShipController : ShipController() {
         return ShipState(globalPos, rotation, velocity)
     }
 
-    override fun undockRequested(delta: Double): Boolean {
+    override fun isRequestingUndock(): Boolean {
         return false;
     }
 
