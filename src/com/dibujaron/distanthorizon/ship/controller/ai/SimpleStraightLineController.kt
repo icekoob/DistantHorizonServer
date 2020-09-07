@@ -8,7 +8,7 @@ import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.ship.controller.ai.nav.IndependentStepsNavigation
 import com.dibujaron.distanthorizon.ship.controller.ai.nav.Navigation
 
-const val UNITS_PER_TICK = 500.0
+const val UNITS_PER_TICK = 1.0/60.0
 
 //dead simple controller that drives the ship in a straight line at a constant speed from A to B.
 //makes no attempt to match velocities.
@@ -24,12 +24,15 @@ class SimpleStraightLineController : NovelRoutingAIController() {
 
     override fun plotNewCourse(): Navigation {
         val n = super.plotNewCourse()
-        println("ship ${ship.uuid} is departing from ${ship.dockedToPort?.station}")
+        println("ship ${ship.uuid} is departing from ${ship.dockedToPort?.station} to ${n.targetStation}")
+        println("    departed from ${n.startState.position}, heading to ${n.targetState.position}")
         return n
     }
 
     override fun createNavigation(startState: ShipState, targetState: ShipState, targetStation: Station, targetStationPort: StationDockingPort, myPort: ShipDockingPort): Navigation {
-        return StraightLineNavigation(UNITS_PER_TICK, startState, targetState, targetStation, targetStationPort, myPort)
+        var n = StraightLineNavigation(UNITS_PER_TICK, startState, targetState, targetStation, targetStationPort, myPort)
+        //println("navigation should take ${n.numStepsExact()} steps, ${n.numStepsExact() / 60} seconds.")
+        return n
     }
 
     class StraightLineNavigation(
@@ -44,18 +47,19 @@ class SimpleStraightLineController : NovelRoutingAIController() {
         private val diff = (targetState.position - startState.position)
         private val dist = diff.length
         private val angle = diff.angle
-        private val dx = diff.x / speed
-        private val dy = diff.y / speed
-        private val velocity = Vector2(dx, dy)
+        private val dx = diff.x * speed
+        private val dy = diff.y * speed
+        private val velocityPerTick = Vector2(dx, dy)
 
         override fun getStep(step: Int): ShipState {
-            val pos = startState.position + (velocity * step)
-            return ShipState(pos, angle, velocity)
+            if(step == 0){
+                println("    velocity per tick is $velocityPerTick")
+            }
+            val pos = startState.position + (velocityPerTick * step)
+            return ShipState(pos, angle, velocityPerTick)
         }
 
         override fun numStepsExact(): Double {
-            //d = rt
-            //t = d / r
             return dist / speed
         }
 

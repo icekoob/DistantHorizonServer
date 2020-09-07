@@ -15,4 +15,8 @@ class ShipState(val position: Vector2, val rotation: Double, val velocity: Vecto
         retval.put("velocity", velocity.toJSON())
         return retval
     }
+
+    override fun toString(): String {
+        return toJSON().toString()
+    }
 }

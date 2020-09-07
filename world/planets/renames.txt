@@ -1,0 +1,63 @@
+- Quillon (Binary Star)
+    - Quillon B (Star)
+    - Erilon (Gas Giant)
+    - Martos (Gas Giant)
+        - Vapid (Station)
+    - REQ (Station)
+    - Asteroids 1 .. 11
+    
+- Koros (Star)
+    - Beskytt (Station)
+    
+- Digitallia (Star)
+    - Inaris (Gas Giant)
+        - Luna Inaris (Habitable Moon)
+            - Digitallia (Station)
+        - Inaris B .. D (Moons)
+    - Quavara (Continental Planet)
+        - Quavara A (Moon)
+            - Quavara (Station)
+    - Valadro (Continental Planet)
+        - Skywatch (Station)
+        - Valadro A .. C (Moons)
+    - Asteroids 20 .. 24
+
+- Defalos (Star)
+    - Bosquevine (Gas Giant)
+        - Defalos (Station)
+    - Yisheng (Continental Planet)
+        - Yisheng (Station)
+    - Skydogs (Station)
+    
+- Arator (Star)
+    - Asteroids 12 .. 19
+        - Quol Station
+    - Hylon (Continental Planet)
+        - Hylon (Station)
+    - Yavar (Gas Giant)
+        - Yavar A .. D (Moons)
+            - Yavar (Station)
+    
+- Regalis (Star)
+    - Kelakaria (Continental Planet)
+        - Kelakaria (Station)
+    - Rakuria (Continental Planet)
+        - Rakuria A (Moon)
+            - Rakuria (Station)
+    - Avalon (Gas Giant)
+        - Avalon A (Moon)
+            - Avalon (Station)
+    - Avaquo (Gas Giant)
+        - Avaquo A .. B (Moons)
+            - Avaquo (Station)
+    - Uru (Moon)
+        - Distant Horizon Mining Co. (Station)
+
+- Aporia (Rogue Gas Giant)
+    - Aporia A .. F (Moons)
+        - Aporia (Station)
+        
+- Xira (Rogue Planet)
+    - Syndicate (Station)
+
+- Klon (Station)

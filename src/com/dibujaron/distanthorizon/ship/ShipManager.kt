@@ -1,9 +1,7 @@
 package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
-import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.ship.controller.ai.SimpleStraightLineController
 import java.util.*
 
 object ShipManager {
@@ -12,18 +10,19 @@ object ShipManager {
     private val shipsToRemove = LinkedList<Ship>()
 
     init {
-        OrbiterManager.getStations().asSequence()
+        /*OrbiterManager.getStations().asSequence()
+            .filter{it.getStar().name.contains("Regalis")}
             .map { it.getState() }
             .map {
                 Ship(
-                    ShipClassManager.getShipClasses().random(),
+                    ShipClassManager.getShipClass("radi.kx6")!!,
                     ShipColor.random(),
                     ShipColor.random(),
                     it,
                     SimpleStraightLineController()
                 )
             }
-            .forEach { shipsToAdd.add(it) }
+            .first{ shipsToAdd.add(it) }*/
     }
 
     fun getShips(): Collection<Ship> {
