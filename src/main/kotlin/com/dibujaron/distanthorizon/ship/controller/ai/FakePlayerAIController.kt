@@ -1,13 +1,12 @@
 package com.dibujaron.distanthorizon.ship.controller.ai
 
 import com.dibujaron.distanthorizon.DHServer
-import com.dibujaron.distanthorizon.script.ScriptDatabase
 import com.dibujaron.distanthorizon.script.ScriptReader
 import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.ship.controller.ControllerType
 import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
 
-class FakePlayerAIController(scriptDatabase: ScriptDatabase) : PlayerShipController(scriptDatabase,false) {
+class FakePlayerAIController() : PlayerShipController(false) {
 
     override fun getType(): ControllerType {
         return ControllerType.ARTIFICIAL
@@ -22,9 +21,9 @@ class FakePlayerAIController(scriptDatabase: ScriptDatabase) : PlayerShipControl
 
     override fun computeNextState(): ShipState {
         val script = currentScript
-        if(script != null){
-            if(script.hasNextAction()){
-                if(script.nextActionShouldFire()){
+        if (script != null) {
+            if (script.hasNextAction()) {
+                if (script.nextActionShouldFire()) {
                     receiveInputChange(script.getNextAction())
                 }
             } else {
@@ -34,14 +33,15 @@ class FakePlayerAIController(scriptDatabase: ScriptDatabase) : PlayerShipControl
         return super.computeNextState() //will apply the inputs.
     }
 
-    private fun dock(){
+    private fun dock() {
         currentScript = null
         ship.attemptDock(2000.0, 2000.0)
         if (ship.isDocked()) {
             val station = ship.dockedToPort!!.station
             println("AI Ship ${ship.uuid} docked at $station")
-            val newScript = scriptDatabase.selectAvailableScriptToAnywhere(station, DHServer.getCurrentTick() + 5, DHServer.getMaxTick())
-            if(newScript == null){
+            val newScript = DHServer.getScriptDatabase()
+                .selectAvailableScriptToAnywhere(station, DHServer.getCurrentTick() + 5, DHServer.getMaxTick())
+            if (newScript == null) {
                 println("AI ship found no script to proceed, will remain docked.")
             } else {
                 nextDepartureTick = newScript.getDepartureTick()

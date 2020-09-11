@@ -51,11 +51,10 @@
     <orderEntry type="library" name="Maven: org.eclipse.jetty.websocket:websocket-client:9.4.25.v20191220" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.jetty:jetty-client:9.4.25.v20191220" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.jetty.websocket:websocket-servlet:9.4.25.v20191220" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.exposed:exposed-core:0.24.1" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.3.72" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.exposed:exposed-dao:0.24.1" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.exposed:exposed-jdbc:0.24.1" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.exposed:exposed-core:0.21.1" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.3.61" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.exposed:exposed-jdbc:0.21.1" level="project" />
     <orderEntry type="library" name="Maven: org.postgresql:postgresql:42.2.16" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.checkerframework:checker-qual:3.5.0" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.4.0" level="project" />

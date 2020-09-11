@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
+import com.dibujaron.distanthorizon.script.impl.relational.RelationalScriptDatabase
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
@@ -45,7 +46,14 @@ object DHServer {
     val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
+
+    private val scriptDatabase = RelationalScriptDatabase("jdbc:postgresql://localhost/routes?user=postgres&password=admin", "org.postgresql.Driver")
     private var tickCount = 0
+
+    fun getScriptDatabase(): RelationalScriptDatabase
+    {
+        return scriptDatabase
+    }
 
     fun getCurrentTick(): Int {
         return tickCount

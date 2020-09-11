@@ -36,6 +36,7 @@
     </build>
     <properties>
         <kotlin.version>1.4.0</kotlin.version>
+        <exposed.version>0.21.1</exposed.version>
     </properties>
     <repositories>
         <repository>
@@ -53,17 +54,12 @@
         <dependency>
             <groupId>org.jetbrains.exposed</groupId>
             <artifactId>exposed-core</artifactId>
-            <version>0.24.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.exposed</groupId>
-            <artifactId>exposed-dao</artifactId>
-            <version>0.24.1</version>
+            <version>${exposed.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.exposed</groupId>
             <artifactId>exposed-jdbc</artifactId>
-            <version>0.24.1</version>
+            <version>${exposed.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

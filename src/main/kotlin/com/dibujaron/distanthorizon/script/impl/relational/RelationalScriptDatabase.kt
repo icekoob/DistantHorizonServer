@@ -18,39 +18,47 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
-class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: String) : ScriptDatabase() {
+class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatabase() {
 
-    object Route : IntIdTable() {
+    object Route : IntIdTable("route") {
         val originStation: Column<String> =
-            varchar("OriginStation", 32) //todo make these foreign keys to a stations table?
-        val destinationStation: Column<String> = varchar("DestinationStation", 32)
-        val departureTick: Column<Int> = integer("DepartureTick")
-        val arrivalTick: Column<Int> = integer("ArrivalTick")
-        val startingLocationX: Column<Double> = double("StartingLocationX")
-        val startingLocationY: Column<Double> = double("StartingLocationY")
-        val startingRotation: Column<Double> = double("StartingRotation")
-        val startingVelocityX: Column<Double> = double("StartingVelocityX")
-        val startingVelocityY: Column<Double> = double("StartingVelocityY")
-        val mainThrustPower: Column<Double> = double("MainThrustPower")
-        val manuThrustPower: Column<Double> = double("ManuThrustPower")
-        val rotationPower: Column<Double> = double("RotationPower")
-
+            varchar("origin_station", 32) //todo make these foreign keys to a stations table?
+        val destinationStation: Column<String> = varchar("dest_station", 32)
+        val departureTick: Column<Int> = integer("departure_tick")
+        val arrivalTick: Column<Int> = integer("arrival_tick")
+        val startingLocationX: Column<Double> = double("start_loc_x")
+        val startingLocationY: Column<Double> = double("start_loc_y")
+        val startingRotation: Column<Double> = double("start_rotation")
+        val startingVelocityX: Column<Double> = double("start_vel_x")
+        val startingVelocityY: Column<Double> = double("start_vel_y")
+        val mainThrustPower: Column<Double> = double("main_thrust")
+        val manuThrustPower: Column<Double> = double("manu_thrust")
+        val rotationPower: Column<Double> = double("rotation_power")
     }
 
-    object RouteStep : IntIdTable() {
-        val routeID = reference("RouteID", Route.id).uniqueIndex() //what does unique index do here?
-        val stepTick: Column<Int> = integer("StepTick")
-        val mainEngines: Column<Boolean> = bool("MainEngines")
-        val tillerLeft: Column<Boolean> = bool("TillerLeft")
-        val tillerRight: Column<Boolean> = bool("TillerRight")
-        val portThrusters: Column<Boolean> = bool("PortThrusters")
-        val stbdThrusters: Column<Boolean> = bool("StbdThrusters")
-        val foreThrusters: Column<Boolean> = bool("ForeThrusters")
-        val aftThrusters: Column<Boolean> = bool("AftThrusters")
+    object RouteStep : IntIdTable("route_step") {
+        val routeID = reference("route_id", Route.id)
+        val stepTick: Column<Int> = integer("step_tick")
+        val mainEngines: Column<Boolean> = bool("main_engines")
+        val tillerLeft: Column<Boolean> = bool("tiller_left")
+        val tillerRight: Column<Boolean> = bool("tiller_right")
+        val portThrusters: Column<Boolean> = bool("port_thrust")
+        val stbdThrusters: Column<Boolean> = bool("stbd_thrust")
+        val foreThrusters: Column<Boolean> = bool("fore_thrust")
+        val aftThrusters: Column<Boolean> = bool("aft_thrust")
     }
 
     init {
-        Database.connect(databaseUrl, driver = databaseDriver)
+        val result = Database.connect(databaseUrl, driver = databaseDriver)
+        println("Routes database connected. Dialect: ${result.dialect.name}, DB Version: ${result.version}, Database Name: ${result.name}. ")
+        transaction {
+            SchemaUtils.createMissingTablesAndColumns(Route)
+            SchemaUtils.createMissingTablesAndColumns(RouteStep)
+        }
+        println("Routes schema and tables initialized.")
+        transaction {
+            println("There are ${Route.selectAll().count()} saved routes.")
+        }
     }
 
     override fun selectStationsWithScripts(): List<Station> {
@@ -71,11 +79,11 @@ class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: Stri
         latestDepartureTick: Int
     ): ScriptReader? {
 
-        val originStationFilter = (RelationalScriptDatabase.Route.originStation eq sourceStation.name)
-        val destStationFilter = (RelationalScriptDatabase.Route.destinationStation eq targetStation.name)
+        val originStationFilter = (Route.originStation eq sourceStation.name)
+        val destStationFilter = (Route.destinationStation eq targetStation.name)
         val stationFilters = originStationFilter and destStationFilter
-        val departureTickLowerLimit = (RelationalScriptDatabase.Route.departureTick greater earliestDepartureTick)
-        val departureTickUpperLimit = (RelationalScriptDatabase.Route.departureTick less latestDepartureTick)
+        val departureTickLowerLimit = (Route.departureTick greater earliestDepartureTick)
+        val departureTickUpperLimit = (Route.departureTick less latestDepartureTick)
         val timeFilters = departureTickLowerLimit and departureTickUpperLimit
         val routeFilters = stationFilters and timeFilters
 
@@ -109,12 +117,12 @@ class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: Stri
         return RelationalScriptReader(route)
     }
 
-    class RelationalScriptReader(private val route: ResultRow) : ScriptReader {
+    inner class RelationalScriptReader(private val route: ResultRow) : ScriptReader {
 
         private val steps: TreeMap<Int, ResultRow> = TreeMap()
 
         init {
-            transaction { RouteStep.select { RouteStep.routeID eq route[Route.id] } }
+            transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value } }
                 .forEach { steps[it[RouteStep.stepTick]] = it }
         }
 
@@ -183,10 +191,11 @@ class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: Stri
         startState: ShipState,
         shipClass: ShipClass
     ): ScriptWriter {
+        println("Beginning script logging.")
         return RelationalScriptWriter(sourceStation, startState, shipClass)
     }
 
-    class RelationalScriptWriter(
+    inner class RelationalScriptWriter(
         private val sourceStation: Station,
         private val startState: ShipState,
         private val shipClass: ShipClass,
@@ -199,10 +208,12 @@ class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: Stri
         }
 
         //todo make not blocking if required
-        override fun completeScript() {
+        override fun completeScript(dockedToStation: Station) {
+            println("Saving script...")
             transaction {
                 val newRouteId = Route.insertAndGetId {
                     it[originStation] = sourceStation.name
+                    it[destinationStation] = dockedToStation.name
                     it[departureTick] = startTick
                     it[arrivalTick] = DHServer.getCurrentTick()
                     it[startingLocationX] = startState.position.x
@@ -229,6 +240,7 @@ class RelationalScriptDatabase(val databaseUrl: String, val databaseDriver: Stri
                     this[RouteStep.aftThrusters] = inputs.aftThrustersActive
                 }
             }
+            println("Script saved.")
         }
     }
 
