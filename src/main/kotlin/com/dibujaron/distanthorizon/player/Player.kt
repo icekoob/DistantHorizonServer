@@ -2,7 +2,7 @@ package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.script.impl.flatfile.PostgresScriptDatabase
+import com.dibujaron.distanthorizon.script.impl.relational.RelationalScriptDatabase
 import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
 import io.javalin.websocket.WsContext
@@ -13,7 +13,7 @@ import java.util.*
 
 class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
-    private val myShipController: PlayerShipController = PlayerShipController(PostgresScriptDatabase(), false)
+    private val myShipController: PlayerShipController = PlayerShipController(RelationalScriptDatabase(), false)
     val ship: Ship = Ship(
         ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
         ShipColor(Color(0,148,255)),

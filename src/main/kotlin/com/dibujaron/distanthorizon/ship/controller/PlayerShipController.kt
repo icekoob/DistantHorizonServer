@@ -4,10 +4,10 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.ship.ShipInputs
-import com.dibujaron.distanthorizon.ship.ShipState
 import com.dibujaron.distanthorizon.script.ScriptDatabase
 import com.dibujaron.distanthorizon.script.ScriptWriter
+import com.dibujaron.distanthorizon.ship.ShipInputs
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
 
 open class PlayerShipController(val scriptDatabase: ScriptDatabase, val shouldRecordScripts: Boolean) : ShipController() {
@@ -75,14 +75,18 @@ open class PlayerShipController(val scriptDatabase: ScriptDatabase, val shouldRe
 
     fun dockOrUndock() {
         if (ship.isDocked()) {
-            if(shouldRecordScripts) {
-                scriptWriter = scriptDatabase.beginLoggingScript(ship.dockedToPort!!.station)
-            }
+            val dockedStation = ship.dockedToPort!!.station
             ship.undock()
+            if(shouldRecordScripts) {
+                println("Beginning script logging.")
+                scriptWriter = scriptDatabase.beginLoggingScript(dockedStation, ship.currentState, ship.type)
+            }
         } else {
             ship.attemptDock()
             if(ship.isDocked()){
+                println("Publishing new script...")
                 scriptWriter?.completeScript()
+                println("Script saved.")
             }
         }
     }

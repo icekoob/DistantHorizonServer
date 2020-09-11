@@ -24,8 +24,8 @@ class FakePlayerAIController(scriptDatabase: ScriptDatabase) : PlayerShipControl
         val script = currentScript
         if(script != null){
             if(script.hasNextAction()){
-                if(script.nextActionReady()){
-                    receiveInputChange(script.nextAction())
+                if(script.nextActionShouldFire()){
+                    receiveInputChange(script.getNextAction())
                 }
             } else {
                 dock()
