@@ -1,28 +1,26 @@
 package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
-import com.dibujaron.distanthorizon.ship.controller.ShipController
+import com.dibujaron.distanthorizon.player.PlayerManager
+import com.dibujaron.distanthorizon.database.ScriptWriter
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.pow
 
-class Ship(
+open class Ship(
     val type: ShipClass,
     private val primaryColor: ShipColor,
     private val secondaryColor: ShipColor,
     initialState: ShipState,
-    private val controller: ShipController
+    val shouldRecordScripts: Boolean
 ) {
-
-    init {
-        controller.initForShip(this)
-    }
 
     var currentState: ShipState = initialState
     val uuid = UUID.randomUUID()
@@ -34,6 +32,8 @@ class Ship(
 
     var holdCapacity = type.holdSize
     var hold = HashMap<String, Int>()
+
+    var scriptWriter: ScriptWriter? = null
 
     fun holdOccupied(): Int {
         return hold.values.asSequence().sum()
@@ -56,35 +56,73 @@ class Ship(
     fun tick() {
         val dockedTo = dockedToPort
         val dockedFrom = myDockedPort
-        if (dockedTo != null && dockedFrom != null) {
-            if(controller.isRequestingUndock()){
-                undock()
-                currentState = controller.computeNextState()
-            } else {
-                val velocity = dockedTo.getVelocity()
-                val myPortRelative = dockedFrom.relativePosition()
-                val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
-                val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
-                currentState = ShipState(globalPos, rotation, velocity)
-            }
+        currentState = if (dockedTo != null && dockedFrom != null) {
+            val velocity = dockedTo.getVelocity()
+            val myPortRelative = dockedFrom.relativePosition()
+            val rotation = dockedTo.globalRotation() + dockedFrom.relativeRotation()
+            val globalPos = dockedTo.globalPosition() + (myPortRelative * -1.0).rotated(rotation)
+            ShipState(globalPos, rotation, velocity)
         } else {
-            currentState = controller.computeNextState()
+            computeNextState()
         }
         tickCount++
+    }
+
+    private var controls: ShipInputs = ShipInputs()
+    open fun computeNextState(): ShipState {
+        val delta = DHServer.TICK_LENGTH_SECONDS
+        var velocity = currentState.velocity
+        var globalPos = currentState.position
+        var rotation = currentState.rotation
+        if (controls.mainEnginesActive) {
+            velocity += Vector2(0, -getMainThrust()).rotated(rotation) * delta
+        }
+        if (controls.stbdThrustersActive) {
+            velocity += Vector2(-getManuThrust(), 0).rotated(rotation) * delta
+        }
+        if (controls.portThrustersActive) {
+            velocity += Vector2(getManuThrust(), 0).rotated(rotation) * delta
+        }
+        if (controls.foreThrustersActive) {
+            velocity += Vector2(0, getManuThrust()).rotated(rotation) * delta
+        }
+        if (controls.aftThrustersActive) {
+            velocity += Vector2(0, -getManuThrust()).rotated(rotation) * delta
+        }
+        if (controls.tillerLeft) {
+            rotation -= getRotationPower() * delta
+        } else if (controls.tillerRight) {
+            rotation += getRotationPower() * delta
+        }
+        velocity += OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
+        globalPos += velocity * delta
+        return ShipState(globalPos, rotation, velocity)
+    }
+
+    open fun getMainThrust(): Double {
+        return type.mainThrust
+    }
+
+    open fun getManuThrust(): Double {
+        return type.manuThrust
+    }
+
+    open fun getRotationPower(): Double {
+        return type.rotationPower
     }
 
     fun createFullShipJSON(): JSONObject {
         val retval = createShipHeartbeatJSON()
         retval.put("type", type.qualifiedName)
         retval.put("hold_size", type.holdSize)
-        retval.put("main_engine_thrust", controller.getMainThrust())
-        retval.put("manu_engine_thrust", controller.getManuThrust())
-        retval.put("rotation_power", controller.getRotationPower())
+        retval.put("main_engine_thrust", getMainThrust())
+        retval.put("manu_engine_thrust", getManuThrust())
+        retval.put("rotation_power", getRotationPower())
         retval.put("primary_color", primaryColor.toJSON())
         retval.put("secondary_color", secondaryColor.toJSON())
         retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())
         retval.put("docked", isDocked())
-        if(isDocked()){
+        if (isDocked()) {
             retval.put("docked_info", createDockedMessage())
         }
         return retval
@@ -97,8 +135,13 @@ class Ship(
         retval.put("global_pos", currentState.position.toJSON())
         retval.put("rotation", currentState.rotation)
         retval.put("hold_occupied", holdOccupied())
-        retval.put("controller_type", controller.getType().toJSON())
-        retval.put("controller_heartbeat", controller.getHeartbeat())
+        retval.put("main_engines", controls.mainEnginesActive)
+        retval.put("port_thrusters", controls.portThrustersActive)
+        retval.put("stbd_thrusters", controls.stbdThrustersActive)
+        retval.put("fore_thrusters", controls.foreThrustersActive)
+        retval.put("aft_thrusters", controls.aftThrustersActive)
+        retval.put("rotating_left", controls.tillerLeft)
+        retval.put("rotating_right", controls.tillerRight)
         return retval
     }
 
@@ -116,7 +159,7 @@ class Ship(
             .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
             .map { Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared) }
             .filter { it.third < maxDistSquared }
-            .minBy { it.third }
+            .minByOrNull { it.third }
 
         if (match != null) {
             val bestShipPort = match.first
@@ -131,13 +174,13 @@ class Ship(
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
         DHServer.broadcastShipDocked(this)
+        scriptWriter?.completeScript(stationPort.station)
     }
 
-    fun createDockedMessage(): JSONObject
-    {
+    fun createDockedMessage(): JSONObject {
         val myPort: DockingPort? = this.myDockedPort
         val stationPort: StationDockingPort? = this.dockedToPort;
-        if(myPort == null || stationPort == null){
+        if (myPort == null || stationPort == null) {
             throw IllegalStateException("Creating docked message but not docked.")
         } else {
             val dockedMessage = JSONObject()
@@ -150,25 +193,47 @@ class Ship(
     }
 
     fun undock() {
-        if (dockedToPort != null) {
+        val dockedTo = dockedToPort
+        if (dockedTo != null) {
             DHServer.broadcastShipUndocked(this)
+            if (shouldRecordScripts) {
+                scriptWriter = DHServer.getScriptDatabase().beginLoggingScript(dockedTo.station, currentState, type)
+            }
         }
         dockedToPort = null;
         myDockedPort = null;
     }
 
-    fun buyResourceFromStation(commodity: String, purchasingAccount: Account, quantity: Int){
-        if(isDocked()) {
+    fun receiveInputChange(shipInputs: ShipInputs) {
+        controls = shipInputs
+        scriptWriter?.writeAction(shipInputs)
+        broadcastInputsChange()
+    }
+
+    private fun broadcastInputsChange() {
+        val inputsUpdate = createShipHeartbeatJSON()
+        inputsUpdate.put("main_engines", controls.mainEnginesActive)
+        inputsUpdate.put("port_thrusters", controls.portThrustersActive)
+        inputsUpdate.put("stbd_thrusters", controls.stbdThrustersActive)
+        inputsUpdate.put("fore_thrusters", controls.foreThrustersActive)
+        inputsUpdate.put("aft_thrusters", controls.aftThrustersActive)
+        inputsUpdate.put("rotating_left", controls.tillerLeft)
+        inputsUpdate.put("rotating_right", controls.tillerRight)
+        PlayerManager.getPlayers().asSequence()
+            .forEach { it.sendShipInputsUpdate(inputsUpdate) }
+    }
+
+    fun buyResourceFromStation(commodity: String, purchasingAccount: Account, quantity: Int) {
+        if (isDocked()) {
             val station = dockedToPort!!.station
-            station.sellResourceToShip(commodity,purchasingAccount, this, quantity)
+            station.sellResourceToShip(commodity, purchasingAccount, this, quantity)
         }
     }
 
-    fun sellResourceToStation(commodity: String, purchasingAccount: Account, quantity: Int)
-    {
-        if(isDocked()) {
+    fun sellResourceToStation(commodity: String, purchasingAccount: Account, quantity: Int) {
+        if (isDocked()) {
             val station = dockedToPort!!.station
-            station.buyResourceFromShip(commodity,purchasingAccount, this, quantity)
+            station.buyResourceFromShip(commodity, purchasingAccount, this, quantity)
         }
     }
 }

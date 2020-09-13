@@ -2,11 +2,13 @@ package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.database.ScriptReader
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Account
-import com.dibujaron.distanthorizon.script.ScriptReader
-import com.dibujaron.distanthorizon.ship.*
-import com.dibujaron.distanthorizon.ship.controller.ai.FakePlayerAIController
+import com.dibujaron.distanthorizon.ship.AIShip
+import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipManager
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -43,17 +45,9 @@ class Station(properties: Properties) : Orbiter(properties) {
         val script = aiScripts[DHServer.getCurrentTickInCycle()]
         if (script != null) {
             println("initializing AI ship from station $name")
-            val scriptCopy = script.copy()
-            ShipManager.markForAdd(
-                Ship(
-                    ShipClassManager.getShipClasses().random(),
-                    ShipColor.random(),
-                    ShipColor.random(),
-                    scriptCopy.getStartingState(),
-                    FakePlayerAIController(scriptCopy)
-                )
-            )
+            ShipManager.markForAdd(AIShip(script.copy()))
         }
+        super.tick()
     }
 
     fun getState(): ShipState {

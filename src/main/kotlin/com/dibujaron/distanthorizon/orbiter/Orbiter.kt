@@ -67,7 +67,10 @@ abstract class Orbiter(val properties: Properties) {
 
     open fun tick() {
         if(DHServer.getCurrentTickInCycle() == 0){
-            println("At tick 0, orbiter $name is at position $relativePos. Adjusting by ${startingPos-relativePos} to compensate.")
+            val diff = (startingPos - relativePos).lengthSquared
+            if(diff > 1.0){
+                throw IllegalStateException("Orbiter drift is too large!")
+            }
             relativePos = startingPos //just to eliminate any possible wobble, at the end of a cycle we reset to exactly the start.
         }
         relativePos = relativePosAtTick(1.0) //this is tricky but correct.
@@ -131,29 +134,17 @@ fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Doub
     val originalRadius = originalPos.length
     val originalPeriodSeconds = periodFromRadius(originalRadius, OrbiterManager.GRAVITY_CONSTANT, parentMass)
     val originalPeriod = DHServer.secondsToTicks(originalPeriodSeconds)
-    //there has to be a better way to do this.
-    var periodLow = floor(originalPeriod).toInt()
-    var periodHigh = ceil(originalPeriod).toInt()
-    while(!isValidPeriod(periodLow) && !isValidPeriod(periodHigh) && periodLow > 0 && periodHigh <= DHServer.CYCLE_LENGTH_TICKS){
-        periodLow--
-        periodHigh++
-    }
-
-    val resultFound = isValidPeriod(periodLow) || isValidPeriod(periodHigh)
-    if(!resultFound){
-        throw IllegalStateException("No valid period found for orbiter ")
-    } else {
-        val result = if (isValidPeriod(periodLow)) periodLow else periodHigh
-        val resultSeconds = DHServer.ticksToSeconds(result.toDouble())
-        val newRadius = radiusFromPeriod(resultSeconds, OrbiterManager.GRAVITY_CONSTANT, parentMass)
-        println("Adjusted period from $originalPeriod to $result. New radius is $newRadius")
-        return originalPos.normalized() * newRadius
-    }
-}
-
-fun isValidPeriod(a: Int): Boolean
-{
-    return a != 0 && DHServer.CYCLE_LENGTH_TICKS % a == 0
+    val possiblePeriods = DHServer.FACTORS_OF_CYCLE_LENGTH
+    var lowerPossibility = possiblePeriods.floor(floor(originalPeriod).toInt())
+    if(lowerPossibility == null) lowerPossibility = 0
+    var higherPossibility = possiblePeriods.ceiling(ceil(originalPeriod).toInt())
+    if(higherPossibility == null) higherPossibility = DHServer.CYCLE_LENGTH_TICKS
+    val lowerDiff = abs(originalPeriod - lowerPossibility)
+    val higherDiff = abs(higherPossibility - originalPeriod)
+    val result = if(lowerDiff < higherDiff) lowerPossibility else higherPossibility
+    val resultSeconds = DHServer.ticksToSeconds(result.toDouble())
+    val newRadius = radiusFromPeriod(resultSeconds, OrbiterManager.GRAVITY_CONSTANT, parentMass)
+    return originalPos.normalized() * newRadius
 }
 
 fun periodFromRadius(r: Double, g: Double, m: Double): Double {

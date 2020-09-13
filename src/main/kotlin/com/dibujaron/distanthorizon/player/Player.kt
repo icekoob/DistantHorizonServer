@@ -3,7 +3,6 @@ package com.dibujaron.distanthorizon.player
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.ship.*
-import com.dibujaron.distanthorizon.ship.controller.PlayerShipController
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -12,13 +11,12 @@ import java.util.*
 
 class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
-    private val myShipController: PlayerShipController = PlayerShipController( true)
     val ship: Ship = Ship(
         ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
         ShipColor(Color(0,148,255)),
         ShipColor(Color.WHITE),
         ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
-        myShipController
+        true
     )
     var account = Account()
 
@@ -31,15 +29,15 @@ class Player(val connection: WsContext) {
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
-            myShipController.receiveInputChange(inputs)
+            ship.receiveInputChange(inputs)
         } else if (messageType == "dock") {
             if(!ship.isDocked()) {
-                myShipController.dockOrUndock()
+                ship.attemptDock()
                 sendStationMenuMessage()
             }
         } else if (messageType == "undock") {
             if(ship.isDocked()) {
-                myShipController.dockOrUndock()
+                ship.undock()
                 sendStationMenuMessage()
             }
         } else if (messageType == "purchase_from_station") {

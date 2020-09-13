@@ -1,9 +1,10 @@
 package com.dibujaron.distanthorizon
 
+import com.dibujaron.distanthorizon.database.ScriptDatabase
+import com.dibujaron.distanthorizon.database.impl.ExposedDatabase
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.script.impl.relational.RelationalScriptDatabase
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
@@ -32,7 +33,7 @@ object DHServer {
     const val TICKS_PER_SECOND = 60
 
     const val CYCLE_LENGTH_TICKS = 83160/*TICKS_PER_SECOND * 60 * 12  //cycle every 12m*/
-
+    val FACTORS_OF_CYCLE_LENGTH = factors(CYCLE_LENGTH_TICKS)
     const val WORLD_HEARTBEATS_EVERY = 60
     const val WORLD_HEARTBEAT_TICK_OFFSET = 0
 
@@ -46,13 +47,15 @@ object DHServer {
     val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
     val dockingSpeed = serverProperties.getProperty("docking.speed", "500.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
+    val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distanthorizon?user=postgres&password=admin")
+    val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
 
-    private val scriptDatabase = RelationalScriptDatabase("jdbc:postgresql://localhost/routes?user=postgres&password=admin", "org.postgresql.Driver")
+    private val scriptDatabase = ExposedDatabase(dbUrl, dbDriver)
     private var tickCount = 0
 
-    fun getScriptDatabase(): RelationalScriptDatabase
+    fun getScriptDatabase(): ScriptDatabase
     {
         return scriptDatabase
     }
@@ -233,5 +236,18 @@ object DHServer {
     fun secondsToTicks(seconds: Double): Double
     {
         return seconds * TICKS_PER_SECOND
+    }
+
+    private fun factors(num: Int): TreeSet<Int>
+    {
+        //https://stackoverflow.com/questions/47030439/get-factors-of-numbers-in-kotlin
+        val factors = TreeSet<Int>()
+        if (num < 1)
+            return factors
+        (1..num / 2)
+            .filter { num % it == 0 }
+            .forEach { factors.add(it) }
+        factors.add(num)
+        return factors
     }
 }
