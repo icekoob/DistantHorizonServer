@@ -30,7 +30,8 @@ open class PlayerShipController(private val shouldRecordScripts: Boolean) : Ship
 
     var controls: ShipInputs = ShipInputs()
 
-    override fun computeNextState(): ShipState {
+    override fun computeNextState(): ShipState
+    {
         val delta = DHServer.TICK_LENGTH_SECONDS
         val currentState = ship.currentState
         var velocity = currentState.velocity
@@ -38,24 +39,24 @@ open class PlayerShipController(private val shouldRecordScripts: Boolean) : Ship
         var rotation = currentState.rotation
         val type = ship.type
         if (controls.mainEnginesActive) {
-            velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
+            velocity += Vector2(0, -getMainThrust()).rotated(rotation) * delta
         }
         if (controls.stbdThrustersActive) {
-            velocity += Vector2(-type.manuThrust, 0).rotated(rotation) * delta
+            velocity += Vector2(-getManuThrust(), 0).rotated(rotation) * delta
         }
         if (controls.portThrustersActive) {
-            velocity += Vector2(type.manuThrust, 0).rotated(rotation) * delta
+            velocity += Vector2(getManuThrust(), 0).rotated(rotation) * delta
         }
         if (controls.foreThrustersActive) {
-            velocity += Vector2(0, type.manuThrust).rotated(rotation) * delta
+            velocity += Vector2(0, getManuThrust()).rotated(rotation) * delta
         }
         if (controls.aftThrustersActive) {
-            velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
+            velocity += Vector2(0, -getManuThrust()).rotated(rotation) * delta
         }
         if (controls.tillerLeft) {
-            rotation -= type.rotationPower * delta
+            rotation -= getRotationPower() * delta
         } else if (controls.tillerRight) {
-            rotation += type.rotationPower * delta
+            rotation += getRotationPower() * delta
         }
         velocity += OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
         globalPos += velocity * delta

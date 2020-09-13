@@ -28,7 +28,7 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
     }
 
     fun tick() {
-        val currentTick = DHServer.getCurrentTick()
+        val currentTick = DHServer.getCurrentTickAbsolute()
         if (currentTick - lastUpdateTick > UPDATE_TIME_TICKS) {
             var newQty = quantityAvailable + productionConsumptionRate
             if (newQty > initialQuantity) {

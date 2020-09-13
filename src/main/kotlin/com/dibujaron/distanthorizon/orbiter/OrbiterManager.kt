@@ -13,8 +13,8 @@ object OrbiterManager {
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
     private val planetsMap: HashMap<String, Planet> = HashMap()
     private val stationsMap: HashMap<String, Station> = HashMap()
-    private const val gravityConstantFudge = 50.0
-    val gravityConstant = 6.67408 * 10.0.pow(-11.0) * gravityConstantFudge
+    private const val GRAVITY_FUDGE = 50.0
+    val GRAVITY_CONSTANT = 6.67408 * 10.0.pow(-11.0) * GRAVITY_FUDGE
 
     fun tick() {
         getOrbiters().forEach { it.tick() }
@@ -54,7 +54,7 @@ object OrbiterManager {
                 if (rSquared < it.minRadiusSquared) {
                     rSquared = it.minRadiusSquared.toDouble()
                 }
-                val forceMag = gravityConstant * it.mass / rSquared
+                val forceMag = GRAVITY_CONSTANT * it.mass / rSquared
                 if(forceMag > MIN_GRAVITY_FORCE_CUTOFF) {
                     accel += (offset.normalized() * forceMag)
                 }

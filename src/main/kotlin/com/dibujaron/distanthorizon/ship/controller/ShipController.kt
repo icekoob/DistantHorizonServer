@@ -15,4 +15,19 @@ abstract class ShipController {
     abstract fun computeNextState(): ShipState
     abstract fun getType(): ControllerType
     abstract fun getHeartbeat(): JSONObject
+
+    open fun getMainThrust(): Double
+    {
+        return ship.type.mainThrust
+    }
+
+    open fun getManuThrust(): Double
+    {
+        return ship.type.manuThrust
+    }
+
+    open fun getRotationPower(): Double
+    {
+        return ship.type.rotationPower
+    }
 }

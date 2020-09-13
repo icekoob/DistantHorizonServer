@@ -26,7 +26,7 @@ abstract class NovelRoutingAIController : ShipController() {
     var nextDepartureTick = computeNextDepartureTick()
 
     override fun isRequestingUndock(): Boolean {
-        return if (DHServer.getCurrentTick() > nextDepartureTick) {
+        return if (DHServer.getCurrentTickInCycle() > nextDepartureTick) {
             currentNav = plotNewCourse()
             true;
         } else {
@@ -103,7 +103,7 @@ abstract class NovelRoutingAIController : ShipController() {
     private fun computeNextDepartureTick(): Int {
         val minDwell = getMinimumStationDwellTicks()
         val dwellRange = getMaximumStationDwellTicks() - minDwell
-        return DHServer.getCurrentTick() + minDwell + (Math.random() * dwellRange).roundToInt()
+        return DHServer.getCurrentTickInCycle() + minDwell + (Math.random() * dwellRange).roundToInt()
     }
 
     companion object {

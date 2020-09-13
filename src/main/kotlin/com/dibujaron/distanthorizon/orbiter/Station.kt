@@ -1,10 +1,12 @@
 package com.dibujaron.distanthorizon.orbiter
 
+import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Account
-import com.dibujaron.distanthorizon.ship.Ship
-import com.dibujaron.distanthorizon.ship.ShipState
+import com.dibujaron.distanthorizon.script.ScriptReader
+import com.dibujaron.distanthorizon.ship.*
+import com.dibujaron.distanthorizon.ship.controller.ai.FakePlayerAIController
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -15,7 +17,12 @@ class Station(properties: Properties) : Orbiter(properties) {
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
     val description = properties.getProperty("description").trim()
-    public var ticks = 0
+
+    private val aiScripts: Map<Int, ScriptReader> = DHServer.getScriptDatabase()
+        .selectScriptsForStation(this).asSequence()
+        .map { Pair(it.getDepartureTick(), it) }
+        .toMap()
+
     private val commodityStores: Map<String, CommodityStore> = CommodityType
         .values()
         .asSequence()
@@ -26,17 +33,33 @@ class Station(properties: Properties) : Orbiter(properties) {
     init {
         dockingPorts.add(StationDockingPort(this, Vector2(7.0, 0.5), -90.0))
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
+        if (aiScripts.isNotEmpty()) {
+            println("loaded ${aiScripts.size} ai scripts for station $name")
+        }
     }
 
     override fun tick() {
-        commodityStores.values.forEach{it.tick()}
-        ticks++
+        commodityStores.values.forEach { it.tick() }
+        val script = aiScripts[DHServer.getCurrentTickInCycle()]
+        if (script != null) {
+            println("initializing AI ship from station $name")
+            val scriptCopy = script.copy()
+            ShipManager.markForAdd(
+                Ship(
+                    ShipClassManager.getShipClasses().random(),
+                    ShipColor.random(),
+                    ShipColor.random(),
+                    scriptCopy.getStartingState(),
+                    FakePlayerAIController(scriptCopy)
+                )
+            )
+        }
     }
 
-    fun getState(): ShipState
-    {
+    fun getState(): ShipState {
         return ShipState(globalPos(), globalRotation(), velocity())
     }
+
     fun globalRotation(): Double {
         val vecToParent = relativePos * -1.0;
         return vecToParent.angle;
@@ -82,14 +105,14 @@ class Station(properties: Properties) : Orbiter(properties) {
             purchaseQuantity = spaceInHold
         }
 
-        if (buyingAccount.balance < price){
+        if (buyingAccount.balance < price) {
             val affordableQuantity = floor(buyingAccount.balance / store.price).toInt()
             purchaseQuantity = affordableQuantity
         }
         val purchasePrice = store.price * purchaseQuantity
         buyingAccount.balance = buyingAccount.balance - purchasePrice
         store.quantityAvailable -= purchaseQuantity
-        val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
+        val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         ship.hold[store.identifyingName] = holdStore + purchaseQuantity
     }
 
@@ -98,7 +121,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         var purchaseQuantity = quantity
 
         //first check if there's enough in player's hold to sell
-        val availableQuantity = ship.hold[resource]?:0
+        val availableQuantity = ship.hold[resource] ?: 0
         if (purchaseQuantity > availableQuantity) {
             purchaseQuantity = availableQuantity
         }
@@ -107,7 +130,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         val purchasePrice = store.price * purchaseQuantity
         buyingAccount.balance = buyingAccount.balance + purchasePrice
         store.quantityAvailable += purchaseQuantity
-        val holdStore = ship.hold.getOrPut(store.identifyingName, {0})
+        val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         ship.hold[store.identifyingName] = holdStore - purchaseQuantity
     }
 }

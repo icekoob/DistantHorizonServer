@@ -31,6 +31,8 @@ object DHServer {
     val TICK_LENGTH_MILLIS_CEIL = ceil(TICK_LENGTH_MILLIS).toLong()
     const val TICKS_PER_SECOND = 60
 
+    const val CYCLE_LENGTH_TICKS = 83160/*TICKS_PER_SECOND * 60 * 12  //cycle every 12m*/
+
     const val WORLD_HEARTBEATS_EVERY = 60
     const val WORLD_HEARTBEAT_TICK_OFFSET = 0
 
@@ -55,12 +57,12 @@ object DHServer {
         return scriptDatabase
     }
 
-    fun getCurrentTick(): Int {
+    fun getCurrentTickAbsolute(): Int {
         return tickCount
     }
 
-    fun getMaxTick(): Int {
-        return Integer.MAX_VALUE
+    fun getCurrentTickInCycle(): Int {
+        return tickCount % CYCLE_LENGTH_TICKS
     }
 
     fun commandLoop() {
@@ -221,5 +223,15 @@ object DHServer {
             println("Found no server properties file, using defaults.")
         }
         return p
+    }
+
+    fun ticksToSeconds(ticks: Double): Double
+    {
+        return ticks / TICKS_PER_SECOND
+    }
+
+    fun secondsToTicks(seconds: Double): Double
+    {
+        return seconds * TICKS_PER_SECOND
     }
 }

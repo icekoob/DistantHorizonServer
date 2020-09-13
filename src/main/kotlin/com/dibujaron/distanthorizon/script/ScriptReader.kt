@@ -5,6 +5,8 @@ import com.dibujaron.distanthorizon.ship.ShipState
 
 interface ScriptReader {
 
+    fun copy(): ScriptReader
+
     fun getDepartureTick(): Int
 
     fun getStartingState(): ShipState

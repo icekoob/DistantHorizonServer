@@ -71,6 +71,14 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
         }
     }
 
+    override fun selectScriptsForStation(sourceStation: Station): List<ScriptReader> {
+        val originStationFilter = (Route.originStation eq sourceStation.name)
+        return transaction {
+            Route.select { originStationFilter }
+                .map { RelationalScriptReader(it) }
+        }
+    }
+
     //for now, the best script is the one with the earliest arrival date.
     override fun selectAvailableScript(
         sourceStation: Station,
@@ -117,13 +125,21 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
         return RelationalScriptReader(route)
     }
 
-    inner class RelationalScriptReader(private val route: ResultRow) : ScriptReader {
+    inner class RelationalScriptReader(private val steps: TreeMap<Int, ResultRow>, private val route: ResultRow) : ScriptReader {
 
-        private val steps: TreeMap<Int, ResultRow> = TreeMap()
+        //private val steps: TreeMap<Int, ResultRow> = TreeMap()
+
+        constructor(route: ResultRow): this(TreeMap(), route)
 
         init {
-            transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value } }
-                .forEach { steps[it[RouteStep.stepTick]] = it }
+            if(steps.isEmpty()) {
+                transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value } }
+                    .forEach { steps[it[RouteStep.stepTick]] = it }
+            }
+        }
+
+        override fun copy(): ScriptReader {
+            return RelationalScriptReader(steps, route) //this does selects twice but I don't think I care.
         }
 
         override fun getDepartureTick(): Int {
@@ -156,7 +172,7 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
 
         override fun nextActionShouldFire(): Boolean {
             val nextActionTick = steps.firstKey()
-            val currentTick = DHServer.getCurrentTick()
+            val currentTick = DHServer.getCurrentTickInCycle()
             if (nextActionTick < currentTick) {
                 throw IllegalStateException("called nextActionReady but next action is in the past - must be called every tick!")
             } else {
@@ -199,12 +215,12 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
         private val sourceStation: Station,
         private val startState: ShipState,
         private val shipClass: ShipClass,
-        private val startTick: Int = DHServer.getCurrentTick()
+        private val startTick: Int = DHServer.getCurrentTickInCycle()
     ) : ScriptWriter {
         private val steps: TreeMap<Int, ShipInputs> = TreeMap()
 
         override fun writeAction(action: ShipInputs) {
-            steps[DHServer.getCurrentTick()] = action
+            steps[DHServer.getCurrentTickInCycle()] = action
         }
 
         //todo make not blocking if required
@@ -215,7 +231,7 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
                     it[originStation] = sourceStation.name
                     it[destinationStation] = dockedToStation.name
                     it[departureTick] = startTick
-                    it[arrivalTick] = DHServer.getCurrentTick()
+                    it[arrivalTick] = DHServer.getCurrentTickInCycle()
                     it[startingLocationX] = startState.position.x
                     it[startingLocationY] = startState.position.y
                     it[startingRotation] = startState.rotation
@@ -226,7 +242,7 @@ class RelationalScriptDatabase(databaseUrl: String, databaseDriver: String) : Sc
                     it[rotationPower] = shipClass.rotationPower
                 }
 
-                RouteStep.batchInsert(steps.entries){ entry ->
+                RouteStep.batchInsert(steps.entries) { entry ->
                     val tick = entry.key
                     val inputs = entry.value
                     this[RouteStep.routeID] = newRouteId

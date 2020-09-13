@@ -4,14 +4,12 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import org.json.JSONObject
 import java.util.*
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 abstract class Orbiter(val properties: Properties) {
     val name: String = properties.getProperty("name").trim()
     val parentName: String = properties.getProperty("parent").trim()
-
+    var startingPos: Vector2 = Vector2(0, 0)
     var initialized = false;
     var parent: Planet? = null;
 
@@ -28,26 +26,28 @@ abstract class Orbiter(val properties: Properties) {
     fun initialize() {
         if (!initialized) {
             if (parentName.isEmpty()) {
-                relativePos = loadStartingPositionAndScale(properties, 1.0)
+                startingPos = loadStartingPositionAndScale(properties, 1.0)
                 orbitalSpeed = 0.0
-                orbitalRadius = relativePos.length
+                orbitalRadius = startingPos.length
             } else {
                 val foundParent: Planet? = OrbiterManager.getPlanet(parentName)
                 if (foundParent == null) {
                     throw IllegalArgumentException("parent planet $parentName not found.")
                 } else {
                     foundParent.initialize()
-                    relativePos = loadStartingPositionAndScale(properties, foundParent.scale())
-                    orbitalRadius = relativePos.length
-                    orbitalSpeed = sqrt((OrbiterManager.gravityConstant * foundParent.mass) / orbitalRadius)
+                    val unadjusted = loadStartingPositionAndScale(properties, foundParent.scale())
+                    startingPos = adjustOrbitalRadiusToMatchCycleLength(unadjusted, foundParent.mass)
+                    orbitalRadius = startingPos.length
+                    orbitalSpeed = sqrt((OrbiterManager.GRAVITY_CONSTANT * foundParent.mass) / orbitalRadius)
                     parent = foundParent;
 
                 }
             }
-            if (orbitalRadius > 0) {
-                angularVelocityPerSecond = orbitalSpeed / orbitalRadius
+            relativePos = startingPos
+            angularVelocityPerSecond = if (orbitalRadius > 0) {
+                orbitalSpeed / orbitalRadius
             } else {
-                angularVelocityPerSecond = 0.0
+                0.0
             }
             angularVelocityPerTick = angularVelocityPerSecond / DHServer.TICKS_PER_SECOND
             initialized = true;
@@ -66,6 +66,10 @@ abstract class Orbiter(val properties: Properties) {
     }
 
     open fun tick() {
+        if(DHServer.getCurrentTickInCycle() == 0){
+            println("At tick 0, orbiter $name is at position $relativePos. Adjusting by ${startingPos-relativePos} to compensate.")
+            relativePos = startingPos //just to eliminate any possible wobble, at the end of a cycle we reset to exactly the start.
+        }
         relativePos = relativePosAtTick(1.0) //this is tricky but correct.
     }
 
@@ -82,8 +86,7 @@ abstract class Orbiter(val properties: Properties) {
         return (globalPosAtTick(tickOffset + 1) - globalPosAtTick(tickOffset)) * DHServer.TICKS_PER_SECOND
     }
 
-    fun globalPosAtTick(tickOffset: Double): Vector2
-    {
+    fun globalPosAtTick(tickOffset: Double): Vector2 {
         val parent = this.parent
         return if (parent == null) {
             relativePos
@@ -95,11 +98,7 @@ abstract class Orbiter(val properties: Properties) {
 
     fun getStar(): Orbiter {
         val p = parent
-        if (p == null) {
-            return this
-        } else {
-            return p.getStar()
-        }
+        return p?.getStar() ?: this
     }
 
     override fun toString(): String {
@@ -128,15 +127,51 @@ abstract class Orbiter(val properties: Properties) {
     }
 }
 
+fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Double): Vector2 {
+    val originalRadius = originalPos.length
+    val originalPeriodSeconds = periodFromRadius(originalRadius, OrbiterManager.GRAVITY_CONSTANT, parentMass)
+    val originalPeriod = DHServer.secondsToTicks(originalPeriodSeconds)
+    //there has to be a better way to do this.
+    var periodLow = floor(originalPeriod).toInt()
+    var periodHigh = ceil(originalPeriod).toInt()
+    while(!isValidPeriod(periodLow) && !isValidPeriod(periodHigh) && periodLow > 0 && periodHigh <= DHServer.CYCLE_LENGTH_TICKS){
+        periodLow--
+        periodHigh++
+    }
+
+    val resultFound = isValidPeriod(periodLow) || isValidPeriod(periodHigh)
+    if(!resultFound){
+        throw IllegalStateException("No valid period found for orbiter ")
+    } else {
+        val result = if (isValidPeriod(periodLow)) periodLow else periodHigh
+        val resultSeconds = DHServer.ticksToSeconds(result.toDouble())
+        val newRadius = radiusFromPeriod(resultSeconds, OrbiterManager.GRAVITY_CONSTANT, parentMass)
+        println("Adjusted period from $originalPeriod to $result. New radius is $newRadius")
+        return originalPos.normalized() * newRadius
+    }
+}
+
+fun isValidPeriod(a: Int): Boolean
+{
+    return a != 0 && DHServer.CYCLE_LENGTH_TICKS % a == 0
+}
+
+fun periodFromRadius(r: Double, g: Double, m: Double): Double {
+    return sqrt((r * r * r * 4 * PI * PI) / (g * m)) //todo have fudged gravity constant, does that matter?
+}
+
+fun radiusFromPeriod(p: Double, g: Double, m: Double): Double {
+    return ((g * m * p * p) / (4 * PI * PI)).pow(1.0 / 3.0)
+}
+
 fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
-    if (properties.containsKey("posX") && properties.containsKey("posY")) {
+    return if (properties.containsKey("posX") && properties.containsKey("posY")) {
         val posX = properties.getProperty("posX").toDouble()
         val posY = properties.getProperty("posY").toDouble()
-        val retval = Vector2(posX, posY) * parentScale
-        return retval;
+        Vector2(posX, posY) * parentScale
     } else if (properties.containsKey("orbitalRadius")) {
         val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
-        return Vector2(orbitalRadius, 0) * (parentScale)
+        Vector2(orbitalRadius, 0) * (parentScale)
     } else {
         throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
     }
