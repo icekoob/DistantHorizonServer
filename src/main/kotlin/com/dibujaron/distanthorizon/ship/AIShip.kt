@@ -3,13 +3,14 @@ package com.dibujaron.distanthorizon.ship
 import com.dibujaron.distanthorizon.database.ScriptReader
 
 class AIShip(private val scriptReader: ScriptReader) : Ship(
-    ShipClassManager.getShipClasses().random(),
+    scriptReader.getShipClass(),
     ShipColor.random(),
     ShipColor.random(),
     scriptReader.getStartingState(),
     false
 ) {
 
+    val shipClass = scriptReader.getShipClass()
     override fun computeNextState(): ShipState {
         if (scriptReader.hasNextAction()) {
             if (scriptReader.nextActionShouldFire()) {
@@ -20,17 +21,5 @@ class AIShip(private val scriptReader: ScriptReader) : Ship(
             ShipManager.markForRemove(this)
         }
         return super.computeNextState() //will apply the inputs.
-    }
-
-    override fun getMainThrust(): Double {
-        return scriptReader.getMainThrustPower()
-    }
-
-    override fun getManuThrust(): Double {
-        return scriptReader.getManuThrustPower()
-    }
-
-    override fun getRotationPower(): Double {
-        return scriptReader.getRotationPower()
     }
 }

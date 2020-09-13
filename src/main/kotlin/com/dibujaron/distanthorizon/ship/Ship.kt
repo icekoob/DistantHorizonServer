@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.database.ScriptWriter
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
@@ -9,7 +10,6 @@ import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.database.ScriptWriter
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.pow
@@ -75,49 +75,37 @@ open class Ship(
         var globalPos = currentState.position
         var rotation = currentState.rotation
         if (controls.mainEnginesActive) {
-            velocity += Vector2(0, -getMainThrust()).rotated(rotation) * delta
+            velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
         }
         if (controls.stbdThrustersActive) {
-            velocity += Vector2(-getManuThrust(), 0).rotated(rotation) * delta
+            velocity += Vector2(-type.manuThrust, 0).rotated(rotation) * delta
         }
         if (controls.portThrustersActive) {
-            velocity += Vector2(getManuThrust(), 0).rotated(rotation) * delta
+            velocity += Vector2(type.manuThrust, 0).rotated(rotation) * delta
         }
         if (controls.foreThrustersActive) {
-            velocity += Vector2(0, getManuThrust()).rotated(rotation) * delta
+            velocity += Vector2(0, type.manuThrust).rotated(rotation) * delta
         }
         if (controls.aftThrustersActive) {
-            velocity += Vector2(0, -getManuThrust()).rotated(rotation) * delta
+            velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
         }
         if (controls.tillerLeft) {
-            rotation -= getRotationPower() * delta
+            rotation -= type.rotationPower * delta
         } else if (controls.tillerRight) {
-            rotation += getRotationPower() * delta
+            rotation += type.rotationPower * delta
         }
         velocity += OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
         globalPos += velocity * delta
         return ShipState(globalPos, rotation, velocity)
     }
 
-    open fun getMainThrust(): Double {
-        return type.mainThrust
-    }
-
-    open fun getManuThrust(): Double {
-        return type.manuThrust
-    }
-
-    open fun getRotationPower(): Double {
-        return type.rotationPower
-    }
-
     fun createFullShipJSON(): JSONObject {
         val retval = createShipHeartbeatJSON()
         retval.put("type", type.qualifiedName)
         retval.put("hold_size", type.holdSize)
-        retval.put("main_engine_thrust", getMainThrust())
-        retval.put("manu_engine_thrust", getManuThrust())
-        retval.put("rotation_power", getRotationPower())
+        retval.put("main_engine_thrust", type.mainThrust)
+        retval.put("manu_engine_thrust", type.manuThrust)
+        retval.put("rotation_power", type.rotationPower)
         retval.put("primary_color", primaryColor.toJSON())
         retval.put("secondary_color", secondaryColor.toJSON())
         retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())

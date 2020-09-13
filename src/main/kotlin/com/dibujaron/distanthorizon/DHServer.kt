@@ -47,7 +47,7 @@ object DHServer {
     val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
     val dockingSpeed = serverProperties.getProperty("docking.speed", "500.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
-    val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distanthorizon?user=postgres&password=admin")
+    val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }

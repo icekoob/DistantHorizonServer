@@ -8,6 +8,7 @@ import com.dibujaron.distanthorizon.database.ScriptWriter
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.ship.ShipClass
+import com.dibujaron.distanthorizon.ship.ShipClassManager
 import com.dibujaron.distanthorizon.ship.ShipInputs
 import com.dibujaron.distanthorizon.ship.ShipState
 import org.jetbrains.exposed.dao.id.IntIdTable
@@ -32,9 +33,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
         val startingRotation: Column<Double> = double("start_rotation")
         val startingVelocityX: Column<Double> = double("start_vel_x")
         val startingVelocityY: Column<Double> = double("start_vel_y")
-        val mainThrustPower: Column<Double> = double("main_thrust")
-        val manuThrustPower: Column<Double> = double("manu_thrust")
-        val rotationPower: Column<Double> = double("rotation_power")
+        val shipClass: Column<String> = varchar("ship_class", 32)
     }
 
     object RouteStep : IntIdTable("route_step") {
@@ -96,14 +95,17 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
         val timeFilters = departureTickLowerLimit and departureTickUpperLimit
         val routeFilters = stationFilters and timeFilters
 
-        //todo this is not ideal! don't use yet!
-        val route = transaction {
-            Route.select { routeFilters }.orderBy(Route.duration to SortOrder.ASC)
-                .limit(1)
-                .first()
+        val routes = transaction {
+            Route.select { routeFilters }.orderBy(Route.duration to SortOrder.ASC).toList()
         }
 
-        return RelationalScriptReader(route)
+        val selectedRoute =
+            routes.asSequence().minByOrNull { it[Route.departureTick] + it[Route.duration] } //min by arrival time
+        return if (selectedRoute == null) {
+            null
+        } else {
+            RelationalScriptReader(selectedRoute)
+        }
     }
 
     override fun selectAvailableScriptToAnywhere(
@@ -127,14 +129,15 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
         return RelationalScriptReader(route)
     }
 
-    inner class RelationalScriptReader(private val steps: TreeMap<Int, ResultRow>, private val route: ResultRow) : ScriptReader {
+    inner class RelationalScriptReader(private val steps: TreeMap<Int, ResultRow>, private val route: ResultRow) :
+        ScriptReader {
 
         //private val steps: TreeMap<Int, ResultRow> = TreeMap()
 
-        constructor(route: ResultRow): this(TreeMap(), route)
+        constructor(route: ResultRow) : this(TreeMap(), route)
 
         init {
-            if(steps.isEmpty()) {
+            if (steps.isEmpty()) {
                 transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value } }
                     .forEach { steps[it[RouteStep.stepTick]] = it }
             }
@@ -156,16 +159,9 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
             )
         }
 
-        override fun getMainThrustPower(): Double {
-            return route[Route.mainThrustPower]
-        }
-
-        override fun getManuThrustPower(): Double {
-            return route[Route.manuThrustPower]
-        }
-
-        override fun getRotationPower(): Double {
-            return route[Route.rotationPower]
+        override fun getShipClass(): ShipClass {
+            val shipClassName = route[Route.shipClass]
+            return ShipClassManager.getShipClass(shipClassName) ?: throw IllegalStateException("No ship class found $shipClassName")
         }
 
         override fun hasNextAction(): Boolean {
@@ -216,7 +212,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
     inner class RelationalScriptWriter(
         private val sourceStation: Station,
         private val startState: ShipState,
-        private val shipClass: ShipClass,
+        private val shipType: ShipClass,
         private val startTick: Int = DHServer.getCurrentTickInCycle(),
         private val startTickAbsolute: Int = DHServer.getCurrentTickAbsolute()
     ) : ScriptWriter {
@@ -240,9 +236,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
                     it[startingRotation] = startState.rotation
                     it[startingVelocityX] = startState.velocity.x
                     it[startingVelocityY] = startState.velocity.y
-                    it[mainThrustPower] = shipClass.mainThrust
-                    it[manuThrustPower] = shipClass.manuThrust
-                    it[rotationPower] = shipClass.rotationPower
+                    it[shipClass] = shipType.qualifiedName
                 }
 
                 RouteStep.batchInsert(steps.entries) { entry ->
