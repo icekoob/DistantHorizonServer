@@ -13,8 +13,8 @@ class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
     val ship: Ship = Ship(
         ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
-        ShipColor(Color(0,148,255)),
-        ShipColor(Color.WHITE),
+        ShipColor(Color(128,128,128)),//ShipColor(Color(0,148,255)),
+        ShipColor(Color(205,106,0)),
         ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
         true
     )

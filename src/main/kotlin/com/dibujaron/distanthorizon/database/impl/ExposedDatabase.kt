@@ -138,8 +138,8 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
 
         init {
             if (steps.isEmpty()) {
-                transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value } }
-                    .forEach { steps[it[RouteStep.stepTick]] = it }
+                transaction { RouteStep.select { RouteStep.routeID eq route[Route.id].value }
+                    .forEach { steps[it[RouteStep.stepTick]] = it }}
             }
         }
 
@@ -226,7 +226,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
         override fun completeScript(dockedToStation: Station) {
             println("Saving script...")
             transaction {
-                val newRouteId = Route.insertAndGetId {
+                val newRouteId = ExposedDatabase.Route.insertAndGetId {
                     it[originStation] = sourceStation.name
                     it[destinationStation] = dockedToStation.name
                     it[departureTick] = startTick
@@ -239,13 +239,13 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
                     it[shipClass] = shipType.qualifiedName
                 }
 
-                RouteStep.batchInsert(steps.entries) { entry ->
+                ExposedDatabase.RouteStep.batchInsert(steps.entries) { entry ->
                     val tick = entry.key
                     val inputs = entry.value
-                    this[RouteStep.routeID] = newRouteId
-                    this[RouteStep.stepTick] = tick
-                    this[RouteStep.mainEngines] = inputs.mainEnginesActive
-                    this[RouteStep.tillerLeft] = inputs.tillerLeft
+                    this[ExposedDatabase.RouteStep.routeID] = newRouteId
+                    this[ExposedDatabase.RouteStep.stepTick] = tick
+                    this[ExposedDatabase.RouteStep.mainEngines] = inputs.mainEnginesActive
+                    this[ExposedDatabase.RouteStep.tillerLeft] = inputs.tillerLeft
                     this[RouteStep.tillerRight] = inputs.tillerRight
                     this[RouteStep.portThrusters] = inputs.portThrustersActive
                     this[RouteStep.stbdThrusters] = inputs.stbdThrustersActive
