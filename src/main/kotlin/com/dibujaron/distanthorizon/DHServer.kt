@@ -37,16 +37,16 @@ object DHServer {
     const val WORLD_HEARTBEATS_EVERY = 60
     const val WORLD_HEARTBEAT_TICK_OFFSET = 0
 
-    const val SHIP_HEARTBEATS_EVERY = 60
-    const val SHIP_HEARTBEAT_TICK_OFFSET = 30
+    const val SHIP_HEARTBEATS_EVERY = 3
+    const val SHIP_HEARTBEAT_TICK_OFFSET = 0
 
     private var shuttingDown = false
     var debug = false
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
     val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
-    val dockingSpeed = serverProperties.getProperty("docking.speed", "500.0").toDouble()
-    val dockingDist = serverProperties.getProperty("docking.distance", "500.0").toDouble()
+    val dockingSpeed = serverProperties.getProperty("docking.speed", "200.0").toDouble()
+    val dockingDist = serverProperties.getProperty("docking.distance", "200.0").toDouble()
     val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
     val timer =
