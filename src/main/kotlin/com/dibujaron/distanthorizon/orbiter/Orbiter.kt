@@ -148,7 +148,7 @@ fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Doub
 }
 
 fun periodFromRadius(r: Double, g: Double, m: Double): Double {
-    return sqrt((r * r * r * 4 * PI * PI) / (g * m)) //todo have fudged gravity constant, does that matter?
+    return sqrt((r * r * r * 4 * PI * PI) / (g * m))
 }
 
 fun radiusFromPeriod(p: Double, g: Double, m: Double): Double {

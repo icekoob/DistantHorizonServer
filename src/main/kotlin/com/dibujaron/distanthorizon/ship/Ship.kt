@@ -133,28 +133,38 @@ open class Ship(
         return retval
     }
 
-    fun attemptDock(maxDockDist: Double = DHServer.dockingDist, maxClosingSpeed: Double = DHServer.dockingSpeed) {
+    fun attemptDock(
+        maxDockDist: Double = DHServer.dockingDist,
+        maxClosingSpeed: Double = DHServer.dockingSpeed
+    ): DockingResult {
         val maxDistSquared = maxDockDist.pow(2)
         val maxClosingSpeedSquared = maxClosingSpeed.pow(2)
 
+        var anyPassedDistTest = false
         val match = OrbiterManager.getStations().asSequence()
             .flatMap { it.dockingPorts.asSequence() }
             .flatMap { stationPort ->
                 myDockingPorts.asSequence()
                     .map { shipPort -> Pair(shipPort, stationPort) }
             }
-            .filter { it.first.relativeRotation() + it.second.relativeRotation == 0.0 } //only want docking position facing forward
-            .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
+            //.filter { it.first.relativeRotation() + it.second.relativeRotation == 0.0 } //only want docking position facing forward
             .map { Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared) }
             .filter { it.third < maxDistSquared }
+            .onEach { anyPassedDistTest = true }
+            .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
             .minByOrNull { it.third }
 
-        if (match != null) {
+        return if (match != null) {
             val bestShipPort = match.first
             val bestStationPort = match.second
             dock(bestShipPort, bestStationPort)
+            DockingResult.SUCCESS
         } else {
-            println("ship $uuid Found no match to dock.")
+            if(anyPassedDistTest){
+                DockingResult.CLOSING_SPEED_TOO_GREAT
+            } else {
+                DockingResult.DISTANCE_TOO_GREAT
+            }
         }
     }
 

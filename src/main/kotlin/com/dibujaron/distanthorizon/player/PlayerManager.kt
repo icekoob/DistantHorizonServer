@@ -12,28 +12,25 @@ object PlayerManager {
     private val playersToAdd = LinkedList<Player>()
     private val playersToRemove = LinkedList<Player>()
 
-    fun markForAdd(player: Player)
-    {
+    fun markForAdd(player: Player) {
         playersToAdd.add(player)
     }
 
-    fun markForRemove(player: Player)
-    {
+    fun markForRemove(player: Player) {
         playersToRemove.add(player)
     }
 
-    fun playerCount(): Int{
+    fun playerCount(): Int {
         return idMap.size - playersToRemove.size + playersToAdd.size
     }
 
-    fun tick()
-    {
-        playersToRemove.forEach{
+    fun tick() {
+        playersToRemove.forEach {
             idMap.remove(it.uuid)
             connectionMap.remove(it.connection)
         }
         playersToRemove.clear()
-        if(!playersToAdd.isEmpty()) {
+        if (!playersToAdd.isEmpty()) {
             val worldStateMessage = DHServer.composeWorldStateMessage()
             val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
             playersToAdd.forEach {
@@ -46,18 +43,19 @@ object PlayerManager {
         }
     }
 
-    fun getPlayerById(uuid: UUID): Player?
-    {
+    fun getPlayerById(uuid: UUID): Player? {
         return idMap[uuid]
     }
 
-    fun getPlayerByConnection(conn: WsContext): Player?
-    {
+    fun getPlayerByConnection(conn: WsContext): Player? {
         return connectionMap[conn]
     }
 
-    fun getPlayers(): Collection<Player>
-    {
+    fun getPlayers(): Collection<Player> {
         return idMap.values
+    }
+
+    fun broadcast(senderName: String, message: String) {
+        getPlayers().forEach { it.sendChatMessage(senderName, message) }
     }
 }
