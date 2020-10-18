@@ -1,10 +1,10 @@
 package com.dibujaron.distanthorizon
 
-import com.dibujaron.distanthorizon.database.ScriptDatabase
-import com.dibujaron.distanthorizon.database.impl.ExposedDatabase
+import com.dibujaron.distanthorizon.dbimpl.ExposedDatabase
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
+import com.dibujaron.distanthorizon.script.ScriptDatabase
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
@@ -37,7 +37,7 @@ object DHServer {
     const val WORLD_HEARTBEATS_EVERY = 60
     const val WORLD_HEARTBEAT_TICK_OFFSET = 0
 
-    const val SHIP_HEARTBEATS_EVERY = 3
+    const val SHIP_HEARTBEATS_EVERY = 10
     const val SHIP_HEARTBEAT_TICK_OFFSET = 0
 
     private var shuttingDown = false

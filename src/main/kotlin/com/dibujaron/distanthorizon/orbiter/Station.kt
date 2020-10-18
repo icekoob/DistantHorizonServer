@@ -2,9 +2,9 @@ package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.database.ScriptReader
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.Account
+import com.dibujaron.distanthorizon.script.ScriptReader
 import com.dibujaron.distanthorizon.ship.AIShip
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
@@ -126,5 +126,11 @@ class Station(properties: Properties) : Orbiter(properties) {
         store.quantityAvailable += purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         ship.hold[store.identifyingName] = holdStore - purchaseQuantity
+    }
+
+    override fun createOrbiterJson(): JSONObject {
+        val retval = super.createOrbiterJson()
+        retval.put("display_name", displayName)
+        return retval
     }
 }

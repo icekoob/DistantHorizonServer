@@ -1,6 +1,6 @@
 package com.dibujaron.distanthorizon.ship
 
-import com.dibujaron.distanthorizon.database.ScriptReader
+import com.dibujaron.distanthorizon.script.ScriptReader
 
 class AIShip(private val scriptReader: ScriptReader) : Ship(
     scriptReader.getShipClass(),

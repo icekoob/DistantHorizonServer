@@ -2,7 +2,7 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.database.ScriptWriter
+import com.dibujaron.distanthorizon.script.ScriptWriter
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
