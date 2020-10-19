@@ -198,7 +198,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
             val nextActionTick = steps.firstKey()
             val currentTick = DHServer.getCurrentTickInCycle()
             if (nextActionTick < currentTick) {
-                throw IllegalStateException("called nextActionReady but next action is in the past - must be called every tick!")
+                throw IllegalStateException("next action is in the past? nat: $nextActionTick, ct: $currentTick, route: ${route[RouteDBO.id]}")
             } else {
                 return nextActionTick == currentTick
             }
