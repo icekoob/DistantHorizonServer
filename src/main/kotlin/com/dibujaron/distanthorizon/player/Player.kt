@@ -19,17 +19,35 @@ class Player(val connection: WsContext) {
         ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
         true
     )
+    val incomingMessageQueue: Queue<JSONObject> = LinkedList()
+    val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
+
     var account = Account()
 
     init {
         println("initializing player with default starting ship ${DHServer.playerStartingShip}")
         ShipManager.markForAdd(ship)
-        sendChatMessage("... Shipboard artificial intelligence is loading ...")
-        sendShipAIMessage(companionAI.getInitializationMessage())
-        sendShipAIMessage(companionAI.getGreeting())
+        queueChatMsg("... Shipboard artificial intelligence is loading ...")
+        queueShipAIChatMsg(companionAI.getInitializationMessage())
+        queueShipAIChatMsg(companionAI.getGreeting())
     }
 
-    fun onMessageFromClient(message: JSONObject) {
+    fun queueIncomingMessageFromClient(message: JSONObject) {
+        incomingMessageQueue.add(message)
+    }
+
+    //todo batching
+    fun tick(){
+        while(!incomingMessageQueue.isEmpty()){
+            processIncomingMessage(incomingMessageQueue.remove())
+        }
+        while(!outgoingMessageQueue.isEmpty()){
+            sendMessage(outgoingMessageQueue.remove())
+        }
+    }
+
+    private fun processIncomingMessage(message: JSONObject){
+        //todo refactor - separate handlers for each message type?
         val messageType = message.getString("message_type")
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
@@ -37,17 +55,17 @@ class Player(val connection: WsContext) {
         } else if (messageType == "dock") {
             if (!ship.isDocked()) {
                 when (ship.attemptDock()) {
-                    DockingResult.SUCCESS -> sendStationMenuMessage()
-                    DockingResult.DISTANCE_TOO_GREAT -> sendShipAIMessage("We cannot dock; no stations are within docking range.")
-                    DockingResult.CLOSING_SPEED_TOO_GREAT -> sendShipAIMessage("Our relative velocity is too high for the docking magnets to safely engage.")
+                    DockingResult.SUCCESS -> queueSendStationMenuMessage()
+                    DockingResult.DISTANCE_TOO_GREAT -> queueShipAIChatMsg("We cannot dock; no stations are within docking range.")
+                    DockingResult.CLOSING_SPEED_TOO_GREAT -> queueShipAIChatMsg("Our relative velocity is too high for the docking magnets to safely engage.")
                 }
             }
         } else if (messageType == "undock") {
             if (ship.isDocked()) {
                 ship.undock()
-                sendStationMenuMessage()
+                queueSendStationMenuMessage()
             } else {
-                sendChatMessage("Ship is not docked?")
+                queueChatMsg("Ship is not docked?")
             }
         } else if (messageType == "purchase_from_station") {
             if (ship.isDocked()) {
@@ -55,7 +73,7 @@ class Player(val connection: WsContext) {
                 val quantity = message.getInt("quantity")
                 ship.buyResourceFromStation(commodity, account, quantity)
                 println("bought $quantity of $commodity from station, new balance is ${account.balance}")
-                sendStationMenuMessage()
+                queueSendStationMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
             if (ship.isDocked()) {
@@ -63,7 +81,7 @@ class Player(val connection: WsContext) {
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, account, quantity)
                 println("sold $quantity of $commodity to station, new balance is ${account.balance}")
-                sendStationMenuMessage()
+                queueSendStationMenuMessage()
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
@@ -71,7 +89,7 @@ class Player(val connection: WsContext) {
         }
     }
 
-    fun sendStationMenuMessage() {
+    private fun queueSendStationMenuMessage() {
         val dockedTo = ship.dockedToPort
         if (dockedTo != null) {
             val dockedToStation = dockedTo.station
@@ -89,56 +107,56 @@ class Player(val connection: WsContext) {
         }
     }
 
-    fun sendWorldState(worldStateMessage: JSONObject) {
+    fun queueWorldStateMsg(worldStateMessage: JSONObject) {
         val myMessage = createMessage("world_state")
         myMessage.put("world_state", worldStateMessage)
         sendMessage(myMessage)
     }
 
-    fun sendShipDocked(shipDockedMessage: JSONObject) {
+    fun queueShipDockedMsg(shipDockedMessage: JSONObject) {
         val myMessage = createMessage("ship_docked")
         myMessage.put("ship_docked", shipDockedMessage);
         sendMessage(myMessage)
     }
 
-    fun sendShipUndocked(shipUndockedMessage: JSONObject) {
+    fun queueShipUndockedMsg(shipUndockedMessage: JSONObject) {
         val myMessage = createMessage("ship_undocked")
         myMessage.put("ship_undocked", shipUndockedMessage);
         sendMessage(myMessage)
     }
 
-    fun sendShipInputsUpdate(shipInputsUpdate: JSONObject) {
+    fun queueInputsUpdateMsg(shipInputsUpdate: JSONObject) {
         val myMessage = createMessage("ship_inputs")
         myMessage.put("ship_inputs", shipInputsUpdate)
         sendMessage(myMessage)
     }
 
-    fun sendShipHeartbeats(shipHeartbeats: JSONArray) {
+    fun queueShipHeartbeatsMsg(shipHeartbeats: JSONArray) {
         val myMessage = createMessage("ship_heartbeats")
         myMessage.put("ship_heartbeats", shipHeartbeats)
         sendMessage(myMessage)
     }
 
-    fun sendShipsAdded(shipsAdded: JSONArray) {
+    fun queueShipsAddedMsg(shipsAdded: JSONArray) {
         val myMessage = createMessage("ships_added")
         myMessage.put("ships_added", shipsAdded)
         sendMessage(myMessage)
     }
 
-    fun sendShipsRemoved(shipsRemoved: JSONArray) {
+    fun queueShipsRemovedMsg(shipsRemoved: JSONArray) {
         val myMessage = createMessage("ships_removed")
         myMessage.put("ships_removed", shipsRemoved)
         sendMessage(myMessage)
     }
 
-    fun sendShipAIMessage(message: String){
-        sendChatMessage("[${companionAI.getName()}]", message)
+    fun queueShipAIChatMsg(message: String){
+        queueChatMsg("[${companionAI.getName()}]", message)
     }
 
-    fun sendChatMessage(senderName: String, message: String){
-        sendChatMessage("$senderName: $message")
+    fun queueChatMsg(senderName: String, message: String){
+        queueChatMsg("$senderName: $message")
     }
-    fun sendChatMessage(message: String) {
+    fun queueChatMsg(message: String) {
         val myMessage = createMessage("chat")
         myMessage.put("payload", message)
         sendMessage(myMessage)

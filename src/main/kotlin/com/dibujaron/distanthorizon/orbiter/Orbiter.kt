@@ -6,9 +6,7 @@ import org.json.JSONObject
 import java.util.*
 import kotlin.math.*
 
-abstract class Orbiter(val properties: Properties) {
-    val name: String = properties.getProperty("name").trim()
-    val parentName: String = properties.getProperty("parent").trim()
+abstract class Orbiter(private val parentName: String?, val name: String, val properties: Properties) {
     var startingPos: Vector2 = Vector2(0, 0)
     var initialized = false;
     var parent: Planet? = null;
@@ -25,7 +23,7 @@ abstract class Orbiter(val properties: Properties) {
     //called after all of the orbiters have loaded from file.
     fun initialize() {
         if (!initialized) {
-            if (parentName.isEmpty()) {
+            if (parentName == null) {
                 startingPos = loadStartingPositionAndScale(properties, 1.0)
                 orbitalSpeed = 0.0
                 orbitalRadius = startingPos.length
@@ -61,7 +59,7 @@ abstract class Orbiter(val properties: Properties) {
         retval.put("orbital_radius", orbitalRadius)
         retval.put("angular_velocity", angularVelocityPerSecond)
         retval.put("angular_pos", relativePos.angle)
-        retval.put("parent", parentName)
+        retval.put("parent", parentName?:"")
         return retval
     }
 

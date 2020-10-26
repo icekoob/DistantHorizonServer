@@ -106,12 +106,12 @@ object DHServer {
         val isWorldStateMessageTick = tickCount % WORLD_HEARTBEATS_EVERY == WORLD_HEARTBEAT_TICK_OFFSET
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
-            PlayerManager.getPlayers().forEach { it.sendWorldState(worldStateMessage) }
+            PlayerManager.getPlayers().forEach { it.queueWorldStateMsg(worldStateMessage) }
         }
         val isShipStateMessageTick = tickCount % SHIP_HEARTBEATS_EVERY == SHIP_HEARTBEAT_TICK_OFFSET
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
-            PlayerManager.getPlayers().forEach { it.sendShipHeartbeats(shipHeartbeatsMessage) }
+            PlayerManager.getPlayers().forEach { it.queueShipHeartbeatsMsg(shipHeartbeatsMessage) }
         }
         PlayerManager.tick()
         tickCount++
@@ -159,7 +159,7 @@ object DHServer {
         } else {
             val messageStr = conn.data().toString(Charsets.UTF_8)
             val json = JSONObject(messageStr)
-            player.onMessageFromClient(json)
+            player.queueIncomingMessageFromClient(json)
         }
     }
 
@@ -197,12 +197,12 @@ object DHServer {
 
     fun broadcastShipDocked(ship: Ship) {
         val dockedMessage = ship.createDockedMessage()
-        PlayerManager.getPlayers().forEach { it.sendShipDocked(dockedMessage) }
+        PlayerManager.getPlayers().forEach { it.queueShipDockedMsg(dockedMessage) }
     }
 
     fun broadcastShipUndocked(ship: Ship) {
         val undockedMessage = ship.createShipHeartbeatJSON()
-        PlayerManager.getPlayers().forEach { it.sendShipUndocked(undockedMessage) }
+        PlayerManager.getPlayers().forEach { it.queueShipUndockedMsg(undockedMessage) }
     }
 
     private fun onSocketError(conn: WsErrorContext) {

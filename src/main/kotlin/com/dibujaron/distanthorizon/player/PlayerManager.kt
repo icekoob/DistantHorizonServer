@@ -36,11 +36,12 @@ object PlayerManager {
             playersToAdd.forEach {
                 idMap[it.uuid] = it
                 connectionMap[it.connection] = it
-                it.sendWorldState(worldStateMessage)
-                it.sendShipsAdded(shipsMessage)
+                it.queueWorldStateMsg(worldStateMessage)
+                it.queueShipsAddedMsg(shipsMessage)
             }
             playersToAdd.clear()
         }
+        getPlayers().forEach { it.tick() }
     }
 
     fun getPlayerById(uuid: UUID): Player? {
@@ -56,6 +57,6 @@ object PlayerManager {
     }
 
     fun broadcast(senderName: String, message: String) {
-        getPlayers().forEach { it.sendChatMessage(senderName, message) }
+        getPlayers().forEach { it.queueChatMsg(senderName, message) }
     }
 }

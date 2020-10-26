@@ -1,11 +1,10 @@
 package com.dibujaron.distanthorizon.orbiter
 
 import org.json.JSONObject
-import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.math.pow
 
-class Planet(properties: Properties): Orbiter(properties){
+class Planet(parentName: String?, planetName: String, properties: Properties): Orbiter(parentName, planetName, properties){
     val type = properties.getProperty("type").toString()
     val mass = loadMass(properties)
     val tidalLock = if(properties.containsKey("tidalLock")) properties.getProperty("tidalLock")!!.toBoolean() else false
@@ -58,11 +57,19 @@ fun loadMass(properties: Properties): Double{
 }
 
 fun typeScale(type: String): Double{
-    when(type){
-        "Star" -> return 1.0
-        "Continental" -> return 0.2
-        "Moon" -> return 0.1
-        "Gas" -> return 0.75
-        else -> return 1.0
+    return when(type){
+        "StarRedGiant" -> 1.0
+        "StarYellow" -> 1.0
+        "StarWhiteDwarf" -> 1.0
+        "ContinentalForest" -> 0.2
+        "ContinentalDesert" -> 0.2
+        "ContinentalPlains" -> 0.2
+        "ContinentalOcean" -> 0.2
+        "ContinentalIce" -> 0.2
+        "RockyBarren" -> 0.1
+        "RockyIce" -> 0.1
+        "RockyVolcanic" -> 0.1
+        "GasGiant" -> 0.75
+        else -> 1.0
     }
 }

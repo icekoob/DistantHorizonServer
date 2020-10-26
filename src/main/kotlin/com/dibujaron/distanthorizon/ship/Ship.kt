@@ -2,7 +2,6 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.script.ScriptWriter
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
@@ -10,6 +9,7 @@ import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.player.PlayerManager
+import com.dibujaron.distanthorizon.script.ScriptWriter
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.pow
@@ -74,6 +74,7 @@ open class Ship(
         var velocity = currentState.velocity
         var globalPos = currentState.position
         var rotation = currentState.rotation
+        //velocity
         if (controls.mainEnginesActive) {
             velocity += Vector2(0, -type.mainThrust).rotated(rotation) * delta
         }
@@ -89,11 +90,13 @@ open class Ship(
         if (controls.aftThrustersActive) {
             velocity += Vector2(0, -type.manuThrust).rotated(rotation) * delta
         }
+        //rotation
         if (controls.tillerLeft) {
             rotation -= type.rotationPower * delta
         } else if (controls.tillerRight) {
             rotation += type.rotationPower * delta
         }
+
         velocity += OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
         globalPos += velocity * delta
         return ShipState(globalPos, rotation, velocity)
@@ -202,9 +205,9 @@ open class Ship(
         myDockedPort = null;
     }
 
-    fun receiveInputChange(shipInputs: ShipInputs) {
-        controls = shipInputs
-        scriptWriter?.writeAction(shipInputs)
+    fun receiveInputChange(newInputs: ShipInputs) {
+        controls = newInputs
+        scriptWriter?.writeAction(newInputs)
         broadcastInputsChange()
     }
 
@@ -218,7 +221,7 @@ open class Ship(
         inputsUpdate.put("rotating_left", controls.tillerLeft)
         inputsUpdate.put("rotating_right", controls.tillerRight)
         PlayerManager.getPlayers().asSequence()
-            .forEach { it.sendShipInputsUpdate(inputsUpdate) }
+            .forEach { it.queueInputsUpdateMsg(inputsUpdate) }
     }
 
     fun buyResourceFromStation(commodity: String, purchasingAccount: Account, quantity: Int) {

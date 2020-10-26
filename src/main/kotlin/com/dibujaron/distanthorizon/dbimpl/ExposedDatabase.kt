@@ -181,7 +181,7 @@ class ExposedDatabase(databaseUrl: String, databaseDriver: String) : ScriptDatab
             return ShipState(
                 Vector2(route[RouteDBO.startingLocationX], route[RouteDBO.startingLocationY]),
                 route[RouteDBO.startingRotation],
-                Vector2(route[RouteDBO.startingVelocityX], route[RouteDBO.startingVelocityY])
+                Vector2(route[RouteDBO.startingVelocityX], route[RouteDBO.startingVelocityY]),
             )
         }
 

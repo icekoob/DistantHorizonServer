@@ -41,14 +41,14 @@ object ShipManager {
     fun tick() {
         if (!shipsToRemove.isEmpty()) {
             val shipsRemovedMessage = DHServer.composeMessageForShipsRemoved(shipsToRemove)
-            PlayerManager.getPlayers().asSequence().forEach { it.sendShipsRemoved(shipsRemovedMessage) }
+            PlayerManager.getPlayers().asSequence().forEach { it.queueShipsRemovedMsg(shipsRemovedMessage) }
             shipsToRemove.forEach { shipMap.remove(it.uuid) }
             shipsToRemove.clear()
         }
         if(!shipsToAdd.isEmpty()) {
             shipsToAdd.forEach { shipMap[it.uuid] = it }
             val shipsAddedMessage = DHServer.composeMessageForShipsAdded(shipsToAdd)
-            PlayerManager.getPlayers().asSequence().forEach { it.sendShipsAdded(shipsAddedMessage) }
+            PlayerManager.getPlayers().asSequence().forEach { it.queueShipsAddedMsg(shipsAddedMessage) }
             shipsToAdd.clear()
         }
         getShips().forEach { it.tick() }

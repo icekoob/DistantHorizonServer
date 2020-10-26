@@ -1,0 +1,15 @@
+StarRedGiant
+StarYellow
+StarWhiteDwarf
+
+ContinentalForest
+ContinentalDesert
+ContinentalPlains
+ContinentalOcean
+ContinentalIce
+
+RockyBarren
+RockyIce
+RockyVolcanic
+
+GasGiant

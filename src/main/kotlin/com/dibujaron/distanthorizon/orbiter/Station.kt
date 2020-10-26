@@ -12,14 +12,14 @@ import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.floor
 
-class Station(properties: Properties) : Orbiter(properties) {
+class Station(parentName: String?, stationName: String, properties: Properties) : Orbiter(parentName, stationName, properties) {
 
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
-    val description = properties.getProperty("description").trim()
-
+    val splashTextList = ArrayList<String>()
     private val aiScripts: Map<Int, ScriptReader> = DHServer.getScriptDatabase()
         .selectScriptsForStation(this).asSequence()
         .map { Pair(it.getDepartureTick(), it) }
@@ -37,6 +37,13 @@ class Station(properties: Properties) : Orbiter(properties) {
         dockingPorts.add(StationDockingPort(this, Vector2(-7.0, 0.5), 90.0))
         if (aiScripts.isNotEmpty()) {
             println("loaded ${aiScripts.size} ai scripts for station $name")
+        }
+        var index = 0
+        var currentSplash = properties.getProperty("splash.$index", null)
+        while(currentSplash != null){
+            splashTextList.add(currentSplash)
+            index++
+            currentSplash = properties.getProperty("splash.$index", null)
         }
     }
 
@@ -73,7 +80,7 @@ class Station(properties: Properties) : Orbiter(properties) {
         val retval = JSONObject()
         retval.put("identifying_name", name)
         retval.put("display_name", displayName)
-        retval.put("description", description)
+        retval.put("description", splashTextList.random())
         val arr = JSONArray()
         commodityStores.values.asSequence()
             .map { it.createStoreJson() }
