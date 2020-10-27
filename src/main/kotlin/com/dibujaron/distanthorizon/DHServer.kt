@@ -40,6 +40,8 @@ object DHServer {
     const val SHIP_HEARTBEATS_EVERY = 10
     const val SHIP_HEARTBEAT_TICK_OFFSET = 0
 
+    const val REQUEST_BATCHING = true
+
     private var shuttingDown = false
     var debug = false
     val serverProperties: Properties = loadProperties()

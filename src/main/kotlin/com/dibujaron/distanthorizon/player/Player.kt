@@ -33,7 +33,11 @@ class Player(val connection: WsContext) {
     }
 
     fun queueIncomingMessageFromClient(message: JSONObject) {
-        incomingMessageQueue.add(message)
+        if(DHServer.REQUEST_BATCHING) {
+            incomingMessageQueue.add(message)
+        } else {
+            processIncomingMessage(message)
+        }
     }
 
     //todo batching
@@ -100,53 +104,53 @@ class Player(val connection: WsContext) {
             myMessage.put("hold_space", ship.holdCapacity - ship.holdOccupied())
             val holdInfo: JSONObject = ship.createHoldStatusMessage()
             myMessage.put("hold_contents", holdInfo)
-            sendMessage(myMessage)
+            queueMessage(myMessage)
         } else {
             val myMessage = createMessage("station_menu_close")
-            sendMessage(myMessage)
+            queueMessage(myMessage)
         }
     }
 
     fun queueWorldStateMsg(worldStateMessage: JSONObject) {
         val myMessage = createMessage("world_state")
         myMessage.put("world_state", worldStateMessage)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipDockedMsg(shipDockedMessage: JSONObject) {
         val myMessage = createMessage("ship_docked")
         myMessage.put("ship_docked", shipDockedMessage);
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipUndockedMsg(shipUndockedMessage: JSONObject) {
         val myMessage = createMessage("ship_undocked")
         myMessage.put("ship_undocked", shipUndockedMessage);
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueInputsUpdateMsg(shipInputsUpdate: JSONObject) {
         val myMessage = createMessage("ship_inputs")
         myMessage.put("ship_inputs", shipInputsUpdate)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipHeartbeatsMsg(shipHeartbeats: JSONArray) {
         val myMessage = createMessage("ship_heartbeats")
         myMessage.put("ship_heartbeats", shipHeartbeats)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipsAddedMsg(shipsAdded: JSONArray) {
         val myMessage = createMessage("ships_added")
         myMessage.put("ships_added", shipsAdded)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipsRemovedMsg(shipsRemoved: JSONArray) {
         val myMessage = createMessage("ships_removed")
         myMessage.put("ships_removed", shipsRemoved)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun queueShipAIChatMsg(message: String){
@@ -159,7 +163,7 @@ class Player(val connection: WsContext) {
     fun queueChatMsg(message: String) {
         val myMessage = createMessage("chat")
         myMessage.put("payload", message)
-        sendMessage(myMessage)
+        queueMessage(myMessage)
     }
 
     fun createMessage(type: String): JSONObject {
@@ -170,7 +174,15 @@ class Player(val connection: WsContext) {
         return message
     }
 
-    fun sendMessage(message: JSONObject) {
+    fun queueMessage(message: JSONObject) {
+        if(DHServer.REQUEST_BATCHING) {
+            outgoingMessageQueue.add(message)
+        } else {
+            sendMessage(message)
+        }
+    }
+
+    fun sendMessage(message: JSONObject ){
         val messageStr = message.toString()
         connection.send(messageStr)
     }
