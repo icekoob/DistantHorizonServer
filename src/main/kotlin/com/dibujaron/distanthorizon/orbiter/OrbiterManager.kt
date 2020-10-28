@@ -69,6 +69,7 @@ object OrbiterManager {
 
     private fun recursiveInitOrbiters(parentName: String?, folder: File){
         folder.walk()
+            .maxDepth(1)
             .filter{it.name.endsWith(".properties")}
             .forEach {
                 val reader = FileReader(it)
@@ -79,10 +80,12 @@ object OrbiterManager {
                     val stn = Station(parentName, orbiterName, props)
                     stationsMap[orbiterName] = stn
                     orbitersMap[orbiterName] = stn
+                    println("Loaded station $orbiterName with parent $parentName.")
                 } else {
                     val planet = Planet(parentName, orbiterName, props)
                     planetsMap[orbiterName] = planet
                     orbitersMap[orbiterName] = planet
+                    println("Loaded planet $orbiterName with parent $parentName.")
                 }
                 val containingFolder = it.parentFile
                 val descendantFolder = File(containingFolder.path + "/" + orbiterName)
