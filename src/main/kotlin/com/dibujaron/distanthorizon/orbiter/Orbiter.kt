@@ -126,6 +126,21 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
             relativePos.rotated(angleOffset)
         }
     }
+
+    private fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
+        return if (properties.containsKey("posX") && properties.containsKey("posY")) {
+            val posX = properties.getProperty("posX").toDouble()
+            val posY = properties.getProperty("posY").toDouble()
+            Vector2(posX, posY) * parentScale
+        } else if (properties.containsKey("orbitalRadius")) {
+            val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
+            //get a random, but consistent, number to be the starting angle.
+            var random = Objects.hash(name, parentName).toDouble()
+            Vector2(orbitalRadius, 0).rotated(random) * (parentScale)
+        } else {
+            throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
+        }
+    }
 }
 
 fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Double): Vector2 {
@@ -151,17 +166,4 @@ fun periodFromRadius(r: Double, g: Double, m: Double): Double {
 
 fun radiusFromPeriod(p: Double, g: Double, m: Double): Double {
     return ((g * m * p * p) / (4 * PI * PI)).pow(1.0 / 3.0)
-}
-
-fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
-    return if (properties.containsKey("posX") && properties.containsKey("posY")) {
-        val posX = properties.getProperty("posX").toDouble()
-        val posY = properties.getProperty("posY").toDouble()
-        Vector2(posX, posY) * parentScale
-    } else if (properties.containsKey("orbitalRadius")) {
-        val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
-        Vector2(orbitalRadius, 0) * (parentScale)
-    } else {
-        throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
-    }
 }

@@ -14,11 +14,10 @@ class Planet(parentName: String?, planetName: String, properties: Properties): O
 
     override fun scale(): Double{
         val par = parent
-        val typeScale = typeScale(properties.getProperty("type").toString())
         return if (properties.containsKey("scale")) {
-            typeScale * properties.getProperty("scale").toDouble()
+            properties.getProperty("scale").toDouble()
         } else {
-            typeScale * (par?.scale() ?: 1.0)
+            1.0
         }
     }
 
@@ -53,23 +52,5 @@ fun loadMass(properties: Properties): Double{
         return massBase * 10.0.pow(massExp);
     } else {
         throw IllegalArgumentException("Planet properties must contain massBase and massExp")
-    }
-}
-
-fun typeScale(type: String): Double{
-    return when(type){
-        "StarRedGiant" -> 1.0
-        "StarYellow" -> 1.0
-        "StarWhiteDwarf" -> 1.0
-        "ContinentalForest" -> 0.2
-        "ContinentalDesert" -> 0.2
-        "ContinentalPlains" -> 0.2
-        "ContinentalOcean" -> 0.2
-        "ContinentalIce" -> 0.2
-        "RockyBarren" -> 0.1
-        "RockyIce" -> 0.1
-        "RockyVolcanic" -> 0.1
-        "GasGiant" -> 0.75
-        else -> 1.0
     }
 }
