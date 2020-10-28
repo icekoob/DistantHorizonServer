@@ -24,7 +24,7 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
     fun initialize() {
         if (!initialized) {
             if (parentName == null) {
-                startingPos = loadStartingPositionAndScale(properties, 1.0)
+                startingPos = loadStartingPosition(properties)
                 orbitalSpeed = 0.0
                 orbitalRadius = startingPos.length
             } else {
@@ -33,7 +33,7 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
                     throw IllegalArgumentException("parent planet $parentName not found.")
                 } else {
                     foundParent.initialize()
-                    val unadjusted = loadStartingPositionAndScale(properties, foundParent.scale())
+                    val unadjusted = loadStartingPosition(properties)
                     startingPos = adjustOrbitalRadiusToMatchCycleLength(unadjusted, foundParent.mass)
                     orbitalRadius = startingPos.length
                     orbitalSpeed = sqrt((OrbiterManager.GRAVITY_CONSTANT * foundParent.mass) / orbitalRadius)
@@ -127,16 +127,16 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
         }
     }
 
-    private fun loadStartingPositionAndScale(properties: Properties, parentScale: Double): Vector2 {
+    private fun loadStartingPosition(properties: Properties): Vector2 {
         return if (properties.containsKey("posX") && properties.containsKey("posY")) {
             val posX = properties.getProperty("posX").toDouble()
             val posY = properties.getProperty("posY").toDouble()
-            Vector2(posX, posY) * parentScale
+            Vector2(posX, posY)
         } else if (properties.containsKey("orbitalRadius")) {
             val orbitalRadius = properties.getProperty("orbitalRadius").toInt()
             //get a random, but consistent, number to be the starting angle.
             var random = Objects.hash(name, parentName).toDouble()
-            Vector2(orbitalRadius, 0).rotated(random) * (parentScale)
+            Vector2(orbitalRadius, 0).rotated(random)
         } else {
             throw IllegalArgumentException("Properties file must contain posX,posY or orbitalRadius!")
         }
