@@ -7,10 +7,12 @@ import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.orbiter.Planet
 import com.dibujaron.distanthorizon.player.Account
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.script.ScriptWriter
 import org.json.JSONObject
+import java.awt.Color
 import java.util.*
 import kotlin.math.pow
 
@@ -237,4 +239,31 @@ open class Ship(
             station.buyResourceFromShip(commodity, purchasingAccount, this, quantity)
         }
     }
+
+    companion object {
+        fun createPlayerStartingShip(): Ship
+        {
+            return Ship(
+                ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
+                ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
+                ShipColor(Color(205, 106, 0)),
+                getStartingOrbit(),
+                true
+            )
+        }
+
+        private fun getStartingOrbit(): ShipState
+        {
+            val startingPlanetName = DHServer.startingPlanetName
+            val startingPlanet: Planet = OrbiterManager.getPlanet(startingPlanetName)
+                ?: throw IllegalArgumentException("starting planet $startingPlanetName is null.")
+            val offset = Vector2(-DHServer.startingOrbitalRadius, 0)
+            val planetPos = startingPlanet.globalPos()
+            val startingPos = planetPos + offset
+            val startingVelocity = Vector2(DHServer.startingOrbitalSpeed, 0)
+            val rotation = 0.0
+            return ShipState(startingPos, rotation, startingVelocity)
+        }
+    }
 }
+

@@ -1,8 +1,11 @@
 package com.dibujaron.distanthorizon.orbiter
 
+import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.ship.ShipState
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 class Planet(parentName: String?, planetName: String, properties: Properties): Orbiter(parentName, planetName, properties){
     val type = properties.getProperty("type").toString()
@@ -13,7 +16,6 @@ class Planet(parentName: String?, planetName: String, properties: Properties): O
     val minRadiusSquared = minOrbitalRadius * minOrbitalRadius
 
     override fun scale(): Double{
-        val par = parent
         return if (properties.containsKey("scale")) {
             properties.getProperty("scale").toDouble()
         } else {
@@ -32,17 +34,19 @@ class Planet(parentName: String?, planetName: String, properties: Properties): O
         return retval
     }
 
-    /*fun cumulativeScale(): Double {
-        val par = parent;
-        if(par != null){
-            var parScale = par.cumulativeScale()
-            var myScale = parScale * scaleProperty;
-            return myScale;
-        } else {
-            return scaleProperty;
-        }
-    }*/
-
+    fun getStableOrbit(radius: Double): ShipState
+    {
+        val planetPos = this.globalPos()
+        val offset = Vector2(radius, 0)
+        val startingPos = planetPos + offset
+        val g = OrbiterManager.GRAVITY_CONSTANT
+        val speed = sqrt((g * mass) / radius)
+        println("starting speed is $speed")
+        val angle = offset.angle
+        val startingVelocity = Vector2(speed, 0).rotated(angle)
+        val rotation = angle - Math.PI / 2
+        return ShipState(startingPos, rotation, startingVelocity)
+    }
 }
 
 fun loadMass(properties: Properties): Double{

@@ -46,7 +46,10 @@ object DHServer {
     var debug = false
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
-    val playerStartingShip = serverProperties.getProperty("defaults.ship", "rijay.mockingbird")
+    val playerStartingShip = serverProperties.getProperty("starting.ship", "rijay.mockingbird")
+    val startingPlanetName = serverProperties.getProperty("starting.planet", "Rakuri")
+    val startingOrbitalRadius = serverProperties.getProperty("starting.radius", "400.0").toDouble()
+    val startingOrbitalSpeed = serverProperties.getProperty("starting.speed", "25.0").toDouble()
     val dockingSpeed = serverProperties.getProperty("docking.speed", "200.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "200.0").toDouble()
     val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")

@@ -1,26 +1,21 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
-import com.dibujaron.distanthorizon.Vector2
-import com.dibujaron.distanthorizon.ship.*
+import com.dibujaron.distanthorizon.ship.DockingResult
+import com.dibujaron.distanthorizon.ship.Ship
+import com.dibujaron.distanthorizon.ship.ShipInputs
+import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.awt.Color
 import java.util.*
 
 class Player(val connection: WsContext) {
     val uuid: UUID = UUID.randomUUID()
-    val companionAI: PlayerCompanionAI = PlayerCompanionAI(uuid);
-    val ship: Ship = Ship(
-        ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
-        ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
-        ShipColor(Color(205, 106, 0)),
-        ShipState(Vector2(375, 3180), 0.0, Vector2.ZERO),
-        true
-    )
-    val incomingMessageQueue: Queue<JSONObject> = LinkedList()
-    val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
+    private val companionAI: PlayerCompanionAI = PlayerCompanionAI(uuid);
+    val ship: Ship = Ship.createPlayerStartingShip()
+    private val incomingMessageQueue: Queue<JSONObject> = LinkedList()
+    private val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
 
     var account = Account()
 
