@@ -14,6 +14,7 @@ import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.floor
+import kotlin.random.Random
 
 class Station(parentName: String?, stationName: String, properties: Properties) : Orbiter(parentName, stationName, properties) {
 
@@ -76,11 +77,13 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         return vecToParentAtTime.angle
     }
 
-    fun createdShopMessage(): JSONObject {
+    fun createShopMessage(): JSONObject {
+        val changesEveryFiveMinutes = System.currentTimeMillis() / 300000
+        val rand = Random(changesEveryFiveMinutes)
         val retval = JSONObject()
         retval.put("identifying_name", name)
         retval.put("display_name", displayName)
-        retval.put("description", splashTextList.random())
+        retval.put("description", splashTextList.random(rand))
         val arr = JSONArray()
         commodityStores.values.asSequence()
             .map { it.createStoreJson() }

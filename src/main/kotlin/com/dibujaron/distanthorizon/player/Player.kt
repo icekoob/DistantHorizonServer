@@ -92,7 +92,7 @@ class Player(val connection: WsContext) {
         val dockedTo = ship.dockedToPort
         if (dockedTo != null) {
             val dockedToStation = dockedTo.station
-            val stationInfo = dockedToStation.createdShopMessage();
+            val stationInfo = dockedToStation.createShopMessage()
             val myMessage = createMessage("station_menu_info")
             myMessage.put("station_info", stationInfo)
             myMessage.put("player_balance", account.balance)
