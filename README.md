@@ -11,6 +11,7 @@ Project Repositories:
 - Godot Client: https://github.com/Dibujaron/DistantHorizonClient/
 - Python Web: https://github.com/Dibujaron/DistantHorizonBalancer/
 - Build Scripts: https://github.com/Dibujaron/DistantHorizonScripts/
+- Bug Reporting: https://github.com/Dibujaron/DistantHorizonIssues/
 
 This work is licensed under a
 [GNU General Public Licensce][gpl3].
