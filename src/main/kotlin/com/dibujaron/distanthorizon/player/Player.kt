@@ -96,7 +96,6 @@ class Player(val connection: WsContext) {
     private fun processClientFirstMessage(message: JSONObject) {
         val authenticationExpected = message.getBoolean("authenticated")
         if(authenticationExpected){
-            println(message)
             val clientKey = message.getDouble("client_key")
             val authResultStr = URL(DHServer.authenticationUrl + "/" + clientKey).readText()
             val resultJson = JSONObject(authResultStr)
