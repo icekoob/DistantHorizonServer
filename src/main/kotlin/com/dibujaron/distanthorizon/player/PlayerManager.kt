@@ -3,49 +3,41 @@ package com.dibujaron.distanthorizon.player
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.websocket.WsContext
-import java.util.*
-import kotlin.collections.HashMap
+import java.util.concurrent.ConcurrentHashMap
 
 object PlayerManager {
-    private val idMap: HashMap<UUID, Player> = HashMap()
-    private val connectionMap: HashMap<WsContext, Player> = HashMap()
-    private val playersToAdd = LinkedList<Player>()
-    private val playersToRemove = LinkedList<Player>()
+    private val authenticatedUserMap: ConcurrentHashMap<String, Player> = ConcurrentHashMap()
+    private val connectionMap: ConcurrentHashMap<WsContext, Player> = ConcurrentHashMap()
 
-    fun markForAdd(player: Player) {
-        playersToAdd.add(player)
+    fun addPlayer(player: Player) {
+        connectionMap[player.connection] = player
+        val worldStateMessage = DHServer.composeWorldStateMessage()
+        val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
+        player.queueWorldStateMsg(worldStateMessage)
+        player.queueShipsAddedMsg(shipsMessage)
     }
 
-    fun markForRemove(player: Player) {
-        playersToRemove.add(player)
+    fun mapAuthenticatedPlayer(username: String, player: Player){
+        authenticatedUserMap[username] = player
+    }
+
+    fun removePlayer(player: Player) {
+        connectionMap.remove(player.connection)
+        if(player.authenticated){
+            authenticatedUserMap.remove(player.username)
+        }
     }
 
     fun playerCount(): Int {
-        return idMap.size - playersToRemove.size + playersToAdd.size
+        return connectionMap.size
     }
 
     fun tick() {
-        playersToRemove.forEach {
-            idMap.remove(it.uuid)
-            connectionMap.remove(it.connection)
-        }
-        playersToRemove.clear()
-        if (!playersToAdd.isEmpty()) {
-            val worldStateMessage = DHServer.composeWorldStateMessage()
-            val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
-            playersToAdd.forEach {
-                idMap[it.uuid] = it
-                connectionMap[it.connection] = it
-                it.queueWorldStateMsg(worldStateMessage)
-                it.queueShipsAddedMsg(shipsMessage)
-            }
-            playersToAdd.clear()
-        }
         getPlayers().forEach { it.tick() }
     }
 
-    fun getPlayerById(uuid: UUID): Player? {
-        return idMap[uuid]
+    fun getPlayerByUsername(username: String): Player? {
+        return authenticatedUserMap[username]
     }
 
     fun getPlayerByConnection(conn: WsContext): Player? {
@@ -53,7 +45,7 @@ object PlayerManager {
     }
 
     fun getPlayers(): Collection<Player> {
-        return idMap.values
+        return connectionMap.values
     }
 
     fun broadcast(senderName: String, message: String) {

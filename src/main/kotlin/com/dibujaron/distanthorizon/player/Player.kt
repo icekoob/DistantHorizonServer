@@ -8,11 +8,14 @@ import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URL
 import java.util.*
 
 class Player(val connection: WsContext) {
-    val uuid: UUID = UUID.randomUUID()
-    private val companionAI: PlayerCompanionAI = PlayerCompanionAI(uuid);
+    var username: String = "guest"
+    var displayName: String = "Guest"
+    var authenticated = false
+    private val companionAI: PlayerCompanionAI = PlayerCompanionAI(this)
     val ship: Ship = Ship.createPlayerStartingShip()
     private val incomingMessageQueue: Queue<JSONObject> = LinkedList()
     private val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
@@ -24,7 +27,6 @@ class Player(val connection: WsContext) {
         ShipManager.markForAdd(ship)
         queueChatMsg("... Shipboard artificial intelligence is loading ...")
         queueShipAIChatMsg(companionAI.getInitializationMessage())
-        queueShipAIChatMsg(companionAI.getGreeting())
     }
 
     fun queueIncomingMessageFromClient(message: JSONObject) {
@@ -48,6 +50,9 @@ class Player(val connection: WsContext) {
     private fun processIncomingMessage(message: JSONObject){
         //todo refactor - separate handlers for each message type?
         val messageType = message.getString("message_type")
+        if (messageType == "init") {
+            processClientFirstMessage(message)
+        }
         if (messageType == "ship_inputs") {
             val inputs = ShipInputs(message)
             ship.receiveInputChange(inputs)
@@ -84,7 +89,33 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            PlayerManager.broadcast(uuid.toString(), payload)
+            PlayerManager.broadcast(username, payload)
+        }
+    }
+
+    private fun processClientFirstMessage(message: JSONObject) {
+        val authenticationExpected = message.getBoolean("authenticated")
+        if(authenticationExpected){
+            val clientKey = message.getString("client_key")
+            val authResultStr = URL(DHServer.authenticationUrl + "/" + clientKey).readText()
+            val resultJson = JSONObject(authResultStr)
+            val found = resultJson.getBoolean("found")
+            if(found){
+                authenticated = true
+                val userData = resultJson.getJSONObject("user")
+                username = userData.getString("username") + "#" + userData.getString("discriminator")
+                displayName = userData.getString("username")
+            } else {
+                queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
+            }
+        }
+
+        if (authenticated){
+            queueShipAIChatMsg(companionAI.getLoggedInGreeting())
+            PlayerManager.mapAuthenticatedPlayer(username, this)
+        } else {
+            queueShipAIChatMsg(companionAI.getGuestGreeting())
+            queueShipAIChatMsg("Warning: Because you are playing as a guest, your progress will be lost if this tab is closed.")
         }
     }
 
@@ -164,7 +195,6 @@ class Player(val connection: WsContext) {
     fun createMessage(type: String): JSONObject {
         val message = JSONObject();
         message.put("message_type", type)
-        message.put("player_id", uuid.toString())
         message.put("ship_id", ship.uuid.toString())
         return message
     }

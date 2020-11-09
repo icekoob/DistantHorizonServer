@@ -54,6 +54,7 @@ object DHServer {
     val dockingDist = serverProperties.getProperty("docking.distance", "200.0").toDouble()
     val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
+    val authenticationUrl = serverProperties.getProperty("authentication.url", "http://distant-horizon.io/server_check_login")
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
 
@@ -141,8 +142,7 @@ object DHServer {
 
     private fun onClientConnect(conn: WsConnectContext) {
         val player = Player(conn)
-        PlayerManager.markForAdd(player)
-        println("Player id=${player.uuid} joined the game, player count is ${PlayerManager.playerCount()}")
+        PlayerManager.addPlayer(player)
     }
 
     private fun onClientDisconnect(conn: WsCloseContext) {
@@ -150,10 +150,9 @@ object DHServer {
         if (player == null) {
             throw IllegalStateException("Connection disconnected but no player found for this connection.")
         } else {
-            PlayerManager.markForRemove(player)
-            var playerShip: Ship = player.ship
+            PlayerManager.removePlayer(player)
+            val playerShip: Ship = player.ship
             ShipManager.markForRemove(playerShip)
-            println("Player id=${player.uuid} left the game, reason=${conn.reason()}. player count is ${PlayerManager.playerCount()}")
         }
     }
 
@@ -216,8 +215,8 @@ object DHServer {
             println("Connection error thrown and no player found for connection")
             throw conn.error()!!
         } else {
-            println("Connection error for player id=${player.uuid}.")
-            PlayerManager.markForRemove(player)
+            println("Connection error for player id=${player.username}.")
+            PlayerManager.removePlayer(player)
         }
     }
 

@@ -1,10 +1,14 @@
 package com.dibujaron.distanthorizon.player
 
-import java.util.*
+open class PlayerCompanionAI(val player: Player) {
 
-open class PlayerCompanionAI(val playerID: UUID) {
+    private val greetingsNamed = arrayListOf(
+        "Hi %n, it's good to see you!",
+        "Good morning, welcome back %n!",
+        "Hello %n! Where are we heading today?",
+    )
 
-    private val greetings = arrayListOf(
+    private val greetingsGeneric = arrayListOf(
         "Hi, it's good to see you!",
         "Good morning, welcome back!",
         "Hello! Where are we heading today?",
@@ -18,12 +22,16 @@ open class PlayerCompanionAI(val playerID: UUID) {
         return "--- Kotlin Automatic Noob Enlightener 4.47.2 initialized ---"
     }
 
-    open fun getGreeting(): String {
-        return greetings.random()
+    open fun getLoggedInGreeting(): String {
+        return format(greetingsNamed.random())
     }
 
-    open fun getFirstTimeGreeting(): String {
-        return getGreeting()
+    open fun getGuestGreeting(): String {
+        return format(greetingsGeneric.random())
+    }
+
+    open fun format(message: String): String {
+        return message.replace("%n", player.displayName)
     }
 
 }
