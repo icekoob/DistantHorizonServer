@@ -41,7 +41,7 @@ object DHServer {
     var debug = false
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
-    val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "10").toInt()
+    val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "30").toInt()
     val shipHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.ship.offset", "0").toInt()
     val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "60").toInt()
     val worldHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.world.offset", "0").toInt()
