@@ -34,11 +34,6 @@ object DHServer {
 
     const val CYCLE_LENGTH_TICKS = 83160/*TICKS_PER_SECOND * 60 * 12  //cycle every 12m*/
     val FACTORS_OF_CYCLE_LENGTH = factors(CYCLE_LENGTH_TICKS)
-    const val WORLD_HEARTBEATS_EVERY = 60
-    const val WORLD_HEARTBEAT_TICK_OFFSET = 0
-
-    const val SHIP_HEARTBEATS_EVERY = 10
-    const val SHIP_HEARTBEAT_TICK_OFFSET = 0
 
     const val REQUEST_BATCHING = true
 
@@ -46,6 +41,10 @@ object DHServer {
     var debug = false
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
+    val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "10").toInt()
+    val shipHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.ship.offset", "0").toInt()
+    val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "60").toInt()
+    val worldHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.world.offset", "0").toInt()
     val playerStartingShip = serverProperties.getProperty("starting.ship", "rijay.mockingbird")
     val startingPlanetName = serverProperties.getProperty("starting.planet", "Rakuri")
     val startingOrbitalRadius = serverProperties.getProperty("starting.radius", "400.0").toDouble()
@@ -109,12 +108,12 @@ object DHServer {
     private fun tick() {
         OrbiterManager.tick()
         ShipManager.tick()
-        val isWorldStateMessageTick = tickCount % WORLD_HEARTBEATS_EVERY == WORLD_HEARTBEAT_TICK_OFFSET
+        val isWorldStateMessageTick = tickCount % worldHeartbeatsEvery == worldHeartbeatsTickOffset
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
             PlayerManager.getPlayers().forEach { it.queueWorldStateMsg(worldStateMessage) }
         }
-        val isShipStateMessageTick = tickCount % SHIP_HEARTBEATS_EVERY == SHIP_HEARTBEAT_TICK_OFFSET
+        val isShipStateMessageTick = tickCount % shipHeartbeatsEvery == shipHeartbeatsTickOffset
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
             PlayerManager.getPlayers().forEach { it.queueShipHeartbeatsMsg(shipHeartbeatsMessage) }
