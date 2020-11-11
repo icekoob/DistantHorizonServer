@@ -89,7 +89,7 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            PlayerManager.broadcast(username, payload)
+            PlayerManager.broadcast(displayName, payload)
         }
     }
 
