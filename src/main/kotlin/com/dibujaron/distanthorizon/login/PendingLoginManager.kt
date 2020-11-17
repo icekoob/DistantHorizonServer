@@ -49,21 +49,21 @@ object PendingLoginManager {
         return token
     }
 
-    fun confirmClientLogin(token: String): Boolean
+    fun confirmClientLogin(token: String): String?
     {
         println("confirming login for token $token")
         return if(token == "debug"){
-            DHServer.debug
+            if(DHServer.debug) "Debug#0000" else null
         } else {
             cleanup()
             val pendingLogin = unconfirmedLogins[token]
             if (pendingLogin == null || System.currentTimeMillis() > pendingLogin.expiry) {
-                false
+                null
             } else {
                 unconfirmedLogins.remove(token)
                 confirmedConnectionsNoSocketEstablished[token] =
                     PendingLogin(pendingLogin.username, System.currentTimeMillis() + 1000 * 60 * 10)
-                true
+                return pendingLogin.username
             }
         }
     }
@@ -72,7 +72,7 @@ object PendingLoginManager {
     {
         println("completing login for token $token")
         return if(token == "debug") {
-            if(DHServer.debug) "Debug" else null
+            if(DHServer.debug) "Debug#0000" else null
         } else {
             cleanup()
             val pendingLogin = confirmedConnectionsNoSocketEstablished[token]

@@ -144,10 +144,14 @@ object DHServer {
             it.result(token)
         }.get("/confirm_client_login/:token"){
             val token = it.pathParam("token")
-            val result = PendingLoginManager.confirmClientLogin(token)
-            it.result(result.toString())
-        }.
-        get("/account/:accountName") {
+            val username = PendingLoginManager.confirmClientLogin(token)
+            val response = JSONObject()
+            response.put("confirmed", (username != null))
+            if(username != null){
+                response.put("account_data", getDatabase().getPersistenceDatabase().selectOrCreateAccount(username).toJSON())
+            }
+            it.result(response.toString())
+        }.get("/account/:accountName") {
             val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
             it.result(dbInfo.toJSON().toString())
         }.post("/account/:accountName/newActor"){

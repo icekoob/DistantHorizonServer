@@ -39,10 +39,15 @@ class ExPersistenceDatabase : PersistenceDatabase {
             }
         }
         val accountIdFilter = (ExDatabase.Actor.ownedByAccount eq accountRow[ExDatabase.Account.id])
-        val actors = (ExDatabase.Actor innerJoin ExDatabase.Ship)
-            .select(accountIdFilter)
-            .map { mapActorInfo(it) }
-            .toList()
+        val actors = transaction {
+            ExDatabase.Actor.join(
+                ExDatabase.Ship,
+                JoinType.INNER,
+                additionalConstraint = { ExDatabase.Actor.currentShip eq ExDatabase.Ship.id })
+                .select(accountIdFilter)
+                .map { mapActorInfo(it) }
+                .toList()
+        }
         return AccountInfoInternal(
             accountRow[ExDatabase.Account.id],
             accountRow[ExDatabase.Account.accountName],
@@ -64,7 +69,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         ship: ShipInfoInternal
     ) : ActorInfo(displayName, balance, lastDockedStation, ship)
 
-    inner class ShipInfoInternal (
+    inner class ShipInfoInternal(
         val id: EntityID<Int>,
         shipClass: ShipClass,
         primaryColor: ShipColor,
@@ -117,7 +122,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
     override fun deleteActor(actorInfo: ActorInfo) {
         if (actorInfo is ActorInfoInternal) {
             val ship = actorInfo.ship
-            if(ship is ShipInfoInternal){
+            if (ship is ShipInfoInternal) {
                 val shipIdFilter = (ExDatabase.Ship.id eq ship.id)
                 val actorIdFilter = (ExDatabase.Actor.id eq actorInfo.id)
                 transaction {
@@ -135,14 +140,14 @@ class ExPersistenceDatabase : PersistenceDatabase {
             if (oldShip is ShipInfoInternal) {
                 val shipIdFilter = (ExDatabase.Ship.id eq oldShip.id)
                 transaction {
-                    ExDatabase.Ship.update({shipIdFilter}){
+                    ExDatabase.Ship.update({ shipIdFilter }) {
                         it[shipClass] = ship.shipClass.qualifiedName
                         it[primaryColor] = ship.primaryColor.toInt()
                         it[secondaryColor] = ship.secondaryColor.toInt()
                     }
                 }
                 return transaction {
-                    ExDatabase.Actor.select{ExDatabase.Actor.id eq actor.id}
+                    ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
                         .map { mapActorInfo(it) }
                         .first()
                 }
@@ -155,12 +160,12 @@ class ExPersistenceDatabase : PersistenceDatabase {
         if (actor is ActorInfoInternal) {
             val actorIdFilter = (ExDatabase.Actor.id eq actor.id)
             transaction {
-                ExDatabase.Actor.update({actorIdFilter}){
+                ExDatabase.Actor.update({ actorIdFilter }) {
                     it[balance] = newBal
                 }
             }
             return transaction {
-                ExDatabase.Actor.select{ExDatabase.Actor.id eq actor.id}
+                ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
                     .map { mapActorInfo(it) }
                     .first()
             }
@@ -172,12 +177,12 @@ class ExPersistenceDatabase : PersistenceDatabase {
         if (actor is ActorInfoInternal) {
             val actorIdFilter = (ExDatabase.Actor.id eq actor.id)
             transaction {
-                ExDatabase.Actor.update({actorIdFilter}){
+                ExDatabase.Actor.update({ actorIdFilter }) {
                     it[lastDockedStation] = station.name
                 }
             }
             return transaction {
-                ExDatabase.Actor.select{ExDatabase.Actor.id eq actor.id}
+                ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
                     .map { mapActorInfo(it) }
                     .first()
             }
