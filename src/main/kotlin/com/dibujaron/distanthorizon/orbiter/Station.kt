@@ -2,9 +2,9 @@ package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.database.script.ScriptReader
 import com.dibujaron.distanthorizon.docking.StationDockingPort
-import com.dibujaron.distanthorizon.player.Account
-import com.dibujaron.distanthorizon.script.ScriptReader
+import com.dibujaron.distanthorizon.player.wallet.Wallet
 import com.dibujaron.distanthorizon.ship.AIShip
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
@@ -13,7 +13,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.floor
 import kotlin.random.Random
 
 class Station(parentName: String?, stationName: String, properties: Properties) : Orbiter(parentName, stationName, properties) {
@@ -21,7 +20,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
     val splashTextList = ArrayList<String>()
-    private val aiScripts: Map<Int, ScriptReader> = DHServer.getScriptDatabase()
+    private val aiScripts: Map<Int, ScriptReader> = DHServer.getDatabase().getScriptDatabase()
         .selectScriptsForStation(this).asSequence()
         .map { Pair(it.getDepartureTick(), it) }
         .toMap()
@@ -92,7 +91,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         return retval
     }
 
-    fun sellResourceToShip(resource: String, buyingAccount: Account, ship: Ship, quantity: Int) {
+    fun sellResourceToShip(resource: String, buyingWallet: Wallet, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         val price = store.price * quantity
         var purchaseQuantity = quantity
@@ -109,18 +108,18 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
             purchaseQuantity = spaceInHold
         }
 
-        if (buyingAccount.balance < price) {
-            val affordableQuantity = floor(buyingAccount.balance / store.price).toInt()
+        if (buyingWallet.getBalance() < price) {
+            val affordableQuantity = buyingWallet.getBalance() / store.price
             purchaseQuantity = affordableQuantity
         }
         val purchasePrice = store.price * purchaseQuantity
-        buyingAccount.balance = buyingAccount.balance - purchasePrice
+        buyingWallet.setBalance(buyingWallet.getBalance() - purchasePrice)
         store.quantityAvailable -= purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         ship.hold[store.identifyingName] = holdStore + purchaseQuantity
     }
 
-    fun buyResourceFromShip(resource: String, buyingAccount: Account, ship: Ship, quantity: Int) {
+    fun buyResourceFromShip(resource: String, buyingWallet: Wallet, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         var purchaseQuantity = quantity
 
@@ -132,7 +131,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
 
         //now do it
         val purchasePrice = store.price * purchaseQuantity
-        buyingAccount.balance = buyingAccount.balance + purchasePrice
+        buyingWallet.setBalance(buyingWallet.getBalance() + purchasePrice)
         store.quantityAvailable += purchaseQuantity
         val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         ship.hold[store.identifyingName] = holdStore - purchaseQuantity

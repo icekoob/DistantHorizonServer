@@ -40,6 +40,15 @@ object OrbiterManager {
         return stationsMap[name];
     }
 
+    fun getStationRequired(name: String): Station {
+        val s = getStation(name);
+        if(s == null){
+            throw IllegalStateException("No station found with name $name")
+        } else {
+            return s
+        }
+    }
+
     fun getStations(): Collection<Station> {
         return stationsMap.values
     }

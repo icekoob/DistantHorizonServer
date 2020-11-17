@@ -31,7 +31,7 @@ open class PlayerCompanionAI(val player: Player) {
     }
 
     open fun format(message: String): String {
-        return message.replace("%n", player.displayName)
+        return message.replace("%n", player.getDisplayName())
     }
 
 }

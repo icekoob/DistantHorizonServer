@@ -20,5 +20,15 @@ class ShipColor(val baseColor: Color) {
             val b = (Math.random() * 256.0).toInt()
             return ShipColor(Color(r, g, b))
         }
+
+        fun fromInt(intVal: Int): ShipColor
+        {
+            return ShipColor(Color(intVal))
+        }
+    }
+
+    fun toInt(): Int
+    {
+        return baseColor.rgb
     }
 }

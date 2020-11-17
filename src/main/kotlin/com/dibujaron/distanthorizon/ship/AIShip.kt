@@ -1,14 +1,12 @@
 package com.dibujaron.distanthorizon.ship
 
-import com.dibujaron.distanthorizon.script.ScriptReader
+import com.dibujaron.distanthorizon.database.script.ScriptReader
 
 class AIShip(private val scriptReader: ScriptReader) : Ship(
     scriptReader.getShipClass(),
     ShipColor.random(),
     ShipColor.random(),
-    scriptReader.getStartingState(),
-    false
-) {
+    scriptReader.getStartingState(), null) {
 
     val shipClass = scriptReader.getShipClass()
     override fun computeNextState(): ShipState {

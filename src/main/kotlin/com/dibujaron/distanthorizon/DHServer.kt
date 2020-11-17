@@ -1,10 +1,11 @@
 package com.dibujaron.distanthorizon
 
-import com.dibujaron.distanthorizon.dbimpl.ExposedDatabase
+import com.dibujaron.distanthorizon.database.DhDatabase
+import com.dibujaron.distanthorizon.database.impl.ExDatabase
+import com.dibujaron.distanthorizon.login.PendingLoginManager
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.script.ScriptDatabase
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.Javalin
@@ -37,8 +38,9 @@ object DHServer {
 
     const val REQUEST_BATCHING = true
 
+    const val DEFAULT_BALANCE = 1000
+
     private var shuttingDown = false
-    var debug = false
     val serverProperties: Properties = loadProperties()
     private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
     val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "30").toInt()
@@ -51,18 +53,19 @@ object DHServer {
     val startingOrbitalSpeed = serverProperties.getProperty("starting.speed", "25.0").toDouble()
     val dockingSpeed = serverProperties.getProperty("docking.speed", "200.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "200.0").toDouble()
+    var debug = serverProperties.getProperty("debug", "true").toBoolean()
     val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
     val authenticationUrl = serverProperties.getProperty("authentication.url", "http://distant-horizon.io/server_check_login")
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
 
-    private val scriptDatabase = ExposedDatabase(dbUrl, dbDriver)
+    private val database: DhDatabase = ExDatabase(dbUrl, dbDriver)
     private var tickCount = 0
 
-    fun getScriptDatabase(): ScriptDatabase
+    fun getDatabase(): DhDatabase
     {
-        return scriptDatabase
+        return database
     }
 
     fun getCurrentTickAbsolute(): Int {
@@ -130,13 +133,40 @@ object DHServer {
             config.asyncRequestTimeout = 10_000L
             config.enforceSsl = true
             config.showJavalinBanner = false
-        }
-            .ws("/ws/") { ws ->
+        }.ws("/ws/") { ws ->
                 ws.onConnect { onClientConnect(it) }
                 ws.onClose { onClientDisconnect(it) }
                 ws.onBinaryMessage() { onMessageReceived(it) }
                 ws.onError { onSocketError(it) }
-            }.start(port)
+        }.get("/prep_login/:username"){
+            val username = it.pathParam("username")
+            val token = PendingLoginManager.registerPendingLoginGenerateToken(username)
+            it.result(token)
+        }.get("/confirm_client_login/:token"){
+            val token = it.pathParam("token")
+            val result = PendingLoginManager.confirmClientLogin(token)
+            it.result(result.toString())
+        }.
+        get("/account/:accountName") {
+            val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
+            it.result(dbInfo.toJSON().toString())
+        }.post("/account/:accountName/newActor"){
+            val acctName = it.pathParam("accountName")
+            val db = database.getPersistenceDatabase()
+            val body = JSONObject(it.body())
+            val displayName = body.getString("display_name")
+            val acct = db.selectOrCreateAccount(acctName)
+            db.createNewActorForAccount(acct, displayName)
+            it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
+        }.delete("/account/:accountName/:actorIndex"){
+            val acctName = it.pathParam("accountName")
+            val actorIndex = it.pathParam("actorIndex").toInt()
+            val db = database.getPersistenceDatabase()
+            val acct = db.selectOrCreateAccount(acctName)
+            val actor = acct.actors[actorIndex]
+            db.deleteActor(actor)
+            it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
+        }.start(port)
     }
 
     private fun onClientConnect(conn: WsConnectContext) {
@@ -214,7 +244,7 @@ object DHServer {
             println("Connection error thrown and no player found for connection")
             throw conn.error()!!
         } else {
-            println("Connection error for player id=${player.username}.")
+            println("Connection error for player id=${player.getDisplayName()}.")
             PlayerManager.removePlayer(player)
         }
     }

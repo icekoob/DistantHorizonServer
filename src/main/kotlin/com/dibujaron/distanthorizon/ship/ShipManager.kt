@@ -9,22 +9,6 @@ object ShipManager {
     private val shipsToAdd = LinkedList<Ship>()
     private val shipsToRemove = LinkedList<Ship>()
 
-    init {
-        /*OrbiterManager.getStations().asSequence()
-            .filter{it.getStar().name.contains("Regalis")}
-            .map { it.getState() }
-            .map {
-                Ship(
-                    ShipClassManager.getShipClass("radi.kx6")!!,
-                    ShipColor.random(),
-                    ShipColor.random(),
-                    it,
-                    SimpleStraightLineController()
-                )
-            }
-            .take(2).forEach{ shipsToAdd.add(it) }*/
-    }
-
     fun getShips(): Collection<Ship> {
         return shipMap.values
     }

@@ -30,6 +30,16 @@ object ShipClassManager {
         return shipClassMap[qualName]
     }
 
+    fun getShipClassRequired(qualName: String): ShipClass
+    {
+        val res = getShipClass(qualName)
+        if(res == null){
+            throw IllegalStateException("ship class $qualName not found")
+        } else {
+            return res
+        }
+    }
+
     fun getShipClasses(): Collection<ShipClass>
     {
         return shipClassMap.values

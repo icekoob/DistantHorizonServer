@@ -3,18 +3,17 @@ package com.dibujaron.distanthorizon.orbiter
 import com.dibujaron.distanthorizon.DHServer
 import org.json.JSONObject
 import java.util.*
-import kotlin.math.roundToInt
 
 class CommodityStore(val type: CommodityType, properties: Properties) {
 
     val identifyingName = type.identifyingName
     val displayName = type.displayName
-    val price: Double = properties.getProperty("$identifyingName.price", "0.0").toDoubleOrNull() ?: 0.0
+    val price: Int = properties.getProperty("$identifyingName.price", "0").toIntOrNull() ?: 0
     val initialQuantity: Int = properties.getProperty("$identifyingName.initial", "0").toInt()
 
     //this is temporary and not great.
     val productionConsumptionRate =
-        if (initialQuantity > 0) (price * 10).roundToInt() else -1 * (price * 10).roundToInt()
+        if (initialQuantity > 0) (price * 10) else -1 * (price * 10)
     var quantityAvailable: Int = initialQuantity
 
     var lastUpdateTick = 0

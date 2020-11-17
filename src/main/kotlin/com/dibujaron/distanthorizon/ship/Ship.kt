@@ -2,15 +2,17 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.database.persistence.ActorInfo
+import com.dibujaron.distanthorizon.database.script.ScriptWriter
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.orbiter.Planet
-import com.dibujaron.distanthorizon.player.Account
+import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
-import com.dibujaron.distanthorizon.script.ScriptWriter
+import com.dibujaron.distanthorizon.player.wallet.Wallet
 import org.json.JSONObject
 import java.awt.Color
 import java.util.*
@@ -21,7 +23,7 @@ open class Ship(
     private val primaryColor: ShipColor,
     private val secondaryColor: ShipColor,
     initialState: ShipState,
-    val shouldRecordScripts: Boolean
+    val pilot: Player?
 ) {
 
     var currentState: ShipState = initialState
@@ -178,6 +180,10 @@ open class Ship(
         this.dockedToPort = stationPort
         DHServer.broadcastShipDocked(this)
         scriptWriter?.completeScript(stationPort.station)
+        pilot?.actorInfo?.let {
+            DHServer.getDatabase().getPersistenceDatabase().updateActorLastDockedStation(it, stationPort.station)
+            println("Updated last docked station of ${pilot.actorInfo?.displayName} to ${stationPort.station.name}")
+        }
     }
 
     fun createDockedMessage(): JSONObject {
@@ -199,12 +205,14 @@ open class Ship(
         val dockedTo = dockedToPort
         if (dockedTo != null) {
             DHServer.broadcastShipUndocked(this)
-            if (shouldRecordScripts) {
-                scriptWriter = DHServer.getScriptDatabase().beginLoggingScript(dockedTo.station, currentState, type)
+            if (pilot != null) {
+                scriptWriter = DHServer.getDatabase()
+                    .getScriptDatabase()
+                    .beginLoggingScript(pilot.actorInfo, dockedTo.station, currentState, type)
             }
         }
-        dockedToPort = null;
-        myDockedPort = null;
+        dockedToPort = null
+        myDockedPort = null
     }
 
     fun receiveInputChange(newInputs: ShipInputs) {
@@ -226,30 +234,47 @@ open class Ship(
             .forEach { it.queueInputsUpdateMsg(inputsUpdate) }
     }
 
-    fun buyResourceFromStation(commodity: String, purchasingAccount: Account, quantity: Int) {
+    fun buyResourceFromStation(commodity: String, purchasingWallet: Wallet, quantity: Int) {
         if (isDocked()) {
             val station = dockedToPort!!.station
-            station.sellResourceToShip(commodity, purchasingAccount, this, quantity)
+            station.sellResourceToShip(commodity, purchasingWallet, this, quantity)
         }
     }
 
-    fun sellResourceToStation(commodity: String, purchasingAccount: Account, quantity: Int) {
+    fun sellResourceToStation(commodity: String, purchasingWallet: Wallet, quantity: Int) {
         if (isDocked()) {
             val station = dockedToPort!!.station
-            station.buyResourceFromShip(commodity, purchasingAccount, this, quantity)
+            station.buyResourceFromShip(commodity, purchasingWallet, this, quantity)
         }
     }
 
     companion object {
-        fun createPlayerStartingShip(): Ship
+        fun createGuestShip(player: Player): Ship
         {
             return Ship(
                 ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
                 ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
                 ShipColor(Color(205, 106, 0)),
                 getStartingOrbit(),
-                true
+                player
             )
+        }
+
+        fun createFromSave(player: Player, actorInfo: ActorInfo): Ship
+        {
+            val savedShip = actorInfo.ship
+            val s = Ship(
+                savedShip.shipClass,
+                savedShip.primaryColor,
+                savedShip.secondaryColor,
+                getStartingOrbit(),
+                player
+            )
+            if(actorInfo.lastDockedStation != null){
+                s.dockedToPort = actorInfo.lastDockedStation.dockingPorts.random()
+                s.myDockedPort = s.myDockingPorts.random()
+            }
+            return s
         }
 
         private fun getStartingOrbit(): ShipState

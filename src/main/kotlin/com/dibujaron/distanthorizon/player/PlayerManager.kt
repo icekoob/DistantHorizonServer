@@ -1,7 +1,5 @@
 package com.dibujaron.distanthorizon.player
 
-import com.dibujaron.distanthorizon.DHServer
-import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.websocket.WsContext
 import java.util.concurrent.ConcurrentHashMap
 
@@ -11,10 +9,6 @@ object PlayerManager {
 
     fun addPlayer(player: Player) {
         connectionMap[player.connection] = player
-        val worldStateMessage = DHServer.composeWorldStateMessage()
-        val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
-        player.queueWorldStateMsg(worldStateMessage)
-        player.queueShipsAddedMsg(shipsMessage)
     }
 
     fun mapAuthenticatedPlayer(username: String, player: Player){
@@ -23,8 +17,8 @@ object PlayerManager {
 
     fun removePlayer(player: Player) {
         connectionMap.remove(player.connection)
-        if(player.authenticated){
-            authenticatedUserMap.remove(player.username)
+        if(player.isAuthenticated()){
+            authenticatedUserMap.remove(player.getUsername())
         }
     }
 

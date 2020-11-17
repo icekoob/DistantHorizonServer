@@ -1,6 +1,12 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.database.persistence.AccountInfo
+import com.dibujaron.distanthorizon.database.persistence.ActorInfo
+import com.dibujaron.distanthorizon.login.PendingLoginManager
+import com.dibujaron.distanthorizon.player.wallet.AccountWallet
+import com.dibujaron.distanthorizon.player.wallet.GuestWallet
+import com.dibujaron.distanthorizon.player.wallet.Wallet
 import com.dibujaron.distanthorizon.ship.DockingResult
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipInputs
@@ -8,25 +14,71 @@ import com.dibujaron.distanthorizon.ship.ShipManager
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.URL
 import java.util.*
 
 class Player(val connection: WsContext) {
-    var username: String = "guest"
-    var displayName: String = "Guest"
-    var authenticated = false
+    var accountInfo: AccountInfo? = null
+    var actorInfo: ActorInfo? = null
     private val companionAI: PlayerCompanionAI = PlayerCompanionAI(this)
-    val ship: Ship = Ship.createPlayerStartingShip()
+    lateinit var ship: Ship
     private val incomingMessageQueue: Queue<JSONObject> = LinkedList()
     private val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
 
-    var account = Account()
+    lateinit var wallet: Wallet
 
-    init {
-        println("initializing player with default starting ship ${DHServer.playerStartingShip}")
-        ShipManager.markForAdd(ship)
+    private fun processClientFirstMessage(message: JSONObject) {
+        println("processing client opening message.")
+        val authenticationExpected = message.getBoolean("authenticated")
+        if(authenticationExpected){
+            val clientKey = message.getString("client_key")
+            val username = PendingLoginManager.completeLogin(clientKey)
+            if(username != null){
+                val actorIndex = message.getInt("actorIndex")
+                val db = DHServer.getDatabase().getPersistenceDatabase()
+                val myAccount = db.selectOrCreateAccount(username)
+                if(myAccount.actors.size < actorIndex){
+                    throw IllegalStateException("Invalid actor $actorIndex")
+                } else {
+                    val myActor = myAccount.actors[actorIndex]
+                    accountInfo = myAccount
+                    actorInfo = myActor
+                    wallet = AccountWallet(myActor)
+                    ship = Ship.createFromSave(this, myActor)
+                }
+            } else {
+                queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
+            }
+        } else {
+            ship = Ship.createGuestShip(this)
+            wallet = GuestWallet()
+        }
+
         queueChatMsg("... Shipboard artificial intelligence is loading ...")
         queueShipAIChatMsg(companionAI.getInitializationMessage())
+
+        val myAccount = accountInfo
+        if (myAccount != null){
+            queueShipAIChatMsg(companionAI.getLoggedInGreeting())
+            PlayerManager.mapAuthenticatedPlayer(myAccount.accountName, this)
+        } else {
+            queueShipAIChatMsg(companionAI.getGuestGreeting())
+            queueShipAIChatMsg("Warning: Because you are playing as a guest, your progress will be lost if this tab is closed.")
+        }
+
+        ShipManager.markForAdd(ship)
+
+        val worldStateMessage = DHServer.composeWorldStateMessage()
+        val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
+        queueWorldStateMsg(worldStateMessage)
+        queueShipsAddedMsg(shipsMessage)
+    }
+
+    fun isAuthenticated(): Boolean {
+        return accountInfo != null
+    }
+
+    fun getUsername(): String {
+        return accountInfo?.accountName?:"guest"
     }
 
     fun queueIncomingMessageFromClient(message: JSONObject) {
@@ -37,7 +89,6 @@ class Player(val connection: WsContext) {
         }
     }
 
-    //todo batching
     fun tick(){
         while(!incomingMessageQueue.isEmpty()){
             processIncomingMessage(incomingMessageQueue.remove())
@@ -75,48 +126,26 @@ class Player(val connection: WsContext) {
             if (ship.isDocked()) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
-                ship.buyResourceFromStation(commodity, account, quantity)
-                println("bought $quantity of $commodity from station, new balance is ${account.balance}")
+                ship.buyResourceFromStation(commodity, wallet, quantity)
+                println("bought $quantity of $commodity from station, new balance is ${wallet.getBalance()}")
                 queueSendStationMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
             if (ship.isDocked()) {
                 val commodity = message.getString("commodity_name")
                 val quantity = message.getInt("quantity")
-                ship.sellResourceToStation(commodity, account, quantity)
-                println("sold $quantity of $commodity to station, new balance is ${account.balance}")
+                ship.sellResourceToStation(commodity, wallet, quantity)
+                println("sold $quantity of $commodity to station, new balance is ${wallet.getBalance()}")
                 queueSendStationMenuMessage()
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            PlayerManager.broadcast(displayName, payload)
+            PlayerManager.broadcast(getDisplayName(), payload)
         }
     }
 
-    private fun processClientFirstMessage(message: JSONObject) {
-        val authenticationExpected = message.getBoolean("authenticated")
-        if(authenticationExpected){
-            val clientKey = message.getString("client_key")
-            val authResultStr = URL(DHServer.authenticationUrl + "/" + clientKey).readText()
-            val resultJson = JSONObject(authResultStr)
-            val found = resultJson.getBoolean("found")
-            if(found){
-                authenticated = true
-                val userData = resultJson.getJSONObject("user")
-                username = userData.getString("username") + "#" + userData.getString("discriminator")
-                displayName = userData.getString("username")
-            } else {
-                queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
-            }
-        }
-
-        if (authenticated){
-            queueShipAIChatMsg(companionAI.getLoggedInGreeting())
-            PlayerManager.mapAuthenticatedPlayer(username, this)
-        } else {
-            queueShipAIChatMsg(companionAI.getGuestGreeting())
-            queueShipAIChatMsg("Warning: Because you are playing as a guest, your progress will be lost if this tab is closed.")
-        }
+    fun getDisplayName(): String {
+        return actorInfo?.displayName?:"Guest";
     }
 
     private fun queueSendStationMenuMessage() {
@@ -126,7 +155,7 @@ class Player(val connection: WsContext) {
             val stationInfo = dockedToStation.createShopMessage()
             val myMessage = createMessage("station_menu_info")
             myMessage.put("station_info", stationInfo)
-            myMessage.put("player_balance", account.balance)
+            myMessage.put("player_balance", wallet.getBalance())
             myMessage.put("hold_space", ship.holdCapacity - ship.holdOccupied())
             val holdInfo: JSONObject = ship.createHoldStatusMessage()
             myMessage.put("hold_contents", holdInfo)
