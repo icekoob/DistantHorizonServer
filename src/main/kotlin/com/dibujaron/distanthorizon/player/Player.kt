@@ -33,17 +33,22 @@ class Player(val connection: WsContext) {
             val clientKey = message.getString("client_key")
             val username = PendingLoginManager.completeLogin(clientKey)
             if(username != null){
-                val actorIndex = message.getInt("actorIndex")
+                val actorName = message.getString("actor_name")
                 val db = DHServer.getDatabase().getPersistenceDatabase()
                 val myAccount = db.selectOrCreateAccount(username)
-                if(myAccount.actors.size < actorIndex){
-                    throw IllegalStateException("Invalid actor $actorIndex")
-                } else {
-                    val myActor = myAccount.actors[actorIndex]
-                    accountInfo = myAccount
-                    actorInfo = myActor
-                    wallet = AccountWallet(myActor)
-                    ship = Ship.createFromSave(this, myActor)
+                var found = false
+                for(actor in myAccount.actors){
+                    if(actor.displayName == actorName){
+                        accountInfo = myAccount
+                        actorInfo = actor
+                        wallet = AccountWallet(actor)
+                        ship = Ship.createFromSave(this, actor)
+                        found = true
+                        break
+                    }
+                }
+                if(!found){
+                    throw IllegalStateException("Invalid actor $actorName")
                 }
             } else {
                 queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
@@ -65,12 +70,18 @@ class Player(val connection: WsContext) {
             queueShipAIChatMsg("Warning: Because you are playing as a guest, your progress will be lost if this tab is closed.")
         }
 
-        ShipManager.markForAdd(ship)
+        ShipManager.addShip(ship)
 
         val worldStateMessage = DHServer.composeWorldStateMessage()
         val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
         queueWorldStateMsg(worldStateMessage)
         queueShipsAddedMsg(shipsMessage)
+
+        val myActor = actorInfo
+        if(myActor?.lastDockedStation != null){
+            ship.dock(ship.myDockingPorts.random(), myActor.lastDockedStation.dockingPorts.random(), false)
+            queueSendStationMenuMessage()
+        }
     }
 
     fun isAuthenticated(): Boolean {

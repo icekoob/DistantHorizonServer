@@ -52,7 +52,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         val script = aiScripts[DHServer.getCurrentTickInCycle()]
         if (script != null) {
             println("initializing AI ship from station $name")
-            ShipManager.markForAdd(AIShip(script.copy()))
+            ShipManager.addShip(AIShip(script.copy()))
         }
         super.tick()
     }

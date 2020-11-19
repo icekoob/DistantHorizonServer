@@ -175,14 +175,16 @@ open class Ship(
         }
     }
 
-    private fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort) {
+    fun dock(shipPort: ShipDockingPort, stationPort: StationDockingPort, updateLastDocked: Boolean = true) {
         this.myDockedPort = shipPort
         this.dockedToPort = stationPort
         DHServer.broadcastShipDocked(this)
         scriptWriter?.completeScript(stationPort.station)
         pilot?.actorInfo?.let {
-            DHServer.getDatabase().getPersistenceDatabase().updateActorLastDockedStation(it, stationPort.station)
-            println("Updated last docked station of ${pilot.actorInfo?.displayName} to ${stationPort.station.name}")
+            if(updateLastDocked) {
+                DHServer.getDatabase().getPersistenceDatabase().updateActorLastDockedStation(it, stationPort.station)
+                println("Updated last docked station of ${pilot.actorInfo?.displayName} to ${stationPort.station.name}")
+            }
         }
     }
 
@@ -270,10 +272,6 @@ open class Ship(
                 getStartingOrbit(),
                 player
             )
-            if(actorInfo.lastDockedStation != null){
-                s.dockedToPort = actorInfo.lastDockedStation.dockingPorts.random()
-                s.myDockedPort = s.myDockingPorts.random()
-            }
             return s
         }
 

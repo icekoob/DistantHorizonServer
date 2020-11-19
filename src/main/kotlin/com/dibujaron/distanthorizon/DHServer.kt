@@ -154,7 +154,7 @@ object DHServer {
         }.get("/account/:accountName") {
             val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
             it.result(dbInfo.toJSON().toString())
-        }.post("/account/:accountName/newActor"){
+        }.post("/account/:accountName/createActor"){
             val acctName = it.pathParam("accountName")
             val db = database.getPersistenceDatabase()
             val body = JSONObject(it.body())
@@ -162,13 +162,17 @@ object DHServer {
             val acct = db.selectOrCreateAccount(acctName)
             db.createNewActorForAccount(acct, displayName)
             it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
-        }.delete("/account/:accountName/:actorIndex"){
+        }.post("/account/:accountName/deleteActor"){
             val acctName = it.pathParam("accountName")
-            val actorIndex = it.pathParam("actorIndex").toInt()
+            val body = JSONObject(it.body())
+            val displayName = body.getString("display_name")
             val db = database.getPersistenceDatabase()
             val acct = db.selectOrCreateAccount(acctName)
-            val actor = acct.actors[actorIndex]
-            db.deleteActor(actor)
+            for(actor in acct.actors){
+                if(actor.displayName == displayName){
+                    db.deleteActor(actor)
+                }
+            }
             it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
         }.start(port)
     }
@@ -185,7 +189,7 @@ object DHServer {
         } else {
             PlayerManager.removePlayer(player)
             val playerShip: Ship = player.ship
-            ShipManager.markForRemove(playerShip)
+            ShipManager.removeShip(playerShip)
         }
     }
 

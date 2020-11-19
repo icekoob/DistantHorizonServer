@@ -147,7 +147,11 @@ class ExPersistenceDatabase : PersistenceDatabase {
                     }
                 }
                 return transaction {
-                    ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
+                    ExDatabase.Actor.join(
+                        ExDatabase.Ship,
+                        JoinType.INNER,
+                        additionalConstraint = { ExDatabase.Actor.currentShip eq ExDatabase.Ship.id })
+                        .select { ExDatabase.Actor.id eq actor.id }
                         .map { mapActorInfo(it) }
                         .first()
                 }
@@ -165,7 +169,11 @@ class ExPersistenceDatabase : PersistenceDatabase {
                 }
             }
             return transaction {
-                ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
+                ExDatabase.Actor.join(
+                    ExDatabase.Ship,
+                    JoinType.INNER,
+                    additionalConstraint = { ExDatabase.Actor.currentShip eq ExDatabase.Ship.id })
+                    .select { ExDatabase.Actor.id eq actor.id }
                     .map { mapActorInfo(it) }
                     .first()
             }
@@ -182,7 +190,11 @@ class ExPersistenceDatabase : PersistenceDatabase {
                 }
             }
             return transaction {
-                ExDatabase.Actor.select { ExDatabase.Actor.id eq actor.id }
+                ExDatabase.Actor.join(
+                    ExDatabase.Ship,
+                    JoinType.INNER,
+                    additionalConstraint = { ExDatabase.Actor.currentShip eq ExDatabase.Ship.id })
+                    .select { ExDatabase.Actor.id eq actor.id }
                     .map { mapActorInfo(it) }
                     .first()
             }

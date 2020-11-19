@@ -16,7 +16,7 @@ class AIShip(private val scriptReader: ScriptReader) : Ship(
             }
         } else {
             println("AI ship $uuid completed run and will be removed.")
-            ShipManager.markForRemove(this)
+            ShipManager.removeShip(this)
         }
         return super.computeNextState() //will apply the inputs.
     }

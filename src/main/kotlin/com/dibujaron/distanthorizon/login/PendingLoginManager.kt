@@ -53,7 +53,7 @@ object PendingLoginManager {
     {
         println("confirming login for token $token")
         return if(token == "debug"){
-            if(DHServer.debug) "Debug#0000" else null
+            if(DHServer.debug) "Debug0000" else null
         } else {
             cleanup()
             val pendingLogin = unconfirmedLogins[token]
@@ -72,7 +72,7 @@ object PendingLoginManager {
     {
         println("completing login for token $token")
         return if(token == "debug") {
-            if(DHServer.debug) "Debug#0000" else null
+            if(DHServer.debug) "Debug0000" else null
         } else {
             cleanup()
             val pendingLogin = confirmedConnectionsNoSocketEstablished[token]
