@@ -125,6 +125,7 @@ object DHServer {
         tickCount++
     }
 
+    //gotta get rid of the confirmation step. Also token should be ageless, or long-lived.
     fun initJavalin(port: Int): Javalin {
         println("initializing javalin on port $port")
         return Javalin.create { config ->
@@ -141,16 +142,11 @@ object DHServer {
         }.get("/prep_login/:username"){
             val username = it.pathParam("username")
             val token = PendingLoginManager.registerPendingLoginGenerateToken(username)
-            it.result(token)
-        }.get("/confirm_client_login/:token"){
-            val token = it.pathParam("token")
-            val username = PendingLoginManager.confirmClientLogin(token)
-            val response = JSONObject()
-            response.put("confirmed", (username != null))
-            if(username != null){
-                response.put("account_data", getDatabase().getPersistenceDatabase().selectOrCreateAccount(username).toJSON())
-            }
-            it.result(response.toString())
+            val db = database.getPersistenceDatabase()
+            val acct = db.selectOrCreateAccount(username)
+            val json = acct.toJSON()
+            json.put("token", token)
+            it.result(json.toString())
         }.get("/account/:accountName") {
             val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
             it.result(dbInfo.toJSON().toString())

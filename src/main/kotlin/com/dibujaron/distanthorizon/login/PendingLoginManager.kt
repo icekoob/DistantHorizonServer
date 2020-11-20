@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap
 object PendingLoginManager {
 
     private val unconfirmedLogins = ConcurrentHashMap<String, PendingLogin>()
-    private val confirmedConnectionsNoSocketEstablished = ConcurrentHashMap<String, PendingLogin>()
 
     class PendingLogin(val username: String, val expiry: Long)
 
@@ -44,65 +43,41 @@ object PendingLoginManager {
     {
         cleanup()
         val token = generateToken(username)
-        unconfirmedLogins[token] = PendingLogin(username, System.currentTimeMillis() + 5000)
+        unconfirmedLogins[token] = PendingLogin(username, System.currentTimeMillis() + 1000 * 60 * 60 * 10)
         println("registered pending login for user $username, token is $token")
         return token
     }
 
-    fun confirmClientLogin(token: String): String?
-    {
-        println("confirming login for token $token")
-        return if(token == "debug"){
-            if(DHServer.debug) "Debug0000" else null
+
+
+    fun completeLogin(token: String): String? {
+        println("completing login for token $token")
+        return if (token == "debug") {
+            if (DHServer.debug) "Debug0000" else null
         } else {
             cleanup()
             val pendingLogin = unconfirmedLogins[token]
-            if (pendingLogin == null || System.currentTimeMillis() > pendingLogin.expiry) {
+            return if (pendingLogin == null || System.currentTimeMillis() > pendingLogin.expiry) {
                 null
             } else {
                 unconfirmedLogins.remove(token)
-                confirmedConnectionsNoSocketEstablished[token] =
-                    PendingLogin(pendingLogin.username, System.currentTimeMillis() + 1000 * 60 * 10)
-                return pendingLogin.username
-            }
-        }
-    }
-
-    fun completeLogin(token: String): String?
-    {
-        println("completing login for token $token")
-        return if(token == "debug") {
-            if(DHServer.debug) "Debug0000" else null
-        } else {
-            cleanup()
-            val pendingLogin = confirmedConnectionsNoSocketEstablished[token]
-            return if(pendingLogin == null || System.currentTimeMillis() > pendingLogin.expiry){
-                null
-            } else {
-                confirmedConnectionsNoSocketEstablished.remove(token)
                 pendingLogin.username
             }
         }
     }
 
-    private fun cleanup(){
-        var count = 0
-        count += cleanup(unconfirmedLogins)
-        count += cleanup(confirmedConnectionsNoSocketEstablished)
-        if(count > 0){
-            println("cleaned up $count unfulfilled pending logins.")
-        }
-    }
-
-    private fun cleanup(map: ConcurrentHashMap<String, PendingLogin>): Int{
+    private fun cleanup(): Int{
         val t = System.currentTimeMillis()
         var count = 0
-        for(k in map.keys){
-            val pl = map[k]
+        for(k in unconfirmedLogins.keys){
+            val pl = unconfirmedLogins[k]
             if(pl != null && t > pl.expiry){
-                map.remove(k)
+                unconfirmedLogins.remove(k)
                 count++
             }
+        }
+        if(count > 0){
+            println("cleaned up $count unfulfilled pending logins.")
         }
         return count
     }
