@@ -132,7 +132,7 @@ object DHServer {
             config.defaultContentType = "application/json"
             config.autogenerateEtags = true
             config.asyncRequestTimeout = 10_000L
-            config.enforceSsl = true
+            config.enforceSsl = false
             config.showJavalinBanner = false
         }.ws("/ws/") { ws ->
                 ws.onConnect { onClientConnect(it) }
