@@ -48,19 +48,20 @@ object PendingLoginManager {
         return token
     }
 
-
-
     fun completeLogin(token: String): String? {
-        println("completing login for token $token")
+        println("completing login for token $token...")
         return if (token == "debug") {
+            println("token is debug. Server in debug mode=${DHServer.debug}")
             if (DHServer.debug) "Debug0000" else null
         } else {
             cleanup()
             val pendingLogin = unconfirmedLogins[token]
             return if (pendingLogin == null || System.currentTimeMillis() > pendingLogin.expiry) {
+                println("no pending login found or login is expired.")
                 null
             } else {
                 unconfirmedLogins.remove(token)
+                println("login completed for ${pendingLogin.username}")
                 pendingLogin.username
             }
         }

@@ -30,9 +30,11 @@ class Player(val connection: WsContext) {
         println("processing client opening message.")
         val authenticationExpected = message.getBoolean("authenticated")
         if(authenticationExpected){
+            println("authentication expected.")
             val clientKey = message.getString("client_key")
             val username = PendingLoginManager.completeLogin(clientKey)
             if(username != null){
+                println("Username is $username, expecting actor name.")
                 val actorName = message.getString("actor_name")
                 val db = DHServer.getDatabase().getPersistenceDatabase()
                 val myAccount = db.selectOrCreateAccount(username)
@@ -54,6 +56,7 @@ class Player(val connection: WsContext) {
                 queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
             }
         } else {
+            println("authentication not expected, proceeding as guest.")
             ship = Ship.createGuestShip(this)
             wallet = GuestWallet()
         }
