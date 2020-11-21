@@ -153,7 +153,9 @@ object DHServer {
             }
         }.get("/:serverSecret/account/:accountName") {
             if(verifySecret(it.pathParam("serverSecret"))) {
-                val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
+                val acctName = it.pathParam("accountName")
+                val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(acctName)
+                println("Getting account data for account $acctName")
                 it.result(dbInfo.toJSON().toString())
             }
         }.post("/:serverSecret/account/:accountName/createActor"){
@@ -162,6 +164,7 @@ object DHServer {
                 val db = database.getPersistenceDatabase()
                 val body = JSONObject(it.body())
                 val displayName = body.getString("display_name")
+                println("Creating actor for account $acctName with name $displayName")
                 val acct = db.selectOrCreateAccount(acctName)
                 db.createNewActorForAccount(acct, displayName)
                 it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
@@ -171,6 +174,7 @@ object DHServer {
                 val acctName = it.pathParam("accountName")
                 val body = JSONObject(it.body())
                 val displayName = body.getString("display_name")
+                println("Deleting actor $displayName from account $acctName")
                 val db = database.getPersistenceDatabase()
                 val acct = db.selectOrCreateAccount(acctName)
                 for (actor in acct.actors) {
