@@ -42,7 +42,8 @@ object DHServer {
 
     private var shuttingDown = false
     val serverProperties: Properties = loadProperties()
-    private val javalin = initJavalin(serverProperties.getProperty("server.port", "25611").toInt())
+    val serverPort = serverProperties.getProperty("server.port", "25611").toInt()
+    val serverSecret = serverProperties.getProperty("server.secret", "debug")
     val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "30").toInt()
     val shipHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.ship.offset", "0").toInt()
     val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "60").toInt()
@@ -56,7 +57,8 @@ object DHServer {
     var debug = serverProperties.getProperty("debug", "true").toBoolean()
     val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
-    val authenticationUrl = serverProperties.getProperty("authentication.url", "http://distant-horizon.io/server_check_login")
+
+    private val javalin = initJavalin(serverPort)
     val timer =
         fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
 
@@ -137,40 +139,61 @@ object DHServer {
         }.ws("/ws/") { ws ->
                 ws.onConnect { onClientConnect(it) }
                 ws.onClose { onClientDisconnect(it) }
-                ws.onBinaryMessage() { onMessageReceived(it) }
+                ws.onBinaryMessage { onMessageReceived(it) }
                 ws.onError { onSocketError(it) }
-        }.get("/prep_login/:username"){
-            val username = it.pathParam("username")
-            val token = PendingLoginManager.registerPendingLoginGenerateToken(username)
-            val db = database.getPersistenceDatabase()
-            val acct = db.selectOrCreateAccount(username)
-            val json = acct.toJSON()
-            json.put("token", token)
-            it.result(json.toString())
-        }.get("/account/:accountName") {
-            val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
-            it.result(dbInfo.toJSON().toString())
-        }.post("/account/:accountName/createActor"){
-            val acctName = it.pathParam("accountName")
-            val db = database.getPersistenceDatabase()
-            val body = JSONObject(it.body())
-            val displayName = body.getString("display_name")
-            val acct = db.selectOrCreateAccount(acctName)
-            db.createNewActorForAccount(acct, displayName)
-            it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
-        }.post("/account/:accountName/deleteActor"){
-            val acctName = it.pathParam("accountName")
-            val body = JSONObject(it.body())
-            val displayName = body.getString("display_name")
-            val db = database.getPersistenceDatabase()
-            val acct = db.selectOrCreateAccount(acctName)
-            for(actor in acct.actors){
-                if(actor.displayName == displayName){
-                    db.deleteActor(actor)
-                }
+        }.get("/:serverSecret/prepLogin/:username"){
+            if(verifySecret(it.pathParam("serverSecret"))) {
+                val username = it.pathParam("username")
+                val token = PendingLoginManager.registerPendingLoginGenerateToken(username)
+                val db = database.getPersistenceDatabase()
+                val acct = db.selectOrCreateAccount(username)
+                val json = acct.toJSON()
+                json.put("token", token)
+                it.result(json.toString())
             }
-            it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
+        }.get("/:serverSecret/account/:accountName") {
+            if(verifySecret(it.pathParam("serverSecret"))) {
+                val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(it.pathParam("accountName"))
+                it.result(dbInfo.toJSON().toString())
+            }
+        }.post("/:serverSecret/account/:accountName/createActor"){
+            if(verifySecret(it.pathParam("serverSecret"))) {
+                val acctName = it.pathParam("accountName")
+                val db = database.getPersistenceDatabase()
+                val body = JSONObject(it.body())
+                val displayName = body.getString("display_name")
+                val acct = db.selectOrCreateAccount(acctName)
+                db.createNewActorForAccount(acct, displayName)
+                it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
+            }
+        }.post("/:serverSecret/account/:accountName/deleteActor"){
+            if(verifySecret(it.pathParam("serverSecret"))) {
+                val acctName = it.pathParam("accountName")
+                val body = JSONObject(it.body())
+                val displayName = body.getString("display_name")
+                val db = database.getPersistenceDatabase()
+                val acct = db.selectOrCreateAccount(acctName)
+                for (actor in acct.actors) {
+                    if (actor.displayName == displayName) {
+                        db.deleteActor(actor)
+                    }
+                }
+                it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
+            }
         }.start(port)
+    }
+
+    private fun verifySecret(clientSecret: String): Boolean
+    {
+        if(!debug && serverSecret == "debug"){
+            throw IllegalStateException("Server is not in debug mode yet no server secret is set!")
+        } else {
+            val retval = serverSecret == clientSecret
+            if(!retval){
+                println("Warning: illegal client secret provided $clientSecret")
+            }
+            return retval
+        }
     }
 
     private fun onClientConnect(conn: WsConnectContext) {
