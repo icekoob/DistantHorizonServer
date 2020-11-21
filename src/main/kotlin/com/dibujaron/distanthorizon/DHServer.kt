@@ -162,6 +162,7 @@ object DHServer {
             if(verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val db = database.getPersistenceDatabase()
+                println("create actor request: " + it.body())
                 val body = JSONObject(it.body())
                 val displayName = body.getString("display_name")
                 println("Creating actor for account $acctName with name $displayName")
