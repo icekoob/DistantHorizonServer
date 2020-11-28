@@ -23,7 +23,7 @@ class Player(val connection: WsContext) {
     lateinit var ship: Ship
     private val incomingMessageQueue: Queue<JSONObject> = LinkedList()
     private val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
-
+    var initialized: Boolean = false
     lateinit var wallet: Wallet
 
     private fun processClientFirstMessage(message: JSONObject) {
@@ -74,7 +74,7 @@ class Player(val connection: WsContext) {
         }
 
         ShipManager.addShip(ship)
-
+        initialized = true
         val worldStateMessage = DHServer.composeWorldStateMessage()
         val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
         queueWorldStateMsg(worldStateMessage)

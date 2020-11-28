@@ -28,8 +28,8 @@ fun main() {
 
 object DHServer {
 
-    const val TICK_LENGTH_SECONDS = 1.0/60.0
-    const val TICK_LENGTH_MILLIS = 1000.0/60.0
+    const val TICK_LENGTH_SECONDS = 1.0 / 60.0
+    const val TICK_LENGTH_MILLIS = 1000.0 / 60.0
     val TICK_LENGTH_MILLIS_CEIL = ceil(TICK_LENGTH_MILLIS).toLong()
     const val TICKS_PER_SECOND = 60
 
@@ -55,18 +55,24 @@ object DHServer {
     val dockingSpeed = serverProperties.getProperty("docking.speed", "200.0").toDouble()
     val dockingDist = serverProperties.getProperty("docking.distance", "200.0").toDouble()
     var debug = serverProperties.getProperty("debug", "true").toBoolean()
-    val dbUrl = serverProperties.getProperty("database.url", "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin")
+    val dbUrl = serverProperties.getProperty(
+        "database.url",
+        "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin"
+    )
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
 
     private val javalin = initJavalin(serverPort)
     val timer =
-        fixedRateTimer(name = "mainThread", initialDelay = TICK_LENGTH_MILLIS_CEIL, period = TICK_LENGTH_MILLIS_CEIL) { mainLoop() }
+        fixedRateTimer(
+            name = "mainThread",
+            initialDelay = TICK_LENGTH_MILLIS_CEIL,
+            period = TICK_LENGTH_MILLIS_CEIL
+        ) { mainLoop() }
 
     private val database: DhDatabase = ExDatabase(dbUrl, dbDriver)
     private var tickCount = 0
 
-    fun getDatabase(): DhDatabase
-    {
+    fun getDatabase(): DhDatabase {
         return database
     }
 
@@ -102,7 +108,7 @@ object DHServer {
         val delta = tickTime - lastTickTime
         accumulator += delta
         var count = 0
-        while(accumulator >= TICK_LENGTH_MILLIS){
+        while (accumulator >= TICK_LENGTH_MILLIS) {
             tick()
             count++
             accumulator -= TICK_LENGTH_MILLIS
@@ -121,7 +127,9 @@ object DHServer {
         val isShipStateMessageTick = tickCount % shipHeartbeatsEvery == shipHeartbeatsTickOffset
         if (isShipStateMessageTick) {
             val shipHeartbeatsMessage = composeShipHeartbeatsMessageForAll()
-            PlayerManager.getPlayers().forEach { it.queueShipHeartbeatsMsg(shipHeartbeatsMessage) }
+            PlayerManager.getPlayers()
+                .filter { it.initialized }
+                .forEach { it.queueShipHeartbeatsMsg(shipHeartbeatsMessage) }
         }
         PlayerManager.tick()
         tickCount++
@@ -137,12 +145,12 @@ object DHServer {
             config.enforceSsl = false
             config.showJavalinBanner = false
         }.ws("/ws/") { ws ->
-                ws.onConnect { onClientConnect(it) }
-                ws.onClose { onClientDisconnect(it) }
-                ws.onBinaryMessage { onMessageReceived(it) }
-                ws.onError { onSocketError(it) }
-        }.get("/:serverSecret/prepLogin/:username"){
-            if(verifySecret(it.pathParam("serverSecret"))) {
+            ws.onConnect { onClientConnect(it) }
+            ws.onClose { onClientDisconnect(it) }
+            ws.onBinaryMessage { onMessageReceived(it) }
+            ws.onError { onSocketError(it) }
+        }.get("/:serverSecret/prepLogin/:username") {
+            if (verifySecret(it.pathParam("serverSecret"))) {
                 val username = it.pathParam("username")
                 val token = PendingLoginManager.registerPendingLoginGenerateToken(username)
                 val db = database.getPersistenceDatabase()
@@ -152,14 +160,14 @@ object DHServer {
                 it.result(json.toString())
             }
         }.get("/:serverSecret/account/:accountName") {
-            if(verifySecret(it.pathParam("serverSecret"))) {
+            if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val dbInfo = database.getPersistenceDatabase().selectOrCreateAccount(acctName)
                 println("Getting account data for account $acctName")
                 it.result(dbInfo.toJSON().toString())
             }
-        }.post("/:serverSecret/account/:accountName/createActor"){
-            if(verifySecret(it.pathParam("serverSecret"))) {
+        }.post("/:serverSecret/account/:accountName/createActor") {
+            if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val db = database.getPersistenceDatabase()
                 println("create actor request: " + it.body())
@@ -170,8 +178,8 @@ object DHServer {
                 db.createNewActorForAccount(acct, displayName)
                 it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
             }
-        }.post("/:serverSecret/account/:accountName/deleteActor"){
-            if(verifySecret(it.pathParam("serverSecret"))) {
+        }.post("/:serverSecret/account/:accountName/deleteActor") {
+            if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val body = JSONObject(it.body())
                 val displayName = body.getString("display_name")
@@ -188,13 +196,12 @@ object DHServer {
         }.start(port)
     }
 
-    private fun verifySecret(clientSecret: String): Boolean
-    {
-        if(!debug && serverSecret == "debug"){
+    private fun verifySecret(clientSecret: String): Boolean {
+        if (!debug && serverSecret == "debug") {
             throw IllegalStateException("Server is not in debug mode yet no server secret is set!")
         } else {
             val retval = serverSecret == clientSecret
-            if(!retval){
+            if (!retval) {
                 println("Warning: illegal client secret provided $clientSecret")
             }
             return retval
@@ -246,17 +253,15 @@ object DHServer {
         return ships
     }
 
-    fun composeMessageForShipsAdded(inputShips: Collection<Ship>): JSONArray
-    {
+    fun composeMessageForShipsAdded(inputShips: Collection<Ship>): JSONArray {
         val outputShips = JSONArray()
-        inputShips.asSequence().map{it.createFullShipJSON()}.forEach { outputShips.put(it) }
+        inputShips.asSequence().map { it.createFullShipJSON() }.forEach { outputShips.put(it) }
         return outputShips
     }
 
-    fun composeMessageForShipsRemoved(inputShips: Collection<Ship>): JSONArray
-    {
+    fun composeMessageForShipsRemoved(inputShips: Collection<Ship>): JSONArray {
         val outputShips = JSONArray()
-        inputShips.asSequence().map{it.uuid}.forEach { outputShips.put(it) }
+        inputShips.asSequence().map { it.uuid }.forEach { outputShips.put(it) }
         return outputShips
     }
 
@@ -284,7 +289,7 @@ object DHServer {
     fun loadProperties(): Properties {
         val p = Properties()
         val f = File("./server.properties")
-        if(f.exists()) {
+        if (f.exists()) {
             println("Found server properties file.")
             p.load(FileReader(f))
         } else {
@@ -293,18 +298,15 @@ object DHServer {
         return p
     }
 
-    fun ticksToSeconds(ticks: Double): Double
-    {
+    fun ticksToSeconds(ticks: Double): Double {
         return ticks / TICKS_PER_SECOND
     }
 
-    fun secondsToTicks(seconds: Double): Double
-    {
+    fun secondsToTicks(seconds: Double): Double {
         return seconds * TICKS_PER_SECOND
     }
 
-    private fun factors(num: Int): TreeSet<Int>
-    {
+    private fun factors(num: Int): TreeSet<Int> {
         //https://stackoverflow.com/questions/47030439/get-factors-of-numbers-in-kotlin
         val factors = TreeSet<Int>()
         if (num < 1)
