@@ -74,7 +74,6 @@ class Player(val connection: WsContext) {
         }
 
         ShipManager.addShip(ship)
-        initialized = true
         val worldStateMessage = DHServer.composeWorldStateMessage()
         val shipsMessage = DHServer.composeMessageForShipsAdded(ShipManager.getShips())
         queueWorldStateMsg(worldStateMessage)
@@ -85,6 +84,7 @@ class Player(val connection: WsContext) {
             ship.dock(ship.myDockingPorts.random(), myActor.lastDockedStation.dockingPorts.random(), false)
             queueSendStationMenuMessage()
         }
+        initialized = true
     }
 
     fun isAuthenticated(): Boolean {
