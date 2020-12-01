@@ -29,29 +29,29 @@ class Player(val connection: WsContext) {
     private fun processClientFirstMessage(message: JSONObject) {
         println("processing client opening message.")
         val authenticationExpected = message.getBoolean("authenticated")
-        if(authenticationExpected){
+        if (authenticationExpected) {
             println("authentication expected.")
             val clientKey = message.getString("client_key")
             val username = PendingLoginManager.completeLogin(clientKey)
-            if(username != null){
+            if (username != null) {
                 println("Username is $username, expecting actor name.")
                 val actorName = message.getString("actor_name")
                 val db = DHServer.getDatabase().getPersistenceDatabase()
                 val myAccount = db.selectOrCreateAccount(username)
-                var found = false
-                for(actor in myAccount.actors){
-                    if(actor.displayName == actorName){
-                        accountInfo = myAccount
-                        actorInfo = actor
-                        wallet = AccountWallet(actor)
-                        ship = Ship.createFromSave(this, actor)
-                        found = true
-                        break
+                var foundActor: ActorInfo? = myAccount.actors.find { it.displayName == actorName }
+                if (foundActor == null) {
+                    if (username == "Debug0000" && actorName == "debug") {
+                        val newAcct = db.createNewActorForAccount(myAccount, "debug")
+                        foundActor = newAcct!!.actors.find { it.displayName == actorName }
+                    } else {
+                        throw IllegalStateException("Invalid actor $actorName")
                     }
                 }
-                if(!found){
-                    throw IllegalStateException("Invalid actor $actorName")
-                }
+                accountInfo = myAccount
+                actorInfo = foundActor!!
+                wallet = AccountWallet(foundActor)
+                ship = Ship.createFromSave(this, foundActor)
+
             } else {
                 queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
             }
@@ -65,7 +65,7 @@ class Player(val connection: WsContext) {
         queueShipAIChatMsg(companionAI.getInitializationMessage())
 
         val myAccount = accountInfo
-        if (myAccount != null){
+        if (myAccount != null) {
             queueShipAIChatMsg(companionAI.getLoggedInGreeting())
             PlayerManager.mapAuthenticatedPlayer(myAccount.accountName, this)
         } else {
@@ -80,7 +80,7 @@ class Player(val connection: WsContext) {
         queueShipsAddedMsg(shipsMessage)
 
         val myActor = actorInfo
-        if(myActor?.lastDockedStation != null){
+        if (myActor?.lastDockedStation != null) {
             ship.dock(ship.myDockingPorts.random(), myActor.lastDockedStation.dockingPorts.random(), false)
             queueSendStationMenuMessage()
         }
@@ -92,27 +92,27 @@ class Player(val connection: WsContext) {
     }
 
     fun getUsername(): String {
-        return accountInfo?.accountName?:"guest"
+        return accountInfo?.accountName ?: "guest"
     }
 
     fun queueIncomingMessageFromClient(message: JSONObject) {
-        if(DHServer.REQUEST_BATCHING) {
+        if (DHServer.REQUEST_BATCHING) {
             incomingMessageQueue.add(message)
         } else {
             processIncomingMessage(message)
         }
     }
 
-    fun tick(){
-        while(!incomingMessageQueue.isEmpty()){
+    fun tick() {
+        while (!incomingMessageQueue.isEmpty()) {
             processIncomingMessage(incomingMessageQueue.remove())
         }
-        while(!outgoingMessageQueue.isEmpty()){
+        while (!outgoingMessageQueue.isEmpty()) {
             sendMessage(outgoingMessageQueue.remove())
         }
     }
 
-    private fun processIncomingMessage(message: JSONObject){
+    private fun processIncomingMessage(message: JSONObject) {
         //todo refactor - separate handlers for each message type?
         val messageType = message.getString("message_type")
         if (messageType == "init") {
@@ -159,7 +159,7 @@ class Player(val connection: WsContext) {
     }
 
     fun getDisplayName(): String {
-        return actorInfo?.displayName?:"Guest";
+        return actorInfo?.displayName ?: "Guest";
     }
 
     private fun queueSendStationMenuMessage() {
@@ -222,13 +222,14 @@ class Player(val connection: WsContext) {
         queueMessage(myMessage)
     }
 
-    fun queueShipAIChatMsg(message: String){
+    fun queueShipAIChatMsg(message: String) {
         queueChatMsg("[${companionAI.getName()}]", message)
     }
 
-    fun queueChatMsg(senderName: String, message: String){
+    fun queueChatMsg(senderName: String, message: String) {
         queueChatMsg("$senderName: $message")
     }
+
     fun queueChatMsg(message: String) {
         val myMessage = createMessage("chat")
         myMessage.put("payload", message)
@@ -243,14 +244,14 @@ class Player(val connection: WsContext) {
     }
 
     fun queueMessage(message: JSONObject) {
-        if(DHServer.REQUEST_BATCHING) {
+        if (DHServer.REQUEST_BATCHING) {
             outgoingMessageQueue.add(message)
         } else {
             sendMessage(message)
         }
     }
 
-    fun sendMessage(message: JSONObject ){
+    fun sendMessage(message: JSONObject) {
         val messageStr = message.toString()
         connection.send(messageStr)
     }

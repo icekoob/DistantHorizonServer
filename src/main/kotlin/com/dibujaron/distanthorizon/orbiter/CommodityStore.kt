@@ -1,6 +1,6 @@
 package com.dibujaron.distanthorizon.orbiter
 
-import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.utils.TimeUtils
 import org.json.JSONObject
 import java.util.*
 
@@ -27,7 +27,7 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
     }
 
     fun tick() {
-        val currentTick = DHServer.getCurrentTickAbsolute()
+        val currentTick = TimeUtils.getCurrentTickAbsolute()
         if (currentTick - lastUpdateTick > UPDATE_TIME_TICKS) {
             var newQty = quantityAvailable + productionConsumptionRate
             if (newQty > initialQuantity) {

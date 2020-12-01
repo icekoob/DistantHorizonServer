@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.orbiter
 
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
+import com.dibujaron.distanthorizon.utils.TimeUtils
 import org.json.JSONObject
 import java.util.*
 import kotlin.math.*
@@ -64,7 +65,7 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
     }
 
     open fun tick() {
-        if(DHServer.getCurrentTickInCycle() == 0){
+        if(TimeUtils.getCurrentTickInCycle() == 0){
             val diff = (startingPos - relativePos).lengthSquared
             if(diff > 1.0){
                 throw IllegalStateException("Orbiter drift is too large!")
@@ -146,7 +147,7 @@ abstract class Orbiter(private val parentName: String?, val name: String, val pr
 fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Double): Vector2 {
     val originalRadius = originalPos.length
     val originalPeriodSeconds = periodFromRadius(originalRadius, OrbiterManager.GRAVITY_CONSTANT, parentMass)
-    val originalPeriod = DHServer.secondsToTicks(originalPeriodSeconds)
+    val originalPeriod = TimeUtils.secondsToTicks(originalPeriodSeconds)
     val possiblePeriods = DHServer.FACTORS_OF_CYCLE_LENGTH
     var lowerPossibility = possiblePeriods.floor(floor(originalPeriod).toInt())
     if(lowerPossibility == null) lowerPossibility = 0
@@ -155,7 +156,7 @@ fun adjustOrbitalRadiusToMatchCycleLength(originalPos: Vector2, parentMass: Doub
     val lowerDiff = abs(originalPeriod - lowerPossibility)
     val higherDiff = abs(higherPossibility - originalPeriod)
     val result = if(lowerDiff < higherDiff) lowerPossibility else higherPossibility
-    val resultSeconds = DHServer.ticksToSeconds(result.toDouble())
+    val resultSeconds = TimeUtils.ticksToSeconds(result.toDouble())
     val newRadius = radiusFromPeriod(resultSeconds, OrbiterManager.GRAVITY_CONSTANT, parentMass)
     return originalPos.normalized() * newRadius
 }

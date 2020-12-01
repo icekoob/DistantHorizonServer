@@ -76,12 +76,8 @@ object DHServer {
         return database
     }
 
-    fun getCurrentTickAbsolute(): Int {
+    fun getTickCount(): Int{
         return tickCount
-    }
-
-    fun getCurrentTickInCycle(): Int {
-        return tickCount % CYCLE_LENGTH_TICKS
     }
 
     fun commandLoop() {
@@ -296,14 +292,6 @@ object DHServer {
             println("Found no server properties file, using defaults.")
         }
         return p
-    }
-
-    fun ticksToSeconds(ticks: Double): Double {
-        return ticks / TICKS_PER_SECOND
-    }
-
-    fun secondsToTicks(seconds: Double): Double {
-        return seconds * TICKS_PER_SECOND
     }
 
     private fun factors(num: Int): TreeSet<Int> {

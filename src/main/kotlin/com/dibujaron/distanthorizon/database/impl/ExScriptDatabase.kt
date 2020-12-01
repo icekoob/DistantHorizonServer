@@ -1,6 +1,5 @@
 package com.dibujaron.distanthorizon.database.impl
 
-import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.database.script.ScriptDatabase
@@ -12,6 +11,7 @@ import com.dibujaron.distanthorizon.ship.ShipClass
 import com.dibujaron.distanthorizon.ship.ShipClassManager
 import com.dibujaron.distanthorizon.ship.ShipInputs
 import com.dibujaron.distanthorizon.ship.ShipState
+import com.dibujaron.distanthorizon.utils.TimeUtils
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
@@ -92,14 +92,16 @@ class ExScriptDatabase : ScriptDatabase
     inner class RelationalScriptReader(private val steps: TreeMap<Int, ResultRow>, private val route: ResultRow) :
         ScriptReader {
 
-        //private val steps: TreeMap<Int, ResultRow> = TreeMap()
-
         constructor(route: ResultRow) : this(TreeMap(), route)
 
         init {
             if (steps.isEmpty()) {
                 transaction { ExDatabase.RouteStep.select { ExDatabase.RouteStep.routeID eq route[ExDatabase.Route.id].value }
-                    .forEach { steps[it[ExDatabase.RouteStep.stepTick]] = it }}
+                    .forEach {
+                        val startTick = it[ExDatabase.RouteStep.stepTick]
+                        val trueTick = TimeUtils.getNextAbsoluteTimeOfCycleTick(startTick)
+                        steps[trueTick] = it
+                    }}
             }
         }
 
@@ -130,7 +132,7 @@ class ExScriptDatabase : ScriptDatabase
 
         override fun nextActionShouldFire(): Boolean {
             val nextActionTick = steps.firstKey()
-            val currentTick = DHServer.getCurrentTickInCycle()
+            val currentTick = TimeUtils.getCurrentTickAbsolute()
             if (nextActionTick < currentTick) {
                 throw IllegalStateException("next action is in the past? nat: $nextActionTick, ct: $currentTick, route: ${route[ExDatabase.Route.id]}")
             } else {
@@ -175,13 +177,13 @@ class ExScriptDatabase : ScriptDatabase
         private val sourceStation: Station,
         private val startState: ShipState,
         private val shipType: ShipClass,
-        private val startTick: Int = DHServer.getCurrentTickInCycle(),
-        private val startTickAbsolute: Int = DHServer.getCurrentTickAbsolute()
+        private val startTick: Int = TimeUtils.getCurrentTickInCycle(),
+        private val startTickAbsolute: Int = TimeUtils.getCurrentTickAbsolute()
     ) : ScriptWriter {
         private val steps: TreeMap<Int, ShipInputs> = TreeMap()
 
         override fun writeAction(action: ShipInputs) {
-            steps[DHServer.getCurrentTickInCycle()] = action
+            steps[TimeUtils.getCurrentTickInCycle()] = action
         }
 
         //todo make not blocking if required
@@ -197,7 +199,7 @@ class ExScriptDatabase : ScriptDatabase
                     it[originStation] = sourceStation.name
                     it[destinationStation] = dockedStation.name
                     it[departureTick] = startTick
-                    it[duration] = DHServer.getCurrentTickAbsolute() - startTickAbsolute
+                    it[duration] = TimeUtils.getCurrentTickAbsolute() - startTickAbsolute
                     it[startingLocationX] = startState.position.x
                     it[startingLocationY] = startState.position.y
                     it[startingRotation] = startState.rotation

@@ -9,6 +9,7 @@ import com.dibujaron.distanthorizon.ship.AIShip
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import com.dibujaron.distanthorizon.ship.ShipState
+import com.dibujaron.distanthorizon.utils.TimeUtils
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -49,7 +50,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
 
     override fun tick() {
         commodityStores.values.forEach { it.tick() }
-        val script = aiScripts[DHServer.getCurrentTickInCycle()]
+        val script = aiScripts[TimeUtils.getCurrentTickInCycle()]
         if (script != null) {
             println("initializing AI ship from station $name")
             ShipManager.addShip(AIShip(script.copy()))
