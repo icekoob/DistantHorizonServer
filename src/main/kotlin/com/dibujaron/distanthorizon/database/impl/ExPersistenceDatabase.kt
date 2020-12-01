@@ -67,7 +67,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         balance: Int,
         lastDockedStation: Station?,
         ship: ShipInfoInternal
-    ) : ActorInfo(displayName, balance, lastDockedStation, ship)
+    ) : ActorInfo(id.value, displayName, balance, lastDockedStation, ship)
 
     inner class ShipInfoInternal(
         val id: EntityID<Int>,

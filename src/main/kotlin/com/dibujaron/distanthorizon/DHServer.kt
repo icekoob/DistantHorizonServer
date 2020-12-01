@@ -178,7 +178,7 @@ object DHServer {
             if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val body = JSONObject(it.body())
-                val displayName = body.getString("display_name")
+                val displayName = body.getString("actor_id")
                 println("Deleting actor $displayName from account $acctName")
                 val db = database.getPersistenceDatabase()
                 val acct = db.selectOrCreateAccount(acctName)

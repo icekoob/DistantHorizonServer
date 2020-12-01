@@ -4,6 +4,7 @@ import com.dibujaron.distanthorizon.orbiter.Station
 import org.json.JSONObject
 
 open class ActorInfo(
+    val uniqueID: Int,
     val displayName: String,
     val balance: Int,
     val lastDockedStation: Station?,
@@ -11,6 +12,7 @@ open class ActorInfo(
 ){
     open fun toJSON(): JSONObject {
         val r = JSONObject()
+        r.put("unique_id", uniqueID)
         r.put("display_name", displayName)
         r.put("balance", balance)
         r.put("station_name", lastDockedStation?.name)

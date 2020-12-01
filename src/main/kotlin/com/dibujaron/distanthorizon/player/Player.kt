@@ -35,22 +35,27 @@ class Player(val connection: WsContext) {
             val username = PendingLoginManager.completeLogin(clientKey)
             if (username != null) {
                 println("Username is $username, expecting actor name.")
-                val actorName = message.getString("actor_name")
+                val actorID = message.getInt("actor_id")
                 val db = DHServer.getDatabase().getPersistenceDatabase()
                 val myAccount = db.selectOrCreateAccount(username)
-                var foundActor: ActorInfo? = myAccount.actors.find { it.displayName == actorName }
-                if (foundActor == null) {
-                    if (username == "Debug0000" && actorName == "debug") {
+                var myActor: ActorInfo
+                if(username == "Debug0000"){
+                    myActor = if(myAccount.actors.isEmpty()){
+                        println("debug user has no actors, creating new.")
                         val newAcct = db.createNewActorForAccount(myAccount, "debug")
-                        foundActor = newAcct!!.actors.find { it.displayName == actorName }
+                        newAcct!!.actors.first()
                     } else {
-                        throw IllegalStateException("Invalid actor $actorName")
+                        println("user is debug, returning debug user.")
+                        myAccount.actors.first()
                     }
+                } else {
+                    myActor = myAccount.actors.find { it.uniqueID == actorID }!!
                 }
+                println("actor name is ${myActor.displayName}")
                 accountInfo = myAccount
-                actorInfo = foundActor!!
-                wallet = AccountWallet(foundActor)
-                ship = Ship.createFromSave(this, foundActor)
+                actorInfo = myActor
+                wallet = AccountWallet(myActor)
+                ship = Ship.createFromSave(this, myActor)
 
             } else {
                 queueShipAIChatMsg("ERROR: client authentication expected, but failed. Please report this to the DH team.")
