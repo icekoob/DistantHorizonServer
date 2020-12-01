@@ -118,7 +118,9 @@ object DHServer {
         val isWorldStateMessageTick = tickCount % worldHeartbeatsEvery == worldHeartbeatsTickOffset
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
-            PlayerManager.getPlayers().forEach { it.queueWorldStateMsg(worldStateMessage) }
+            PlayerManager.getPlayers()
+                .filter { it.initialized }
+                .forEach { it.queueWorldStateMsg(worldStateMessage) }
         }
         val isShipStateMessageTick = tickCount % shipHeartbeatsEvery == shipHeartbeatsTickOffset
         if (isShipStateMessageTick) {
