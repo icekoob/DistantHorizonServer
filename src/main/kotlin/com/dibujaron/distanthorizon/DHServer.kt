@@ -44,7 +44,7 @@ object DHServer {
     val serverProperties: Properties = loadProperties()
     val serverPort = serverProperties.getProperty("server.port", "25611").toInt()
     val serverSecret = serverProperties.getProperty("server.secret", "debug")
-    val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "5").toInt()
+    val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "30").toInt()
     val shipHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.ship.offset", "0").toInt()
     val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "10").toInt()
     val worldHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.world.offset", "0").toInt()

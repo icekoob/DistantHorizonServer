@@ -98,9 +98,7 @@ class ExScriptDatabase : ScriptDatabase
             if (steps.isEmpty()) {
                 transaction { ExDatabase.RouteStep.select { ExDatabase.RouteStep.routeID eq route[ExDatabase.Route.id].value }
                     .forEach {
-                        val startTick = it[ExDatabase.RouteStep.stepTick]
-                        val trueTick = TimeUtils.getNextAbsoluteTimeOfCycleTick(startTick)
-                        steps[trueTick] = it
+                        steps[it[ExDatabase.RouteStep.stepTick]] = it
                     }}
             }
         }
@@ -132,12 +130,8 @@ class ExScriptDatabase : ScriptDatabase
 
         override fun nextActionShouldFire(): Boolean {
             val nextActionTick = steps.firstKey()
-            val currentTick = TimeUtils.getCurrentTickAbsolute()
-            if (nextActionTick < currentTick) {
-                throw IllegalStateException("next action is in the past? nat: $nextActionTick, ct: $currentTick, route: ${route[ExDatabase.Route.id]}")
-            } else {
-                return nextActionTick == currentTick
-            }
+            val currentTick = TimeUtils.getCurrentTickInCycle()
+            return nextActionTick == currentTick
         }
 
         override fun getNextAction(): ShipInputs {
