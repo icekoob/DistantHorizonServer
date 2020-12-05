@@ -217,8 +217,10 @@ object DHServer {
             throw IllegalStateException("Connection disconnected but no player found for this connection.")
         } else {
             PlayerManager.removePlayer(player)
-            val playerShip: Ship = player.ship
-            ShipManager.removeShip(playerShip)
+            if(player.initialized) {
+                val playerShip: Ship = player.ship
+                ShipManager.removeShip(playerShip)
+            }
         }
     }
 

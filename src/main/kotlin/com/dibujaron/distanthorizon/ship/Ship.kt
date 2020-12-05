@@ -102,8 +102,6 @@ open class Ship(
         }
 
         val gravityAccel = OrbiterManager.calculateGravityAtTick(0.0, globalPos) * delta
-        if(Math.random() > 0.95 && pilot != null)
-            println("gravity accel is ${gravityAccel.length}")
         velocity += gravityAccel
         globalPos += velocity * delta
         return ShipState(globalPos, rotation, velocity)
