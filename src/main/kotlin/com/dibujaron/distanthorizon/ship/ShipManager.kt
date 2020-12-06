@@ -40,12 +40,12 @@ object ShipManager {
     fun addShip(ship: Ship) {
         shipMap[ship.uuid] = ship
         val message = DHServer.composeMessageForShipsAdded(Collections.singletonList(ship))
-        PlayerManager.getPlayers().asSequence().forEach { it.queueShipsAddedMsg(message) }
+        PlayerManager.getPlayers().forEach { it.queueShipsAddedMsg(message) }
     }
 
     fun removeShip(ship: Ship) {
         val message = DHServer.composeMessageForShipsRemoved(Collections.singletonList(ship))
-        PlayerManager.getPlayers().asSequence().forEach { it.queueShipsRemovedMsg(message) }
+        PlayerManager.getPlayers().forEach { it.queueShipsRemovedMsg(message) }
         shipMap.remove(ship.uuid)
     }
 }

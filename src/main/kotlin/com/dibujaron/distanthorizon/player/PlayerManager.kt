@@ -27,7 +27,7 @@ object PlayerManager {
     }
 
     fun tick() {
-        getPlayers().forEach { it.tick() }
+        getPlayers(true).forEach { it.tick() }
     }
 
     fun getPlayerByUsername(username: String): Player? {
@@ -38,8 +38,8 @@ object PlayerManager {
         return connectionMap[conn]
     }
 
-    fun getPlayers(): Collection<Player> {
-        return connectionMap.values
+    fun getPlayers(includeUninitialized: Boolean = false): Sequence<Player> {
+        return connectionMap.values.asSequence().filter { includeUninitialized || it.initialized }
     }
 
     fun broadcast(senderName: String, message: String) {
