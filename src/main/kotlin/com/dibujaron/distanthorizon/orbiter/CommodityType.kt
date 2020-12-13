@@ -17,4 +17,11 @@ enum class CommodityType(val identifyingName: String, val displayName: String) {
     RUSH("rush", "RuSh");
 
     constructor(identifyingName: String): this(identifyingName, identifyingName)
+
+    companion object {
+        fun fromString(name: String): CommodityType
+        {
+            return values().asSequence().find { it.identifyingName == name }!!
+        }
+    }
 }

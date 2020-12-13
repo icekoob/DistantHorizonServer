@@ -26,11 +26,11 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         .map { Pair(it.getDepartureTick(), it) }
         .toMap()
 
-    private val commodityStores: Map<String, CommodityStore> = CommodityType
+    private val commodityStores: Map<CommodityType, CommodityStore> = CommodityType
         .values()
         .asSequence()
         .map { CommodityStore(it, properties) }
-        .map { Pair(it.identifyingName, it) }
+        .map { Pair(it.type, it) }
         .toMap()
 
     init {
@@ -92,7 +92,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         return retval
     }
 
-    fun sellResourceToShip(resource: String, buyingWallet: Wallet, ship: Ship, quantity: Int) {
+    fun sellResourceToShip(resource: CommodityType, buyingWallet: Wallet, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         val price = store.price * quantity
         var purchaseQuantity = quantity
@@ -116,26 +116,26 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         val purchasePrice = store.price * purchaseQuantity
         buyingWallet.setBalance(buyingWallet.getBalance() - purchasePrice)
         store.quantityAvailable -= purchaseQuantity
-        val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
-        ship.hold[store.identifyingName] = holdStore + purchaseQuantity
+        //val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
+        //ship.hold[store.identifyingName] = holdStore + purchaseQuantity
     }
 
-    fun buyResourceFromShip(resource: String, buyingWallet: Wallet, ship: Ship, quantity: Int) {
+    fun buyResourceFromShip(resource: CommodityType, buyingWallet: Wallet, ship: Ship, quantity: Int) {
         val store = commodityStores.getValue(resource)
         var purchaseQuantity = quantity
 
         //first check if there's enough in player's hold to sell
-        val availableQuantity = ship.hold[resource] ?: 0
-        if (purchaseQuantity > availableQuantity) {
-            purchaseQuantity = availableQuantity
-        }
+        //val availableQuantity = ship.hold[resource] ?: 0
+        //if (purchaseQuantity > availableQuantity) {
+        //    purchaseQuantity = availableQuantity
+       // }
 
         //now do it
         val purchasePrice = store.price * purchaseQuantity
         buyingWallet.setBalance(buyingWallet.getBalance() + purchasePrice)
         store.quantityAvailable += purchaseQuantity
-        val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
-        ship.hold[store.identifyingName] = holdStore - purchaseQuantity
+        //val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
+        //ship.hold[store.identifyingName] = holdStore - purchaseQuantity
     }
 
     override fun createOrbiterJson(): JSONObject {

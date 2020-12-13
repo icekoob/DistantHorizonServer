@@ -6,6 +6,7 @@ class AIShip(private val scriptReader: ScriptReader) : Ship(
     scriptReader.getShipClass(),
     ShipColor.random(),
     ShipColor.random(),
+    HashMap(),
     scriptReader.getStartingState(), null) {
 
     val shipClass = scriptReader.getShipClass()

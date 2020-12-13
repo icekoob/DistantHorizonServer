@@ -16,12 +16,14 @@ import com.dibujaron.distanthorizon.player.wallet.Wallet
 import org.json.JSONObject
 import java.awt.Color
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.pow
 
 open class Ship(
     val type: ShipClass,
     private val primaryColor: ShipColor,
     private val secondaryColor: ShipColor,
+    private val hold: Map<CommodityType, Int>,
     initialState: ShipState,
     val pilot: Player?
 ) {
@@ -35,7 +37,6 @@ open class Ship(
     var myDockedPort: ShipDockingPort? = null
 
     var holdCapacity = type.holdSize
-    var hold = HashMap<String, Int>()
 
     var scriptWriter: ScriptWriter? = null
 
@@ -50,7 +51,7 @@ open class Ship(
     fun createHoldStatusMessage(): JSONObject {
         val retval = JSONObject()
         CommodityType.values().asSequence()
-            .map { Pair(it.identifyingName, hold[it.identifyingName] ?: 0) }
+            .map { Pair(it.identifyingName, hold[it] ?: 0) }
             .forEach { retval.put(it.first, it.second) }
         return retval
     }
@@ -237,14 +238,14 @@ open class Ship(
             .forEach { it.queueInputsUpdateMsg(inputsUpdate) }
     }
 
-    fun buyResourceFromStation(commodity: String, purchasingWallet: Wallet, quantity: Int) {
+    fun buyResourceFromStation(commodity: CommodityType, purchasingWallet: Wallet, quantity: Int) {
         if (isDocked()) {
             val station = dockedToPort!!.station
             station.sellResourceToShip(commodity, purchasingWallet, this, quantity)
         }
     }
 
-    fun sellResourceToStation(commodity: String, purchasingWallet: Wallet, quantity: Int) {
+    fun sellResourceToStation(commodity: CommodityType, purchasingWallet: Wallet, quantity: Int) {
         if (isDocked()) {
             val station = dockedToPort!!.station
             station.buyResourceFromShip(commodity, purchasingWallet, this, quantity)
@@ -258,6 +259,7 @@ open class Ship(
                 ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
                 ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
                 ShipColor(Color(205, 106, 0)),
+                HashMap(),
                 getStartingOrbit(),
                 player
             )
@@ -266,14 +268,14 @@ open class Ship(
         fun createFromSave(player: Player, actorInfo: ActorInfo): Ship
         {
             val savedShip = actorInfo.ship
-            val s = Ship(
+            return Ship(
                 savedShip.shipClass,
                 savedShip.primaryColor,
                 savedShip.secondaryColor,
+                savedShip.holdMap,
                 getStartingOrbit(),
                 player
             )
-            return s
         }
 
         private fun getStartingOrbit(): ShipState

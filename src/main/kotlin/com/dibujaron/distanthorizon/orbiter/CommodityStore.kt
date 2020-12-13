@@ -6,10 +6,9 @@ import java.util.*
 
 class CommodityStore(val type: CommodityType, properties: Properties) {
 
-    val identifyingName = type.identifyingName
     val displayName = type.displayName
-    val price: Int = properties.getProperty("$identifyingName.price", "0").toIntOrNull() ?: 0
-    val initialQuantity: Int = properties.getProperty("$identifyingName.initial", "0").toInt()
+    val price: Int = properties.getProperty("${type.identifyingName}.price", "0").toIntOrNull() ?: 0
+    val initialQuantity: Int = properties.getProperty("${type.identifyingName}.initial", "0").toInt()
 
     //this is temporary and not great.
     val productionConsumptionRate =
@@ -19,7 +18,7 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
     var lastUpdateTick = 0
     fun createStoreJson(): JSONObject {
         val retval = JSONObject()
-        retval.put("identifying_name", identifyingName)
+        retval.put("identifying_name", type.identifyingName)
         retval.put("display_name", displayName)
         retval.put("price", price)
         retval.put("quantity_available", quantityAvailable)

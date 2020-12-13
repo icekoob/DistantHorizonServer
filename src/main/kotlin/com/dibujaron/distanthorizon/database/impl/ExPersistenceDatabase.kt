@@ -5,6 +5,7 @@ import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.database.persistence.PersistenceDatabase
 import com.dibujaron.distanthorizon.database.persistence.ShipInfo
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.ship.ShipClass
@@ -73,8 +74,9 @@ class ExPersistenceDatabase : PersistenceDatabase {
         val id: EntityID<Int>,
         shipClass: ShipClass,
         primaryColor: ShipColor,
-        secondaryColor: ShipColor
-    ) : ShipInfo(shipClass, primaryColor, secondaryColor)
+        secondaryColor: ShipColor,
+        holdMap: Map<CommodityType, Int>
+    ) : ShipInfo(shipClass, primaryColor, secondaryColor, holdMap)
 
     private fun mapActorInfo(row: ResultRow): ActorInfoInternal {
         return ActorInfoInternal(
@@ -87,11 +89,18 @@ class ExPersistenceDatabase : PersistenceDatabase {
     }
 
     private fun mapShipInfo(row: ResultRow): ShipInfoInternal {
+        val holdMap = HashMap<CommodityType, Int>()
+        CommodityType.values().forEach { ct ->
+            val commodityName = ct.identifyingName
+            val col: Column<Int> = ExDatabase.Ship.columns.find { col -> col.name == commodityName} as Column<Int>
+            holdMap[ct] = row[col]
+        }
         return ShipInfoInternal(
             row[ExDatabase.Ship.id],
             ShipClassManager.getShipClassRequired(row[ExDatabase.Ship.shipClass]),
             ShipColor.fromInt(row[ExDatabase.Ship.primaryColor]),
-            ShipColor.fromInt(row[ExDatabase.Ship.secondaryColor])
+            ShipColor.fromInt(row[ExDatabase.Ship.secondaryColor]),
+            holdMap
         )
     }
 

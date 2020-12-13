@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.database.impl
 import com.dibujaron.distanthorizon.database.DhDatabase
 import com.dibujaron.distanthorizon.database.persistence.PersistenceDatabase
 import com.dibujaron.distanthorizon.database.script.ScriptDatabase
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
@@ -74,5 +75,18 @@ class ExDatabase(databaseUrl: String, databaseDriver: String) : DhDatabase {
         val shipClass: Column<String> = varchar("ship_class", 32)
         val primaryColor: Column<Int> = integer("primary_color")
         val secondaryColor: Column<Int> = integer("secondary_color")
+        val holdQtyBioCells: Column<Int> = integer(CommodityType.BIO_CELLS.identifyingName).default(0)
+        val holdQtyCopper: Column<Int> = integer(CommodityType.COPPER.identifyingName).default(0)
+        val holdQtyThorium: Column<Int> = integer(CommodityType.THORIUM.identifyingName).default(0)
+        val holdQtyEncryptedData: Column<Int> = integer(CommodityType.DATA.identifyingName).default(0)
+        val holdQtySuperconductor: Column<Int> = integer(CommodityType.SUPERCONDUCTOR.identifyingName).default(0)
+        val holdQtyHydrogen: Column<Int> = integer(CommodityType.HYDROGEN.identifyingName).default(0)
+        val holdQtyFood: Column<Int> = integer(CommodityType.FOOD.identifyingName).default(0)
+        val holdQtyIron: Column<Int> = integer(CommodityType.IRON.identifyingName).default(0)
+        val holdQtyLuxuries: Column<Int> = integer(CommodityType.LUXURIES.identifyingName).default(0)
+        val holdQtyMachinery: Column<Int> = integer(CommodityType.MACHINERY.identifyingName).default(0)
+        val holdQtyMunitions: Column<Int> = integer(CommodityType.MUNITIONS.identifyingName).default(0)
+        val holdQtyWater: Column<Int> = integer(CommodityType.WATER.identifyingName).default(0)
+        val holdQtyRush: Column<Int> = integer(CommodityType.RUSH.identifyingName).default(0)
     }
 }

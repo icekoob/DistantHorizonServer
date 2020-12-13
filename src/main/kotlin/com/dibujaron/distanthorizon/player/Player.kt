@@ -4,6 +4,7 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.login.PendingLoginManager
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.player.wallet.AccountWallet
 import com.dibujaron.distanthorizon.player.wallet.GuestWallet
 import com.dibujaron.distanthorizon.player.wallet.Wallet
@@ -143,7 +144,7 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "purchase_from_station") {
             if (ship.isDocked()) {
-                val commodity = message.getString("commodity_name")
+                val commodity = CommodityType.fromString(message.getString("commodity_name"))
                 val quantity = message.getInt("quantity")
                 ship.buyResourceFromStation(commodity, wallet, quantity)
                 println("bought $quantity of $commodity from station, new balance is ${wallet.getBalance()}")
@@ -151,7 +152,7 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "sell_to_station") {
             if (ship.isDocked()) {
-                val commodity = message.getString("commodity_name")
+                val commodity = CommodityType.fromString(message.getString("commodity_name"))
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, wallet, quantity)
                 println("sold $quantity of $commodity to station, new balance is ${wallet.getBalance()}")
