@@ -86,11 +86,11 @@ class Player(val connection: WsContext) {
         queueShipsAddedMsg(shipsMessage)
 
         val myActor = actorInfo
+        initialized = true
         if (myActor?.lastDockedStation != null) {
             ship.dock(ship.myDockingPorts.random(), myActor.lastDockedStation.dockingPorts.random(), false)
             queueSendStationMenuMessage()
         }
-        initialized = true
     }
 
     fun isAuthenticated(): Boolean {
