@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.database.persistence
 
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.orbiter.Station
 
 interface PersistenceDatabase {
@@ -9,4 +10,5 @@ interface PersistenceDatabase {
     fun updateShipOfActor(actor: ActorInfo, ship: ShipInfo): ActorInfo?
     fun updateActorBalance(actor: ActorInfo, newBal: Int): ActorInfo?
     fun updateActorLastDockedStation(actor: ActorInfo, station: Station): ActorInfo?
+    fun updateShipHold(ship: ShipInfo, commodity: CommodityType, amount: Int)
 }

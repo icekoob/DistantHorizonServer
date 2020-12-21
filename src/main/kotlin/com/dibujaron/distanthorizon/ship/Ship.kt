@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.ship
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
+import com.dibujaron.distanthorizon.database.persistence.ShipInfo
 import com.dibujaron.distanthorizon.database.script.ScriptWriter
 import com.dibujaron.distanthorizon.docking.DockingPort
 import com.dibujaron.distanthorizon.docking.ShipDockingPort
@@ -20,10 +21,11 @@ import kotlin.collections.HashMap
 import kotlin.math.pow
 
 open class Ship(
+    val dbHook: ShipInfo?,
     val type: ShipClass,
     private val primaryColor: ShipColor,
     private val secondaryColor: ShipColor,
-    private val hold: Map<CommodityType, Int>,
+    private val hold: MutableMap<CommodityType, Int>,
     initialState: ShipState,
     val pilot: Player?
 ) {
@@ -42,6 +44,22 @@ open class Ship(
 
     fun holdOccupied(): Int {
         return hold.values.asSequence().sum()
+    }
+
+    fun getHoldQuantity(ct: CommodityType): Int {
+        return hold[ct] ?: error("CommodityType $ct not found in hold.")
+    }
+
+    fun updateHoldQuantity(ct: CommodityType, delta: Int) {
+        val existing = hold[ct] ?: 0
+        val newAmt = existing + delta
+        hold[ct] = newAmt
+        println("updating hold quantity")
+        if (dbHook != null) {
+            DHServer.getDatabase().getPersistenceDatabase().updateShipHold(dbHook, ct, newAmt)
+            //todo some form of verification that we're still in sync.
+            println("updated in database.")
+        }
     }
 
     fun isDocked(): Boolean {
@@ -170,7 +188,7 @@ open class Ship(
             dock(bestShipPort, bestStationPort)
             DockingResult.SUCCESS
         } else {
-            if(anyPassedDistTest){
+            if (anyPassedDistTest) {
                 DockingResult.CLOSING_SPEED_TOO_GREAT
             } else {
                 DockingResult.DISTANCE_TOO_GREAT
@@ -184,7 +202,7 @@ open class Ship(
         DHServer.broadcastShipDocked(this)
         scriptWriter?.completeScript(stationPort.station)
         pilot?.actorInfo?.let {
-            if(updateLastDocked) {
+            if (updateLastDocked) {
                 DHServer.getDatabase().getPersistenceDatabase().updateActorLastDockedStation(it, stationPort.station)
                 println("Updated last docked station of ${pilot.actorInfo?.displayName} to ${stationPort.station.name}")
             }
@@ -246,6 +264,7 @@ open class Ship(
         }
     }
 
+
     fun sellResourceToStation(commodity: CommodityType, purchasingWallet: Wallet, quantity: Int) {
         if (isDocked()) {
             val station = dockedToPort!!.station
@@ -254,9 +273,9 @@ open class Ship(
     }
 
     companion object {
-        fun createGuestShip(player: Player): Ship
-        {
+        fun createGuestShip(player: Player): Ship {
             return Ship(
+                null,
                 ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
                 ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
                 ShipColor(Color(205, 106, 0)),
@@ -266,10 +285,10 @@ open class Ship(
             )
         }
 
-        fun createFromSave(player: Player, actorInfo: ActorInfo): Ship
-        {
+        fun createFromSave(player: Player, actorInfo: ActorInfo): Ship {
             val savedShip = actorInfo.ship
             return Ship(
+                savedShip,
                 savedShip.shipClass,
                 savedShip.primaryColor,
                 savedShip.secondaryColor,
@@ -279,8 +298,7 @@ open class Ship(
             )
         }
 
-        private fun getStartingOrbit(): ShipState
-        {
+        private fun getStartingOrbit(): ShipState {
             val startingPlanetName = DHServer.startingPlanetName
             val startingPlanet: Planet = OrbiterManager.getPlanet(startingPlanetName)
                 ?: throw IllegalArgumentException("starting planet $startingPlanetName is null.")

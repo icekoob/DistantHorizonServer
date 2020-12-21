@@ -75,7 +75,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         shipClass: ShipClass,
         primaryColor: ShipColor,
         secondaryColor: ShipColor,
-        holdMap: Map<CommodityType, Int>
+        holdMap: MutableMap<CommodityType, Int>
     ) : ShipInfo(shipClass, primaryColor, secondaryColor, holdMap)
 
     private fun mapActorInfo(row: ResultRow): ActorInfoInternal {
@@ -211,4 +211,18 @@ class ExPersistenceDatabase : PersistenceDatabase {
         throw java.lang.IllegalStateException("Object must be from same db")
     }
 
+    override fun updateShipHold(ship: ShipInfo, commodity: CommodityType, amount: Int) {
+        if(ship is ShipInfoInternal)
+        {
+            val shipIDFilter = (ExDatabase.Ship.id eq ship.id)
+            val commodityCol: Column<Int> = ExDatabase.Ship.columns.find { col -> col.name == commodity.identifyingName} as Column<Int>
+            transaction {
+                ExDatabase.Ship.update ({ shipIDFilter }){
+                    it[commodityCol] = amount
+                }
+            }
+        } else {
+            throw java.lang.IllegalStateException("Object must be from same db")
+        }
+    }
 }

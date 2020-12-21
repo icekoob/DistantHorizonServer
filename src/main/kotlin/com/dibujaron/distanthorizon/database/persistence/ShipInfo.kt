@@ -9,7 +9,7 @@ open class ShipInfo(
     val shipClass: ShipClass,
     val primaryColor: ShipColor,
     val secondaryColor: ShipColor,
-    val holdMap: Map<CommodityType, Int>
+    val holdMap: MutableMap<CommodityType, Int>
 ){
     open fun toJSON(): JSONObject {
         val r = JSONObject()

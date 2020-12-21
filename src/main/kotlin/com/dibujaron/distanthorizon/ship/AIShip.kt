@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.ship
 import com.dibujaron.distanthorizon.database.script.ScriptReader
 
 class AIShip(private val scriptReader: ScriptReader) : Ship(
+    null,
     scriptReader.getShipClass(),
     ShipColor.random(),
     ShipColor.random(),

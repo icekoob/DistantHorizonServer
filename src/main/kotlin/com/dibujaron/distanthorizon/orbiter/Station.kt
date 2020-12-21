@@ -116,6 +116,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         val purchasePrice = store.price * purchaseQuantity
         buyingWallet.setBalance(buyingWallet.getBalance() - purchasePrice)
         store.quantityAvailable -= purchaseQuantity
+        ship.updateHoldQuantity(resource, purchaseQuantity)
         //val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         //ship.hold[store.identifyingName] = holdStore + purchaseQuantity
     }
@@ -134,6 +135,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         val purchasePrice = store.price * purchaseQuantity
         buyingWallet.setBalance(buyingWallet.getBalance() + purchasePrice)
         store.quantityAvailable += purchaseQuantity
+        ship.updateHoldQuantity(resource, -purchaseQuantity)
         //val holdStore = ship.hold.getOrPut(store.identifyingName, { 0 })
         //ship.hold[store.identifyingName] = holdStore - purchaseQuantity
     }
