@@ -135,8 +135,8 @@ class ExPersistenceDatabase : PersistenceDatabase {
                 val shipIdFilter = (ExDatabase.Ship.id eq ship.id)
                 val actorIdFilter = (ExDatabase.Actor.id eq actorInfo.id)
                 transaction {
-                    ExDatabase.Ship.deleteWhere { shipIdFilter }
                     ExDatabase.Actor.deleteWhere { actorIdFilter }
+                    ExDatabase.Ship.deleteWhere { shipIdFilter }
                 }
             }
         }
