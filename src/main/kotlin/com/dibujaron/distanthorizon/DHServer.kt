@@ -181,12 +181,13 @@ object DHServer {
             if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val body = JSONObject(it.body())
-                val displayName = body.getString("actor_id")
-                println("Deleting actor $displayName from account $acctName")
+                val id = body.getInt("actor_id")
+                println("Deleting actor $id from account $acctName")
                 val db = database.getPersistenceDatabase()
                 val acct = db.selectOrCreateAccount(acctName)
                 for (actor in acct.actors) {
-                    if (actor.displayName == displayName) {
+                    if (actor.uniqueID == id) {
+                        println("Actor to delete found, deletion succesful.")
                         db.deleteActor(actor)
                     }
                 }
