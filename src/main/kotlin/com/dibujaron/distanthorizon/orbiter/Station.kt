@@ -16,7 +16,8 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random
 
-class Station(parentName: String?, stationName: String, properties: Properties) : Orbiter(parentName, stationName, properties) {
+class Station(parentName: String?, stationName: String, properties: Properties) :
+    Orbiter(parentName, stationName, properties) {
 
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
@@ -41,7 +42,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         }
         var index = 0
         var currentSplash = properties.getProperty("splash.$index", null)
-        while(currentSplash != null){
+        while (currentSplash != null) {
             splashTextList.add(currentSplash)
             index++
             currentSplash = properties.getProperty("splash.$index", null)
@@ -126,10 +127,10 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         var purchaseQuantity = quantity
 
         //first check if there's enough in player's hold to sell
-        //val availableQuantity = ship.hold[resource] ?: 0
-        //if (purchaseQuantity > availableQuantity) {
-        //    purchaseQuantity = availableQuantity
-       // }
+        val availableQuantity = ship.getHoldQuantity(resource)
+        if (purchaseQuantity > availableQuantity) {
+            purchaseQuantity = availableQuantity
+        }
 
         //now do it
         val purchasePrice = store.price * purchaseQuantity
