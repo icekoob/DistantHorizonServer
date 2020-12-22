@@ -139,8 +139,8 @@ class ExPersistenceDatabase : PersistenceDatabase {
                     ExDatabase.Route.update({routeActorIdFilter}){
                         it[plottedBy] = null
                     }
-                    ExDatabase.Ship.deleteWhere { shipIdFilter }
                     ExDatabase.Actor.deleteWhere { actorIdFilter }
+                    ExDatabase.Ship.deleteWhere { shipIdFilter }
                 }
             }
         }
