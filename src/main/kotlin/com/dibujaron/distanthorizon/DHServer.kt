@@ -177,6 +177,7 @@ object DHServer {
                 it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
             }
         }.post("/:serverSecret/account/:accountName/deleteActor") {
+            println("Delete actor request received.")
             if (verifySecret(it.pathParam("serverSecret"))) {
                 val acctName = it.pathParam("accountName")
                 val body = JSONObject(it.body())
