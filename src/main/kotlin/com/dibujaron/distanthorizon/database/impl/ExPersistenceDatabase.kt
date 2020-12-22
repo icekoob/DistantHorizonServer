@@ -92,7 +92,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         val holdMap = HashMap<CommodityType, Int>()
         CommodityType.values().forEach { ct ->
             val commodityName = ct.identifyingName
-            val col: Column<Int> = ExDatabase.Ship.columns.find { col -> col.name == commodityName} as Column<Int>
+            val col: Column<Int> = ExDatabase.Ship.columns.find { col -> col.name == commodityName } as Column<Int>
             holdMap[ct] = row[col]
         }
         return ShipInfoInternal(
@@ -132,19 +132,18 @@ class ExPersistenceDatabase : PersistenceDatabase {
         if (actorInfo is ActorInfoInternal) {
             val ship = actorInfo.ship
             if (ship is ShipInfoInternal) {
-                val shipIdFilter = (ExDatabase.Ship.id eq ship.id)
                 val actorIdFilter = (ExDatabase.Actor.id eq actorInfo.id)
                 val routeActorIdFilter = (ExDatabase.Route.plottedBy eq actorInfo.id)
                 transaction {
-                    ExDatabase.Route.update({routeActorIdFilter}){
+                    ExDatabase.Route.update({ routeActorIdFilter }) {
                         it[plottedBy] = null
                     }
                     ExDatabase.Actor.deleteWhere { actorIdFilter }
-                    ExDatabase.Ship.deleteWhere { shipIdFilter }
                 }
             }
+        } else {
+            throw IllegalStateException("Object must be from same database")
         }
-        throw IllegalStateException("Object must be from same database")
     }
 
     override fun updateShipOfActor(actor: ActorInfo, ship: ShipInfo): ActorInfo? {
@@ -216,12 +215,12 @@ class ExPersistenceDatabase : PersistenceDatabase {
     }
 
     override fun updateShipHold(ship: ShipInfo, commodity: CommodityType, amount: Int) {
-        if(ship is ShipInfoInternal)
-        {
+        if (ship is ShipInfoInternal) {
             val shipIDFilter = (ExDatabase.Ship.id eq ship.id)
-            val commodityCol: Column<Int> = ExDatabase.Ship.columns.find { col -> col.name == commodity.identifyingName} as Column<Int>
+            val commodityCol: Column<Int> =
+                ExDatabase.Ship.columns.find { col -> col.name == commodity.identifyingName } as Column<Int>
             transaction {
-                ExDatabase.Ship.update ({ shipIDFilter }){
+                ExDatabase.Ship.update({ shipIDFilter }) {
                     it[commodityCol] = amount
                 }
             }
