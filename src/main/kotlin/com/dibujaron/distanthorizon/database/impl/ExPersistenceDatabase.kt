@@ -134,9 +134,13 @@ class ExPersistenceDatabase : PersistenceDatabase {
             if (ship is ShipInfoInternal) {
                 val shipIdFilter = (ExDatabase.Ship.id eq ship.id)
                 val actorIdFilter = (ExDatabase.Actor.id eq actorInfo.id)
+                val routeActorIdFilter = (ExDatabase.Route.plottedBy eq actorInfo.id)
                 transaction {
-                    ExDatabase.Actor.deleteWhere { actorIdFilter }
+                    ExDatabase.Route.update({routeActorIdFilter}){
+                        it[plottedBy] = null
+                    }
                     ExDatabase.Ship.deleteWhere { shipIdFilter }
+                    ExDatabase.Actor.deleteWhere { actorIdFilter }
                 }
             }
         }
