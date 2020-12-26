@@ -2,8 +2,10 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
-import com.dibujaron.distanthorizon.docking.ShipDockingPort
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.*
+import kotlin.random.Random
 
 class ShipClass(
     properties: Properties
@@ -16,13 +18,14 @@ class ShipClass(
     //	"rijay.mockingbird"
     val identifyingName: String = properties.getProperty("identifyingName").trim()
     val displayName: String = properties.getProperty("displayName").trim()
-    val manufacturer: String = properties.getProperty("manufacturer").trim()
-    val qualifiedName = "$manufacturer.$identifyingName"
+    val manufacturer: Manufacturer = Manufacturer.fromString(properties.getProperty("manufacturer").trim())
+    val qualifiedName = "${manufacturer.identifyingName}.$identifyingName"
     val rotationPower: Double = properties.getProperty("rotationPower").toDouble()
     val mainThrust: Double = properties.getProperty("mainThrust").toDouble()
     val manuThrust: Double = properties.getProperty("manuThrust").toDouble()
     val dockingPortCount: Int = properties.getProperty("dockingPortCount").toInt()
     val holdSize: Int = properties.getProperty("holdSize").toInt()
+    val price: Int = properties.getProperty("price").toInt()
     val dockingPorts = generateSequence(0) { it + 1 }
         .take(dockingPortCount)
         .map {
@@ -34,4 +37,43 @@ class ShipClass(
             )
         }
         .map { ShipClassDockingPort(it.first, it.second) }.toList()
+
+    val primaryCount: Int = properties.getProperty("primaryCount").toInt()
+    val primaryColors = generateSequence(0) { it + 1 }
+        .take(primaryCount)
+        .map {
+            ShipColor.fromHexString(properties.getProperty("color.primary.$it").toString())
+        }.toList()
+
+    val secondaryCount: Int = properties.getProperty("secondaryCount").toInt()
+    val secondaryColors = generateSequence(0) { it + 1 }
+        .take(secondaryCount)
+        .map {
+            ShipColor.fromHexString(properties.getProperty("color.secondary.$it").toString())
+        }.toList()    //todo use this in the Ship toJson() - currently duplicated
+
+    fun toJSON(random: Random, percentage: Int): JSONObject {
+        val retval = JSONObject()
+        retval.put("qualified_name", qualifiedName)
+        retval.put("identifying_name", identifyingName)
+        retval.put("display_name", displayName)
+        retval.put("hold_size", holdSize)
+        retval.put("main_engine_thrust", mainThrust)
+        retval.put("manu_engine_thrust", manuThrust)
+        retval.put("rotation_power", rotationPower)
+        retval.put("price", price)
+        val colorsJson = JSONArray()
+        for (primaryColor in primaryColors) {
+            for (secondaryColor in secondaryColors) {
+                if (random.nextFloat() * 100 > percentage) {
+                    val colorInfo = JSONArray()
+                    colorInfo.put(primaryColor.toJSON())
+                    colorInfo.put(secondaryColor.toJSON())
+                    colorsJson.put(colorInfo)
+                }
+            }
+        }
+        retval.put("colors", colorsJson)
+        return retval
+    }
 }

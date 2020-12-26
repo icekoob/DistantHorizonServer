@@ -21,14 +21,23 @@ class ShipColor(val baseColor: Color) {
             return ShipColor(Color(r, g, b))
         }
 
-        fun fromInt(intVal: Int): ShipColor
-        {
+        fun fromInt(intVal: Int): ShipColor {
             return ShipColor(Color(intVal))
+        }
+
+        fun fromHexString(hex: String): ShipColor {
+            return ShipColor(Color.decode(hex.trim()))
+        }
+
+        fun fromJSON(json: JSONObject): ShipColor {
+            val red = json.getInt("r")
+            val green = json.getInt("g")
+            val blue = json.getInt("b")
+            return ShipColor(Color(red, green, blue))
         }
     }
 
-    fun toInt(): Int
-    {
+    fun toInt(): Int {
         return baseColor.rgb
     }
 }

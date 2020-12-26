@@ -15,7 +15,6 @@ import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.player.wallet.Wallet
 import org.json.JSONObject
-import java.awt.Color
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.math.pow
@@ -274,11 +273,12 @@ open class Ship(
 
     companion object {
         fun createGuestShip(player: Player): Ship {
+            val shipClass = ShipClassManager.getShipClass(DHServer.playerStartingShip)!!
             return Ship(
                 null,
-                ShipClassManager.getShipClass(DHServer.playerStartingShip)!!,
-                ShipColor(Color(128, 128, 128)),//ShipColor(Color(0,148,255)),
-                ShipColor(Color(205, 106, 0)),
+                shipClass,
+                shipClass.primaryColors[0],
+                shipClass.secondaryColors[0],
                 HashMap(),
                 getStartingOrbit(),
                 player

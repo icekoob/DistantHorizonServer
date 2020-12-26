@@ -5,10 +5,7 @@ import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.database.script.ScriptReader
 import com.dibujaron.distanthorizon.docking.StationDockingPort
 import com.dibujaron.distanthorizon.player.wallet.Wallet
-import com.dibujaron.distanthorizon.ship.AIShip
-import com.dibujaron.distanthorizon.ship.Ship
-import com.dibujaron.distanthorizon.ship.ShipManager
-import com.dibujaron.distanthorizon.ship.ShipState
+import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.utils.TimeUtils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -22,6 +19,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val dockingPorts = LinkedList<StationDockingPort>()
     val displayName = properties.getProperty("displayName").trim()
     val splashTextList = ArrayList<String>()
+    val dealerships = HashMap<Manufacturer, Int>()
     private val aiScripts: Map<Int, ScriptReader> = DHServer.getDatabase().getScriptDatabase()
         .selectScriptsForStation(this).asSequence()
         .map { Pair(it.getDepartureTick(), it) }
@@ -46,6 +44,12 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
             splashTextList.add(currentSplash)
             index++
             currentSplash = properties.getProperty("splash.$index", null)
+        }
+        Manufacturer.values().forEach {
+            val dealershipPercentage = properties.getProperty("dealership.${it.identifyingName}", "0").toInt()
+            if (dealershipPercentage > 0) {
+                dealerships[it] = dealershipPercentage
+            }
         }
     }
 
@@ -80,16 +84,24 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
 
     fun createShopMessage(): JSONObject {
         val changesEveryFiveMinutes = System.currentTimeMillis() / 300000
-        val rand = Random(changesEveryFiveMinutes)
+        val rand = Random(changesEveryFiveMinutes + displayName.hashCode())
         val retval = JSONObject()
         retval.put("identifying_name", name)
         retval.put("display_name", displayName)
         retval.put("description", splashTextList.random(rand))
-        val arr = JSONArray()
+        val commodities = JSONArray()
         commodityStores.values.asSequence()
             .map { it.createStoreJson() }
-            .forEach { arr.put(it) }
-        retval.put("commodity_stores", arr)
+            .forEach { commodities.put(it) }
+        retval.put("commodity_stores", commodities)
+        val dealershipJson = JSONArray()
+        dealerships.forEach {
+            val json = it.key.toJSON(rand, it.value)
+            if (!json.getJSONArray("ship_classes").isEmpty) {
+                dealershipJson.put(json)
+            }
+        }
+        retval.put("dealerships", dealershipJson)
         return retval
     }
 

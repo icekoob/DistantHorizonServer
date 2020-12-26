@@ -8,10 +8,7 @@ import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.player.wallet.AccountWallet
 import com.dibujaron.distanthorizon.player.wallet.GuestWallet
 import com.dibujaron.distanthorizon.player.wallet.Wallet
-import com.dibujaron.distanthorizon.ship.DockingResult
-import com.dibujaron.distanthorizon.ship.Ship
-import com.dibujaron.distanthorizon.ship.ShipInputs
-import com.dibujaron.distanthorizon.ship.ShipManager
+import com.dibujaron.distanthorizon.ship.*
 import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -40,8 +37,8 @@ class Player(val connection: WsContext) {
                 val db = DHServer.getDatabase().getPersistenceDatabase()
                 val myAccount = db.selectOrCreateAccount(username)
                 var myActor: ActorInfo
-                if(username == "Debug0000"){
-                    myActor = if(myAccount.actors.isEmpty()){
+                if (username == "Debug0000") {
+                    myActor = if (myAccount.actors.isEmpty()) {
                         println("debug user has no actors, creating new.")
                         val newAcct = db.createNewActorForAccount(myAccount, "debug")
                         newAcct!!.actors.first()
@@ -161,6 +158,10 @@ class Player(val connection: WsContext) {
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
             PlayerManager.broadcast(getDisplayName(), payload)
+        } else if (messageType == "buy_ship") {
+            val qualName = message.getString("ship_class_qualified_name")
+            val color1 = ShipColor.fromJSON(message.getJSONObject("primary_color"))
+            val color2 = ShipColor.fromJSON(message.getJSONObject("secondary_color"))
         }
     }
 
