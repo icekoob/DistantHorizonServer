@@ -2,10 +2,12 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
+import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.player.Player
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.random.Random
 
 class ShipClass(
@@ -79,4 +81,18 @@ class ShipClass(
         retval.put("colors", colorsJson)
         return retval
     }
+
+    fun generateRandomHoldMap(): HashMap<CommodityType, Int> {
+        val holdSize = this.holdSize
+        var fillAmount = 0
+        val retval = HashMap<CommodityType, Int>()
+        CommodityType.values().forEach {
+            val remainingSpace = holdSize - fillAmount
+            val randAmt: Int = (Random.nextFloat() * remainingSpace).toInt()
+            retval[it] = randAmt
+            fillAmount += randAmt
+        }
+        return retval
+    }
+
 }

@@ -7,11 +7,10 @@ class AIShip(private val scriptReader: ScriptReader) : Ship(
     scriptReader.getShipClass(),
     scriptReader.getShipClass().primaryColors.random(),
     scriptReader.getShipClass().primaryColors.random(),
-    HashMap(),
+    scriptReader.getShipClass().generateRandomHoldMap(),
     scriptReader.getStartingState(), null
 ) {
 
-    val shipClass = scriptReader.getShipClass()
     override fun computeNextState(): ShipState {
         if (scriptReader.hasNextAction()) {
             if (scriptReader.nextActionShouldFire()) {

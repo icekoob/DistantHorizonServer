@@ -277,8 +277,8 @@ open class Ship(
             return Ship(
                 null,
                 shipClass,
-                shipClass.primaryColors[0],
-                shipClass.secondaryColors[0],
+                shipClass.primaryColors.random(),
+                shipClass.secondaryColors.random(),
                 HashMap(),
                 getStartingOrbit(),
                 player
