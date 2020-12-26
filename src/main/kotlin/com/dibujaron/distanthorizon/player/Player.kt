@@ -168,7 +168,7 @@ class Player(val connection: WsContext) {
             val shipClass = ShipClassManager.getShipClass(qualName)!!
             val cost = shipClass.price - ship.type.price
             val newBalance = wallet.getBalance() - cost
-            if(newBalance > 0) {
+            if (newBalance > 0) {
                 wallet.setBalance(newBalance)
                 updateShip(ShipClassManager.getShipClass(qualName)!!, color1, color2)
             }
@@ -188,6 +188,7 @@ class Player(val connection: WsContext) {
         val newShip = Ship(dbHook, shipClass, primaryColor, secondaryColor, HashMap(), Ship.getStartingOrbit(), this)
         val oldShip = ship
         ship = newShip
+        newShip.currentState = oldShip.currentState
         ShipManager.addShip(newShip)
         newShip.dock(newShip.myDockingPorts.random(), oldShip.dockedToPort!!)
         ShipManager.removeShip(oldShip)
