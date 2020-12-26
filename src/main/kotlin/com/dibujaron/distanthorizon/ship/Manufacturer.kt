@@ -12,7 +12,7 @@ enum class Manufacturer(
 ) {
     ALDRIN(
         "aldrin", "Aldrin", "Aldrin Aeronautics", listOf(
-            "Aldrin Aeronautics -- The galaxy's finest vessels for the discerning buyer",
+            "Aldrin Aeronautics -- The galaxy's finest vessels for the discerning buyer.",
             "'Our designs are made for the rich and powerful. Are you sure *you* should be shopping here?'",
             "'Aldrin Aeronautics is proud to introduce the KX-6, the galaxy's most revolutionary exploration craft!'",
             "'Is price the only thing holding you back?'"
@@ -20,7 +20,7 @@ enum class Manufacturer(
     ),
     RIJAY(
         "rijay", "Rijay", "Rijay Drive Yards", listOf(
-            "Rijay Drive Yards -- Live Your Dream",
+            "Rijay Drive Yards -- Live Your Dream!",
             "Rijay ships aren't always reliable, but they're certainly fast.",
             "'Aerodynamics stopped mattering once we got to space, but curves never stopped looking good!'",
             "Rijay started out as a manufacturer of racing ships, but they now offer a complete line of vessels.",
@@ -31,7 +31,7 @@ enum class Manufacturer(
     ),
     PHE(
         "phe", "P.H.E.", "Porter Heavy Engineering", listOf(
-            "Porter Heavy Engineering -- Built To Last",
+            "Porter Heavy Engineering -- Built To Last!",
             "'She don't look like much, but she's got it where it counts!'",
             "'You buy this ship, treat her right, she'll be with you for the rest of your life.'",
             "Porter ships aren't pretty, but they sure are sturdy.",
