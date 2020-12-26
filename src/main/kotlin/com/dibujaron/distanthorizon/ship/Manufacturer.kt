@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.ship
 
+import com.dibujaron.distanthorizon.player.Player
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.random.Random
@@ -49,7 +50,7 @@ enum class Manufacturer(
         }
     }
 
-    fun toJSON(random: Random, percentage: Int): JSONObject {
+    fun toJSON(player: Player, random: Random, percentage: Int): JSONObject {
         val retval = JSONObject()
         retval.put("identifying_name", identifyingName)
         retval.put("display_name_short", displayNameShort)
@@ -58,7 +59,7 @@ enum class Manufacturer(
         val shipClasses = JSONArray()
         ShipClassManager.getShipClasses().asSequence()
             .filter { it.manufacturer == this }
-            .map { it.toJSON(random, percentage) }
+            .map { it.toJSON(player, random, percentage) }
             .filter { !it.getJSONArray("colors").isEmpty }
             .forEach { shipClasses.put(it) }
         retval.put("ship_classes", shipClasses)

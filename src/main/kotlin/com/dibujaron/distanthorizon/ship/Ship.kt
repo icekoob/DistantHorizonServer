@@ -298,7 +298,7 @@ open class Ship(
             )
         }
 
-        private fun getStartingOrbit(): ShipState {
+        public fun getStartingOrbit(): ShipState {
             val startingPlanetName = DHServer.startingPlanetName
             val startingPlanet: Planet = OrbiterManager.getPlanet(startingPlanetName)
                 ?: throw IllegalArgumentException("starting planet $startingPlanetName is null.")

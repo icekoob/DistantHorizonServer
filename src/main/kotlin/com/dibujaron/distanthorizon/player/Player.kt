@@ -3,6 +3,7 @@ package com.dibujaron.distanthorizon.player
 import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
+import com.dibujaron.distanthorizon.database.persistence.ShipInfo
 import com.dibujaron.distanthorizon.login.PendingLoginManager
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.player.wallet.AccountWallet
@@ -13,6 +14,7 @@ import io.javalin.websocket.WsContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
+import kotlin.collections.HashMap
 
 class Player(val connection: WsContext) {
     var accountInfo: AccountInfo? = null
@@ -159,10 +161,37 @@ class Player(val connection: WsContext) {
             val payload = message.getString("payload")
             PlayerManager.broadcast(getDisplayName(), payload)
         } else if (messageType == "buy_ship") {
+            println("got buy ship message")
             val qualName = message.getString("ship_class_qualified_name")
             val color1 = ShipColor.fromJSON(message.getJSONObject("primary_color"))
             val color2 = ShipColor.fromJSON(message.getJSONObject("secondary_color"))
+            val shipClass = ShipClassManager.getShipClass(qualName)!!
+            val cost = shipClass.price - ship.type.price
+            val newBalance = wallet.getBalance() - cost
+            if(newBalance > 0) {
+                wallet.setBalance(newBalance)
+                updateShip(ShipClassManager.getShipClass(qualName)!!, color1, color2)
+            }
         }
+    }
+
+    fun updateShip(shipClass: ShipClass, primaryColor: ShipColor, secondaryColor: ShipColor) {
+        println("updating ship")
+        val actor = actorInfo
+        var dbHook: ShipInfo? = null
+        if (actor != null) {
+            println("updating ship in database.")
+            val newActor = DHServer.getDatabase().getPersistenceDatabase()
+                .updateShipOfActor(actor, shipClass, primaryColor, secondaryColor)
+            dbHook = newActor?.ship
+        }
+        val newShip = Ship(dbHook, shipClass, primaryColor, secondaryColor, HashMap(), Ship.getStartingOrbit(), this)
+        val oldShip = ship
+        ship = newShip
+        ShipManager.addShip(newShip)
+        newShip.dock(newShip.myDockingPorts.random(), oldShip.dockedToPort!!)
+        ShipManager.removeShip(oldShip)
+        println("ship update complete.")
     }
 
     fun getDisplayName(): String {
@@ -173,7 +202,7 @@ class Player(val connection: WsContext) {
         val dockedTo = ship.dockedToPort
         if (dockedTo != null) {
             val dockedToStation = dockedTo.station
-            val stationInfo = dockedToStation.createShopMessage()
+            val stationInfo = dockedToStation.createShopMessage(this)
             val myMessage = createMessage("station_menu_info")
             myMessage.put("station_info", stationInfo)
             myMessage.put("player_balance", wallet.getBalance())

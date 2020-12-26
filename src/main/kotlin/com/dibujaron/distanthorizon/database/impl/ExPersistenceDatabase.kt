@@ -146,16 +146,21 @@ class ExPersistenceDatabase : PersistenceDatabase {
         }
     }
 
-    override fun updateShipOfActor(actor: ActorInfo, ship: ShipInfo): ActorInfo? {
+    override fun updateShipOfActor(
+        actor: ActorInfo,
+        sc: ShipClass,
+        primColor: ShipColor,
+        secColor: ShipColor
+    ): ActorInfo? {
         if (actor is ActorInfoInternal) {
             val oldShip = actor.ship
             if (oldShip is ShipInfoInternal) {
                 val shipIdFilter = (ExDatabase.Ship.id eq oldShip.id)
                 transaction {
                     ExDatabase.Ship.update({ shipIdFilter }) {
-                        it[shipClass] = ship.shipClass.qualifiedName
-                        it[primaryColor] = ship.primaryColor.toInt()
-                        it[secondaryColor] = ship.secondaryColor.toInt()
+                        it[shipClass] = sc.qualifiedName
+                        it[primaryColor] = primColor.toInt()
+                        it[secondaryColor] = secColor.toInt()
                     }
                 }
                 return transaction {

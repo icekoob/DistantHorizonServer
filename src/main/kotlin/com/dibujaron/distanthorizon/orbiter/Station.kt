@@ -4,6 +4,7 @@ import com.dibujaron.distanthorizon.DHServer
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.database.script.ScriptReader
 import com.dibujaron.distanthorizon.docking.StationDockingPort
+import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.wallet.Wallet
 import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.utils.TimeUtils
@@ -82,7 +83,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         return vecToParentAtTime.angle
     }
 
-    fun createShopMessage(): JSONObject {
+    fun createShopMessage(player: Player): JSONObject {
         val changesEveryFiveMinutes = System.currentTimeMillis() / 300000
         val rand = Random(changesEveryFiveMinutes + displayName.hashCode())
         val retval = JSONObject()
@@ -96,7 +97,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         retval.put("commodity_stores", commodities)
         val dealershipJson = JSONArray()
         dealerships.forEach {
-            val json = it.key.toJSON(rand, it.value)
+            val json = it.key.toJSON(player, rand, it.value)
             if (!json.getJSONArray("ship_classes").isEmpty) {
                 dealershipJson.put(json)
             }

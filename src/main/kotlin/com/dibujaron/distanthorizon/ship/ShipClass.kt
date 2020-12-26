@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.ship
 
 import com.dibujaron.distanthorizon.Vector2
 import com.dibujaron.distanthorizon.docking.ShipClassDockingPort
+import com.dibujaron.distanthorizon.player.Player
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -52,7 +53,7 @@ class ShipClass(
             ShipColor.fromHexString(properties.getProperty("color.secondary.$it").toString())
         }.toList()    //todo use this in the Ship toJson() - currently duplicated
 
-    fun toJSON(random: Random, percentage: Int): JSONObject {
+    fun toJSON(player: Player, random: Random, percentage: Int): JSONObject {
         val retval = JSONObject()
         retval.put("qualified_name", qualifiedName)
         retval.put("identifying_name", identifyingName)
@@ -61,7 +62,9 @@ class ShipClass(
         retval.put("main_engine_thrust", mainThrust)
         retval.put("manu_engine_thrust", manuThrust)
         retval.put("rotation_power", rotationPower)
-        retval.put("price", price)
+        val currentShipValue = player.ship.type.price
+        val priceDifference = this.price - currentShipValue
+        retval.put("price", priceDifference)
         val colorsJson = JSONArray()
         for (primaryColor in primaryColors) {
             for (secondaryColor in secondaryColors) {
