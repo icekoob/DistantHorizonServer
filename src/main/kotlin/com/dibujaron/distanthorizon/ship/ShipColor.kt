@@ -2,6 +2,7 @@ package com.dibujaron.distanthorizon.ship
 
 import org.json.JSONObject
 import java.awt.Color
+import kotlin.math.abs
 
 class ShipColor(val baseColor: Color) {
 
@@ -11,6 +12,13 @@ class ShipColor(val baseColor: Color) {
         retval.put("g", baseColor.green)
         retval.put("b", baseColor.blue)
         return retval
+    }
+
+    fun colorDistance(other: ShipColor): Int {
+        val redDistance = abs(baseColor.red - other.baseColor.red)
+        val blueDistance = abs(baseColor.blue - other.baseColor.blue)
+        val greenDistance = abs(baseColor.green - other.baseColor.green)
+        return redDistance + blueDistance + greenDistance
     }
 
     companion object {

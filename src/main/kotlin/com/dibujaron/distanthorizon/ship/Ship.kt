@@ -274,11 +274,12 @@ open class Ship(
     companion object {
         fun createGuestShip(player: Player): Ship {
             val shipClass = ShipClassManager.getShipClass(DHServer.playerStartingShip)!!
+            val colors = shipClass.getGoodRandomColors()
             return Ship(
                 null,
                 shipClass,
-                shipClass.primaryColors.random(),
-                shipClass.secondaryColors.random(),
+                colors.first,
+                colors.second,
                 HashMap(),
                 getStartingOrbit(),
                 player

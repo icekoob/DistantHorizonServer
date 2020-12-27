@@ -95,4 +95,15 @@ class ShipClass(
         return retval
     }
 
+    fun getGoodRandomColors(): Pair<ShipColor, ShipColor>
+    {
+        var primaryColor = this.primaryColors.random()
+        var secondaryColor = this.secondaryColors.random()
+        while(primaryColor.colorDistance(secondaryColor) < 75){
+            primaryColor = this.primaryColors.random()
+            secondaryColor = this.secondaryColors.random()
+        }
+        return Pair(primaryColor, secondaryColor)
+    }
+
 }
