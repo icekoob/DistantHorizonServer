@@ -17,12 +17,12 @@ enum class Manufacturer(
             "'Our designs are made for the rich and powerful. Are you sure *you* should be shopping here?'",
             "'Aldrin Aeronautics is proud to introduce the KX-6, the galaxy's most revolutionary exploration craft!'",
             "'Is price the only thing holding you back?'",
-            "'Our latest model is at the very cutting edge of starship techonology!'",
-            "'Now, over in this direction we have our deluxe models...'",
-            "'This isn't the cheapest freighter out there, but the other captains will be positively drooling over it.'",
+            "'This vessel offers the true cutting edge of starship techonology!'",
+            "'Now, over in this direction we have our touring models...'",
+            "'Sure, it isn't the cheapest freighter out there, but the other captains will drool over it.'",
             "Aldrin Aeronautics -- Command the stars.",
             "Aldrin Aeronautics -- Cruise into the future.",
-            "'Ah, I can tell you're a captain of taste. May I interest you in our KX-6 line?'"
+            "'Ah, I can tell you're a captain of taste. Have you seen the latest in our KX-6 line?'"
         )
     ),
     RIJAY(
@@ -35,7 +35,7 @@ enum class Manufacturer(
             "'Can I interest you in a rust-prevention coat?'",
             "Rijay ships are favored by Skywatch for their speed. You hope nobody will think you're a cop.",
             "'Now, when you buy this ship you'll have to sign a number of release forms...'",
-            "'Sure, it's not as big as a Thumper, but can a Thumper go this fast?'"
+            "'Sure, it won't hold as much as a Thumper, but can a Thumper go this fast?'"
         )
     ),
     PHE(
@@ -48,7 +48,7 @@ enum class Manufacturer(
             "'Fuel efficiency?... Well...'",
             "'What? No, it's never been crashed. It's supposed to look like that.'",
             "'Sure, it's not a very unique model, but have you ever seen one break down?'",
-            "'Yes, it is a passenger ship! Just don't tell 'em what it looks like until after they sign your contract.'",
+            "'Sure, you can haul passengers with it. Just don't tell 'em what it looks like until after they sign a contract.'",
             "'A guy told me he survived an asteroid collision in one of these. Don't look at me like that, it's true!'"
         )
     );
