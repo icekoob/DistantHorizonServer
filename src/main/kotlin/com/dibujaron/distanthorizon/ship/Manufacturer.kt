@@ -34,7 +34,7 @@ enum class Manufacturer(
             "'Buy now -- this price won't last long!'",
             "'Can I interest you in a rust-prevention coat?'",
             "Rijay ships are favored by Skywatch for their speed. You hope nobody will think you're a cop.",
-            "'Now, when you buy this ship you'll have to sign a number of release forms...'",
+            "'Now, when you buy this ship, I'll need you to sign a few release forms...'",
             "'Sure, it won't hold as much as a Thumper, but can a Thumper go this fast?'"
         )
     ),
