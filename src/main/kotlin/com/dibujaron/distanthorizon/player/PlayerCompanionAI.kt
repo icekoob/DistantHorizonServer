@@ -12,6 +12,7 @@ open class PlayerCompanionAI(val player: Player) {
         "Hi, it's good to see you!",
         "Good morning, welcome back!",
         "Hello! Where are we heading today?",
+        "Tip: press 'x' to toggle the breadcrumbs view."
     )
 
     open fun getName(): String {
