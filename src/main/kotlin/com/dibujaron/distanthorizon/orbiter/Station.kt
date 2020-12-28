@@ -21,6 +21,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val displayName = properties.getProperty("displayName").trim()
     val splashTextList = ArrayList<String>()
     val dealerships = HashMap<Manufacturer, Int>()
+    val navigable = properties.getProperty("navigable", "true").toBoolean()
     private val aiScripts: Map<Int, ScriptReader> = DHServer.getDatabase().getScriptDatabase()
         .selectScriptsForStation(this).asSequence()
         .map { Pair(it.getDepartureTick(), it) }
@@ -157,6 +158,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     override fun createOrbiterJson(): JSONObject {
         val retval = super.createOrbiterJson()
         retval.put("display_name", displayName)
+        retval.put("navigable", navigable)
         return retval
     }
 }
