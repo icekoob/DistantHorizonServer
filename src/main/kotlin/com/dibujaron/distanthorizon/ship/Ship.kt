@@ -174,7 +174,7 @@ open class Ship(
                 myDockingPorts.asSequence()
                     .map { shipPort -> Pair(shipPort, stationPort) }
             }
-            //.filter { it.first.relativeRotation() + it.second.relativeRotation == 0.0 } //only want docking position facing forward
+            .filter { it.first.relativeRotation() + it.second.relativeRotation == 0.0 } //only want docking position facing forward
             .map { Triple(it.first, it.second, (it.first.globalPosition() - it.second.globalPosition()).lengthSquared) }
             .filter { it.third < maxDistSquared }
             .onEach { anyPassedDistTest = true }
