@@ -8,7 +8,7 @@ import kotlin.collections.HashMap
 import kotlin.math.pow
 
 object OrbiterManager {
-    private const val MIN_GRAVITY_FORCE_CUTOFF = 0.01
+    private const val MIN_GRAVITY_FORCE_CUTOFF = 0.2
 
     private val orbitersMap: HashMap<String, Orbiter> = HashMap()
     private val planetsMap: HashMap<String, Planet> = HashMap()
