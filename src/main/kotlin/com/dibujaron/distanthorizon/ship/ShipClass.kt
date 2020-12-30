@@ -109,9 +109,11 @@ class ShipClass(
         //return Pair(this.primaryColors[0],this.secondaryColors[0])
         var primaryColor = this.primaryColors.random()
         var secondaryColor = this.secondaryColors.random()
-        while(primaryColor.colorDistance(secondaryColor) < 75){
+        var tries = 0
+        while(primaryColor.colorDistance(secondaryColor) < 10 && tries < 10000){
             primaryColor = this.primaryColors.random()
             secondaryColor = this.secondaryColors.random()
+            tries++
         }
         return Pair(primaryColor, secondaryColor)
     }
