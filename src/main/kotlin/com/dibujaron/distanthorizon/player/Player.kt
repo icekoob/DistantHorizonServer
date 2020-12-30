@@ -165,8 +165,9 @@ class Player(val connection: WsContext) {
             val qualName = message.getString("ship_class_qualified_name")
             val color1 = ShipColor.fromJSON(message.getJSONObject("primary_color"))
             val color2 = ShipColor.fromJSON(message.getJSONObject("secondary_color"))
-            val shipClass = ShipClassManager.getShipClass(qualName)!!
-            val cost = shipClass.price - ship.type.price
+            val newShipClass = ShipClassManager.getShipClass(qualName)!!
+            val oldShipClass = ship.type
+            var cost = newShipClass.getPurchaseCost(oldShipClass)
             val newBalance = wallet.getBalance() - cost
             if (newBalance > 0) {
                 wallet.setBalance(newBalance)

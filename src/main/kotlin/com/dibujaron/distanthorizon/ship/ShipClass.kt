@@ -64,9 +64,7 @@ class ShipClass(
         retval.put("main_engine_thrust", mainThrust)
         retval.put("manu_engine_thrust", manuThrust)
         retval.put("rotation_power", rotationPower)
-        val currentShipValue = player.ship.type.price
-        val priceDifference = this.price - currentShipValue
-        retval.put("price", priceDifference)
+        retval.put("price", getPurchaseCost(player.ship.type))
         val colorsJson = JSONArray()
         for (primaryColor in primaryColors) {
             for (secondaryColor in secondaryColors) {
@@ -80,6 +78,17 @@ class ShipClass(
         }
         retval.put("colors", colorsJson)
         return retval
+    }
+
+    fun getPurchaseCost(existingShipClass: ShipClass): Int
+    {
+        var cost = price
+        if (manufacturer == existingShipClass.manufacturer){
+            cost -= (existingShipClass.price / 2) //same manufacturer trade-ins get 50% value
+        } else {
+            cost -= (existingShipClass.price / 4)
+        }
+        return cost
     }
 
     fun generateRandomHoldMap(): HashMap<CommodityType, Int> {

@@ -11,23 +11,23 @@ enum class Manufacturer(
     val displayNameLong: String = displayNameShort,
     val splashes: List<String>
 ) {
-    ALDRIN(
-        "aldrin", "Aldrin", "Aldrin Aeronautics", listOf(
-            "Aldrin Aeronautics -- The galaxy's finest vessels for the discerning buyer.",
-            "'Our designs are made for the rich and powerful. Are you sure *you* should be shopping here?'",
-            "'Aldrin Aeronautics is proud to introduce the KX-6, the galaxy's most revolutionary exploration craft!'",
-            "'Is price the only thing holding you back?'",
-            "'This vessel offers the true cutting edge of starship techonology!'",
-            "'Now, over in this direction we have our touring models...'",
-            "'Sure, it isn't the cheapest freighter out there, but the other captains will drool over it.'",
-            "Aldrin Aeronautics -- Command the stars.",
-            "Aldrin Aeronautics -- Cruise into the future.",
-            "'Ah, I can tell you're a captain of taste. Have you seen the latest in our KX-6 line?'"
+    PHE(
+        "phe", "P.H.E.", "Porter Heavy Engineering", listOf(
+            "'Porter Heavy Engineering -- Built To Last!'",
+            "'She don't look like much, but she's got it where it counts!'",
+            "'You buy this ship, treat her right, she'll be with you for the rest of your life.'",
+            "Porter ships aren't pretty, but they sure are sturdy.",
+            "Porter designs are mostly industrial, but they offer a few general-commerce ships as well.",
+            "'Fuel efficiency?... Well...'",
+            "'What? No, it's never been crashed. It's supposed to look like that.'",
+            "'Sure, it's not a very unique model, but have you ever seen one break down?'",
+            "'Sure, you can haul passengers with it. Just don't tell 'em what it looks like until after they sign a contract.'",
+            "'A guy told me he survived an asteroid collision in one of these. Don't look at me like that, it's true!'"
         )
     ),
     RIJAY(
         "rijay", "Rijay", "Rijay Drive Yards", listOf(
-            "Rijay Drive Yards -- Live Your Dream!",
+            "'Rijay Drive Yards -- Live Your Dream!'",
             "Rijay ships aren't always reliable, but they're certainly fast.",
             "'Aerodynamics stopped mattering once we got to space, but curves never stopped looking good!'",
             "Rijay started out as a manufacturer of racing ships, but they now offer a complete line of vessels.",
@@ -38,18 +38,18 @@ enum class Manufacturer(
             "'Sure, it won't hold as much as a Thumper, but can a Thumper go this fast?'"
         )
     ),
-    PHE(
-        "phe", "P.H.E.", "Porter Heavy Engineering", listOf(
-            "Porter Heavy Engineering -- Built To Last!",
-            "'She don't look like much, but she's got it where it counts!'",
-            "'You buy this ship, treat her right, she'll be with you for the rest of your life.'",
-            "Porter ships aren't pretty, but they sure are sturdy.",
-            "Porter designs are mostly industrial, but they offer a few general-commerce ships as well.",
-            "'Fuel efficiency?... Well...'",
-            "'What? No, it's never been crashed. It's supposed to look like that.'",
-            "'Sure, it's not a very unique model, but have you ever seen one break down?'",
-            "'Sure, you can haul passengers with it. Just don't tell 'em what it looks like until after they sign a contract.'",
-            "'A guy told me he survived an asteroid collision in one of these. Don't look at me like that, it's true!'"
+    ALDRIN(
+        "aldrin", "Aldrin", "Aldrin Aeronautics", listOf(
+            "'Aldrin Aeronautics -- The galaxy's finest vessels for the discerning buyer.'",
+            "'Our designs are made for the rich and powerful. Are you sure *you* should be shopping here?'",
+            "'Aldrin Aeronautics is proud to introduce the KX-6, the galaxy's most revolutionary exploration craft!'",
+            "'Is price the only thing holding you back?'",
+            "'This vessel offers the true cutting edge of starship techonology!'",
+            "'Now, over in this direction we have our touring models...'",
+            "'Sure, it isn't the cheapest freighter out there, but the other captains will drool over it.'",
+            "'Aldrin Aeronautics -- Command the stars.'",
+            "'Aldrin Aeronautics -- Cruise into the future.'",
+            "'Ah, I can tell you're a captain of taste. Have you seen the latest in our KX-6 line?'"
         )
     );
 
@@ -70,6 +70,7 @@ enum class Manufacturer(
         val shipClasses = JSONArray()
         ShipClassManager.getShipClasses().asSequence()
             .filter { it.manufacturer == this }
+            .sortedBy { it.price }
             .map { it.toJSON(player, random, percentage) }
             .filter { !it.getJSONArray("colors").isEmpty }
             .forEach { shipClasses.put(it) }

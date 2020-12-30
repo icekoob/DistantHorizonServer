@@ -97,10 +97,13 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
             .forEach { commodities.put(it) }
         retval.put("commodity_stores", commodities)
         val dealershipJson = JSONArray()
-        dealerships.forEach {
-            val json = it.key.toJSON(player, rand, it.value)
-            if (!json.getJSONArray("ship_classes").isEmpty) {
-                dealershipJson.put(json)
+        Manufacturer.values().forEach {
+            val percent = dealerships[it]
+            if(percent != null){
+                val json = it.toJSON(player, rand, percent)
+                if (!json.getJSONArray("ship_classes").isEmpty) {
+                    dealershipJson.put(json)
+                }
             }
         }
         retval.put("dealerships", dealershipJson)
