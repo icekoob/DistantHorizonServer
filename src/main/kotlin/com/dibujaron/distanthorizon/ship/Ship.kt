@@ -136,7 +136,6 @@ open class Ship(
         retval.put("secondary_color", secondaryColor.toJSON())
         retval.put("docking_ports", myDockingPorts.asSequence().map { it.toJSON() }.toList())
         retval.put("docked", isDocked())
-        println("Creating full ship json with docked value: ${isDocked()}")
         if (isDocked()) {
             retval.put("docked_info", createDockedMessage())
         }
