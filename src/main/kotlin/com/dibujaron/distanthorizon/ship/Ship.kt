@@ -29,6 +29,22 @@ open class Ship(
     val pilot: Player?
 ) {
 
+    constructor(
+        dbHook: ShipInfo?,
+        type: ShipClass,
+        initialState: ShipState,
+        pilot: Player?
+    ) : this(dbHook, type, type.getGoodRandomColors(), type.generateRandomHoldMap(), initialState, pilot)
+
+    constructor(
+        dbHook: ShipInfo?,
+        type: ShipClass,
+        colors: Pair<ShipColor, ShipColor>,
+        hold: MutableMap<CommodityType, Int>,
+        initialState: ShipState,
+        pilot: Player?
+    ) : this(dbHook, type, colors.first, colors.second, hold, initialState, pilot)
+
     var currentState: ShipState = initialState
     val uuid = UUID.randomUUID()
 
