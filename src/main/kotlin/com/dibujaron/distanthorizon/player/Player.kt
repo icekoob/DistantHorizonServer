@@ -263,6 +263,13 @@ class Player(val connection: WsContext) {
         queueChatMsg("[${companionAI.getName()}]", message)
     }
 
+    fun sendServerMessageImmediate(message: String) {
+        println("sending immediate")
+        val myMessage = createMessage("chat")
+        myMessage.put("payload", "ATTENTION: $message")
+        sendMessage(myMessage)
+    }
+
     fun queueChatMsg(senderName: String, message: String) {
         queueChatMsg("$senderName: $message")
     }

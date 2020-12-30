@@ -85,6 +85,7 @@ object DHServer {
             val command = readLine()
             if (command == "stop") {
                 shuttingDown = true;
+                PlayerManager.getPlayers(false).forEach { it.sendServerMessageImmediate("This server has closed. Your progress was saved at your last docked station.") }
                 timer.cancel()
                 javalin.stop()
             } else if (command == "debug") {
