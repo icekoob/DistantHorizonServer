@@ -1,6 +1,7 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.command.CommandProcessor
 import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.database.persistence.ShipInfo
@@ -159,7 +160,9 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            PlayerManager.broadcast(getDisplayName(), payload)
+            if(!CommandProcessor.handlePlayerCommand(this, payload)) {
+                PlayerManager.broadcast(getDisplayName(), payload)
+            }
         } else if (messageType == "buy_ship") {
             println("got buy ship message")
             val qualName = message.getString("ship_class_qualified_name")

@@ -233,4 +233,18 @@ class ExPersistenceDatabase : PersistenceDatabase {
             throw java.lang.IllegalStateException("Object must be from same db")
         }
     }
+
+
+    override fun getWealthiestActors(limit: Int): List<ActorInfo> {
+        return transaction {
+            ExDatabase.Actor.join(
+                ExDatabase.Ship,
+                JoinType.INNER,
+                additionalConstraint = { ExDatabase.Actor.currentShip eq ExDatabase.Ship.id })
+                .selectAll()
+                .orderBy(ExDatabase.Actor.balance to SortOrder.DESC)
+                .limit(limit)
+                .map { mapActorInfo(it) }
+        }
+    }
 }

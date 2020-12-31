@@ -19,4 +19,5 @@ interface PersistenceDatabase {
     fun updateActorBalance(actor: ActorInfo, newBal: Int): ActorInfo?
     fun updateActorLastDockedStation(actor: ActorInfo, station: Station): ActorInfo?
     fun updateShipHold(ship: ShipInfo, commodity: CommodityType, amount: Int)
+    fun getWealthiestActors(limit: Int): List<ActorInfo>
 }
