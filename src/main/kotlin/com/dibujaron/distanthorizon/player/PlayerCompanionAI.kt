@@ -6,6 +6,8 @@ open class PlayerCompanionAI(val player: Player) {
         "Hi %n, it's good to see you!",
         "Good morning, welcome back %n!",
         "Hello %n! Where are we heading today?",
+        "Tip: press 'x' to toggle the breadcrumbs view.",
+        "Tip: use /top to see the top players across all servers."
     )
 
     private val greetingsGeneric = arrayListOf(
