@@ -15,7 +15,6 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.awt.Color
 
 class ExPersistenceDatabase : PersistenceDatabase {
     override fun selectOrCreateAccount(accountName: String): AccountInfo {
@@ -107,11 +106,12 @@ class ExPersistenceDatabase : PersistenceDatabase {
     override fun createNewActorForAccount(accountInfo: AccountInfo, actorDisplayName: String): AccountInfo? {
         if (accountInfo is AccountInfoInternal) {
             val acctId = accountInfo.id
+            val colors = ShipClassManager.getShipClass(DHServer.playerStartingShip)!!.getGoodRandomColors()
             transaction {
                 val shipId = ExDatabase.Ship.insertAndGetId {
                     it[shipClass] = DHServer.playerStartingShip
-                    it[primaryColor] = ShipColor(Color(128, 128, 128)).toInt()//ShipColor(Color(0,148,255)),
-                    it[secondaryColor] = ShipColor(Color(205, 106, 0)).toInt()
+                    it[primaryColor] = colors.first.toInt()//ShipColor(Color(0,148,255)),
+                    it[secondaryColor] = colors.second.toInt()
                 }
 
                 ExDatabase.Actor.insert {
