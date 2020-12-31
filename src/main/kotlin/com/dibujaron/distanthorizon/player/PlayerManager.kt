@@ -9,6 +9,7 @@ object PlayerManager {
 
     fun addPlayer(player: Player) {
         connectionMap[player.connection] = player
+        broadcast("- ${player.getDisplayName()} joined the game -")
     }
 
     fun mapAuthenticatedPlayer(username: String, player: Player){
@@ -19,6 +20,7 @@ object PlayerManager {
         connectionMap.remove(player.connection)
         if(player.isAuthenticated()){
             authenticatedUserMap.remove(player.getUsername())
+            broadcast("- ${player.getDisplayName()} left the game -")
         }
     }
 
@@ -43,6 +45,12 @@ object PlayerManager {
     }
 
     fun broadcast(senderName: String, message: String) {
+        println("$senderName: $message")
         getPlayers().forEach { it.queueChatMsg(senderName, message) }
+    }
+
+    fun broadcast(message: String) {
+        println("Broadcast: $message")
+        getPlayers().forEach { it.queueChatMsg(message) }
     }
 }
