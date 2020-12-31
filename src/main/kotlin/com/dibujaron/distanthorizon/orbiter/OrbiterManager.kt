@@ -42,7 +42,7 @@ object OrbiterManager {
 
     fun getStationRequired(name: String): Station {
         val s = getStation(name);
-        if(s == null){
+        if (s == null) {
             throw IllegalStateException("No station found with name $name")
         } else {
             return s
@@ -64,7 +64,7 @@ object OrbiterManager {
                     rSquared = it.minRadiusSquared.toDouble()
                 }
                 val forceMag = GRAVITY_CONSTANT * it.mass / rSquared
-                if(forceMag > MIN_GRAVITY_FORCE_CUTOFF) {
+                if (forceMag > MIN_GRAVITY_FORCE_CUTOFF) {
                     accel += (offset.normalized() * forceMag)
                 }
             }
@@ -74,18 +74,19 @@ object OrbiterManager {
     init {
         recursiveInitOrbiters(null, File("./world"))
         orbitersMap.values.forEach { it.initialize() }
+        stationsMap.values.forEach { it.initAiScripts() }
     }
 
-    private fun recursiveInitOrbiters(parentName: String?, folder: File){
+    private fun recursiveInitOrbiters(parentName: String?, folder: File) {
         folder.walk()
             .maxDepth(1)
-            .filter{it.name.endsWith(".properties")}
+            .filter { it.name.endsWith(".properties") }
             .forEach {
                 val reader = FileReader(it)
                 val props = Properties()
                 props.load(reader)
                 val orbiterName = it.nameWithoutExtension
-                if(orbiterName.startsWith("Stn_")){
+                if (orbiterName.startsWith("Stn_")) {
                     val stn = Station(parentName, orbiterName, props)
                     stationsMap[orbiterName] = stn
                     orbitersMap[orbiterName] = stn
@@ -98,7 +99,7 @@ object OrbiterManager {
                 }
                 val containingFolder = it.parentFile
                 val descendantFolder = File(containingFolder.path + "/" + orbiterName)
-                if(descendantFolder.exists()){
+                if (descendantFolder.exists()) {
                     recursiveInitOrbiters(orbiterName, descendantFolder)
                 }
             }

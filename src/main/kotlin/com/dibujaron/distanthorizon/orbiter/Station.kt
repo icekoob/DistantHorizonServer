@@ -22,11 +22,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val splashTextList = ArrayList<String>()
     val dealerships = HashMap<Manufacturer, Int>()
     val navigable = properties.getProperty("navigable", "true").toBoolean()
-    private val aiScripts: Map<Int, ScriptReader> = DHServer.getDatabase().getScriptDatabase()
-        .selectScriptsForStation(this).asSequence()
-        .filter { it.getSourceStation().navigable && it.getDestinationStation().navigable }
-        .map { Pair(it.getDepartureTick(), it) }
-        .toMap()
+    private var aiScripts: Map<Int, ScriptReader> = Collections.emptyMap()
 
     private val commodityStores: Map<CommodityType, CommodityStore> = CommodityType
         .values()
@@ -54,6 +50,14 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
                 dealerships[it] = dealershipPercentage
             }
         }
+    }
+
+    fun initAiScripts(){
+        aiScripts = DHServer.getDatabase().getScriptDatabase()
+            .selectScriptsForStation(this).asSequence()
+            .filter { it.getSourceStation().navigable && it.getDestinationStation().navigable }
+            .map { Pair(it.getDepartureTick(), it) }
+            .toMap()
     }
 
     override fun tick() {
