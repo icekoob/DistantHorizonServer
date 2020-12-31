@@ -24,6 +24,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val navigable = properties.getProperty("navigable", "true").toBoolean()
     private val aiScripts: Map<Int, ScriptReader> = DHServer.getDatabase().getScriptDatabase()
         .selectScriptsForStation(this).asSequence()
+        .filter { it.getSourceStation().navigable && it.getDestinationStation().navigable }
         .map { Pair(it.getDepartureTick(), it) }
         .toMap()
 
@@ -59,6 +60,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         commodityStores.values.forEach { it.tick() }
         val script = aiScripts[TimeUtils.getCurrentTickInCycle()]
         if (script != null) {
+            //todo don't spawn if too many AI ships already
             println("initializing AI ship from station $name")
             ShipManager.addShip(AIShip(script.copy()))
         }
@@ -99,7 +101,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         val dealershipJson = JSONArray()
         Manufacturer.values().forEach {
             val percent = dealerships[it]
-            if(percent != null){
+            if (percent != null) {
                 val json = it.toJSON(player, rand, percent)
                 if (!json.getJSONArray("ship_classes").isEmpty) {
                     dealershipJson.put(json)

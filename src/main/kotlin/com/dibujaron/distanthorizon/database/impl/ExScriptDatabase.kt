@@ -111,6 +111,14 @@ class ExScriptDatabase : ScriptDatabase
             return route[ExDatabase.Route.departureTick]
         }
 
+        override fun getDestinationStation(): Station {
+            return OrbiterManager.getStationRequired(route[ExDatabase.Route.destinationStation])
+        }
+
+        override fun getSourceStation(): Station {
+            return OrbiterManager.getStationRequired(route[ExDatabase.Route.originStation])
+        }
+
         override fun getStartingState(): ShipState {
             return ShipState(
                 Vector2(route[ExDatabase.Route.startingLocationX], route[ExDatabase.Route.startingLocationY]),
