@@ -1,17 +1,16 @@
 package com.dibujaron.distanthorizon.command
 
-import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.ShipManager
 
 class ListCommandHandler : CommandHandler {
-    override fun handle(sender: Player, args: List<String>) {
+    override fun handle(sender: CommandSender, args: List<String>) {
         val players = PlayerManager.getPlayers(false).sortedBy { it.getDisplayName() }.toList()
-        sender.queueChatMsg("Human players on this server: ${players.size}")
+        sender.sendMessage("Human players on this server: ${players.size}")
         PlayerManager.getPlayers(false)
             .forEach {
-                sender.queueChatMsg(it.getDisplayName() + " (" + it.getUsername() + ")")
+                sender.sendMessage(it.getDisplayName() + " (" + it.getUsername() + ")")
             }
-        sender.queueChatMsg("Total ships currently active: ${ShipManager.getShips().size}")
+        sender.sendMessage("Total ships currently active: ${ShipManager.getShips().size}")
     }
 }

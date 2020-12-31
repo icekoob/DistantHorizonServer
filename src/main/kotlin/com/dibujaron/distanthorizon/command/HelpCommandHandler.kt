@@ -1,12 +1,10 @@
 package com.dibujaron.distanthorizon.command
 
-import com.dibujaron.distanthorizon.player.Player
-
 class HelpCommandHandler : CommandHandler{
-    override fun handle(sender: Player, args: List<String>) {
-        sender.queueChatMsg("All available commands: ")
-        PlayerCommand.values().asSequence().forEach {
-            sender.queueChatMsg("/" + it.commandStr)
+    override fun handle(sender: CommandSender, args: List<String>) {
+        sender.sendMessage("All available commands: ")
+        Command.values().asSequence().forEach {
+            sender.sendMessage("/" + it.commandStr)
         }
     }
 }

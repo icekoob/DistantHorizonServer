@@ -1,5 +1,7 @@
 package com.dibujaron.distanthorizon
 
+import com.dibujaron.distanthorizon.command.CommandManager
+import com.dibujaron.distanthorizon.command.CommandSender
 import com.dibujaron.distanthorizon.database.DhDatabase
 import com.dibujaron.distanthorizon.database.impl.ExDatabase
 import com.dibujaron.distanthorizon.login.PendingLoginManager
@@ -8,6 +10,7 @@ import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
+import com.dibujaron.distanthorizon.timer.ScheduledTaskManager
 import io.javalin.Javalin
 import io.javalin.websocket.WsBinaryMessageContext
 import io.javalin.websocket.WsCloseContext
@@ -42,6 +45,7 @@ object DHServer {
 
     private var shuttingDown = false
     val serverProperties: Properties = loadProperties()
+    val restartCommand = serverProperties.getProperty("restart.command", "")
     val serverPort = serverProperties.getProperty("server.port", "25611").toInt()
     val serverSecret = serverProperties.getProperty("server.secret", "debug")
     val shipHeartbeatsEvery = serverProperties.getProperty("heartbeats.ship", "5").toInt()
@@ -76,25 +80,33 @@ object DHServer {
         return database
     }
 
-    fun getTickCount(): Int{
+    fun getTickCount(): Int {
         return tickCount
     }
 
     fun commandLoop() {
         while (!shuttingDown) {
             val command = readLine()
-            if (command == "stop") {
-                shuttingDown = true;
-                PlayerManager.getPlayers(false).forEach { it.sendServerMessageImmediate("This server has closed. Your progress was saved at your last docked station.") }
-                timer.cancel()
-                javalin.stop()
-            } else if (command == "debug") {
-                debug = !debug;
-                println("debug: $debug")
-            } else {
+            if (command != null && !CommandManager.handleConsoleCommand(command)) {
                 println("Unknown command $command")
             }
         }
+    }
+
+    fun shutDown() {
+        shuttingDown = true;
+        PlayerManager.getPlayers(false)
+            .forEach { it.sendServerMessageImmediate("This server has closed. Your progress was saved at your last docked station.") }
+        timer.cancel()
+        javalin.stop()
+    }
+
+    fun restart(sender: CommandSender? = null) {
+        sender?.sendMessage("Attempting to execute restart command...")
+        if (restartCommand.isNotEmpty()) {
+            Runtime.getRuntime().exec(restartCommand)
+        }
+        sender?.sendMessage("Command executed.")
     }
 
     var lastTickTime = System.currentTimeMillis()
@@ -116,6 +128,7 @@ object DHServer {
     private fun tick() {
         OrbiterManager.tick()
         ShipManager.tick()
+        ScheduledTaskManager.tick()
         val isWorldStateMessageTick = tickCount % worldHeartbeatsEvery == worldHeartbeatsTickOffset
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
@@ -220,7 +233,7 @@ object DHServer {
             throw IllegalStateException("Connection disconnected but no player found for this connection.")
         } else {
             PlayerManager.removePlayer(player)
-            if(player.initialized) {
+            if (player.initialized) {
                 val playerShip: Ship = player.ship
                 ShipManager.removeShip(playerShip)
             }

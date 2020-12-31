@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.player
 
+import com.dibujaron.distanthorizon.timer.ScheduledTaskManager
 import io.javalin.websocket.WsContext
 import java.util.concurrent.ConcurrentHashMap
 
@@ -9,16 +10,16 @@ object PlayerManager {
 
     fun addPlayer(player: Player) {
         connectionMap[player.connection] = player
-        broadcast("- ${player.getDisplayName()} joined the game -")
+        ScheduledTaskManager.runDelayed(5, { broadcast("- ${player.getDisplayName()} joined the game -") })
     }
 
-    fun mapAuthenticatedPlayer(username: String, player: Player){
+    fun mapAuthenticatedPlayer(username: String, player: Player) {
         authenticatedUserMap[username] = player
     }
 
     fun removePlayer(player: Player) {
         connectionMap.remove(player.connection)
-        if(player.isAuthenticated()){
+        if (player.isAuthenticated()) {
             authenticatedUserMap.remove(player.getUsername())
             broadcast("- ${player.getDisplayName()} left the game -")
         }
@@ -50,7 +51,7 @@ object PlayerManager {
     }
 
     fun broadcast(message: String) {
-        println("Broadcast: $message")
+        println(message)
         getPlayers().forEach { it.queueChatMsg(message) }
     }
 }

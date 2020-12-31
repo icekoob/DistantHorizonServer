@@ -1,7 +1,9 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
-import com.dibujaron.distanthorizon.command.CommandProcessor
+import com.dibujaron.distanthorizon.command.CommandManager
+import com.dibujaron.distanthorizon.command.CommandSender
+import com.dibujaron.distanthorizon.command.Permission
 import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.database.persistence.ShipInfo
@@ -17,7 +19,7 @@ import org.json.JSONObject
 import java.util.*
 import kotlin.collections.HashMap
 
-class Player(val connection: WsContext) {
+class Player(val connection: WsContext) : CommandSender {
     var accountInfo: AccountInfo? = null
     var actorInfo: ActorInfo? = null
     private val companionAI: PlayerCompanionAI = PlayerCompanionAI(this)
@@ -26,6 +28,15 @@ class Player(val connection: WsContext) {
     private val outgoingMessageQueue: Queue<JSONObject> = LinkedList()
     var initialized: Boolean = false
     lateinit var wallet: Wallet
+
+    override fun sendMessage(message: String) {
+        queueChatMsg(message)
+    }
+
+    override fun hasPermission(permission: Permission): Boolean {
+        return accountInfo?.accountName == "dibujaron0511"
+    }
+
 
     private fun processClientFirstMessage(message: JSONObject) {
         println("processing client opening message.")
@@ -160,7 +171,7 @@ class Player(val connection: WsContext) {
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            if(!CommandProcessor.handlePlayerCommand(this, payload)) {
+            if (!CommandManager.handlePlayerCommand(this, payload)) {
                 PlayerManager.broadcast(getDisplayName(), payload)
             }
         } else if (messageType == "buy_ship") {
