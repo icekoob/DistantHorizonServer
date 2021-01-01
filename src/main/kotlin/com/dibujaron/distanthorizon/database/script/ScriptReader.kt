@@ -4,6 +4,7 @@ import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.ship.ShipClass
 import com.dibujaron.distanthorizon.ship.ShipInputs
 import com.dibujaron.distanthorizon.ship.ShipState
+import com.dibujaron.distanthorizon.utils.TimeUtils
 
 interface ScriptReader {
 
@@ -24,4 +25,15 @@ interface ScriptReader {
     fun nextActionShouldFire(): Boolean
 
     fun getNextAction(): ShipInputs
+
+    fun getDuration(): Int
+
+    fun getNextPossibleDeparture(): Int {
+        return TimeUtils.getNextAbsoluteTimeOfCycleTick(getDepartureTick())
+    }
+
+    //if we haven't departed yet.
+    fun getEarliestPossibleArrivalUsingThisRoute(): Int {
+        return getNextPossibleDeparture() + getDuration()
+    }
 }

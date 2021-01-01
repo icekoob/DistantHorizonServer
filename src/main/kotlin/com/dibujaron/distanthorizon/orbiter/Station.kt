@@ -22,7 +22,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     val splashTextList = ArrayList<String>()
     val dealerships = HashMap<Manufacturer, Int>()
     val navigable = properties.getProperty("navigable", "true").toBoolean()
-    private var aiScripts: Map<Int, ScriptReader> = Collections.emptyMap()
+    private var aiScripts: MutableMap<Int, MutableSet<ScriptReader>> = TreeMap()
 
     private val commodityStores: Map<CommodityType, CommodityStore> = CommodityType
         .values()
@@ -52,22 +52,44 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         }
     }
 
-    fun initAiScripts(){
-        aiScripts = DHServer.getDatabase().getScriptDatabase()
+    fun initAiScripts() {
+        DHServer.getDatabase().getScriptDatabase()
             .selectScriptsForStation(this).asSequence()
             .filter { it.getSourceStation().navigable && it.getDestinationStation().navigable }
-            .map { Pair(it.getDepartureTick(), it) }
-            .toMap()
+            .forEach { aiScripts.getOrPut(it.getDepartureTick()) { mutableSetOf() }.add(it) }
     }
+
+    /*fun calculateBestAiScripts() {
+        for(i in 0..DHServer.CYCLE_LENGTH_TICKS)
+        {
+            for(destStation in OrbiterManager.getStations()){
+                if(destStation == this) continue
+
+            }
+        }
+        for (tickWithScripts in aiScripts.keys) {
+
+        }
+        val aiZS = DHServer.getDatabase().getScriptDatabase().selectScriptsForStation(this)
+        for (myScript in scripts) { //ordered from the db
+            val nextPossibleArrival = myScript.getEarliestPossibleArrivalUsingThisRoute()
+            val departure
+            for (otherScript in scripts) {
+                if (otherScript.)
+            }
+        }
+        DHServer.getDatabase().getScriptDatabase()
+            .selectScriptsForStation(this).map {
+                val arrivalStation = it.getDestinationStation()
+            }
+    }*/
 
     override fun tick() {
         commodityStores.values.forEach { it.tick() }
-        val script = aiScripts[TimeUtils.getCurrentTickInCycle()]
-        if (script != null) {
-            //todo don't spawn if too many AI ships already
-            println("initializing AI ship from station $name")
-            ShipManager.addShip(AIShip(script.copy()))
+        aiScripts.getOrElse(TimeUtils.getCurrentTickInCycle()) { setOf() }.forEach {
+            ShipManager.addShip(AIShip(it.copy()))
         }
+
         super.tick()
     }
 

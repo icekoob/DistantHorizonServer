@@ -19,8 +19,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
-class ExScriptDatabase : ScriptDatabase
-{
+class ExScriptDatabase : ScriptDatabase {
     override fun selectStationsWithScripts(): List<Station> {
         return transaction {
             ExDatabase.Route.slice(ExDatabase.Route.originStation).selectAll()
@@ -35,6 +34,7 @@ class ExScriptDatabase : ScriptDatabase
         val originStationFilter = (ExDatabase.Route.originStation eq sourceStation.name)
         return transaction {
             ExDatabase.Route.select { originStationFilter }
+                .orderBy(ExDatabase.Route.departureTick)
                 .map { RelationalScriptReader(it) }
         }
     }
@@ -60,7 +60,8 @@ class ExScriptDatabase : ScriptDatabase
         }
 
         val selectedRoute =
-            routes.asSequence().minByOrNull { it[ExDatabase.Route.departureTick] + it[ExDatabase.Route.duration] } //min by arrival time
+            routes.asSequence()
+                .minByOrNull { it[ExDatabase.Route.departureTick] + it[ExDatabase.Route.duration] } //min by arrival time
         return if (selectedRoute == null) {
             null
         } else {
@@ -96,11 +97,17 @@ class ExScriptDatabase : ScriptDatabase
 
         init {
             if (steps.isEmpty()) {
-                transaction { ExDatabase.RouteStep.select { ExDatabase.RouteStep.routeID eq route[ExDatabase.Route.id].value }
-                    .forEach {
-                        steps[it[ExDatabase.RouteStep.stepTick]] = it
-                    }}
+                transaction {
+                    ExDatabase.RouteStep.select { ExDatabase.RouteStep.routeID eq route[ExDatabase.Route.id].value }
+                        .forEach {
+                            steps[it[ExDatabase.RouteStep.stepTick]] = it
+                        }
+                }
             }
+        }
+
+        override fun getDuration(): Int {
+            return route[ExDatabase.Route.duration]
         }
 
         override fun copy(): ScriptReader {
@@ -129,7 +136,8 @@ class ExScriptDatabase : ScriptDatabase
 
         override fun getShipClass(): ShipClass {
             val shipClassName = route[ExDatabase.Route.shipClass]
-            return ShipClassManager.getShipClass(shipClassName) ?: throw IllegalStateException("No ship class found $shipClassName")
+            return ShipClassManager.getShipClass(shipClassName)
+                ?: throw IllegalStateException("No ship class found $shipClassName")
         }
 
         override fun hasNextAction(): Boolean {
@@ -191,7 +199,7 @@ class ExScriptDatabase : ScriptDatabase
         //todo make not blocking if required
         override fun completeScript(dockedStation: Station) {
             println("Saving script...")
-            val pilotId = if(actor == null){
+            val pilotId = if (actor == null) {
                 null
             } else {
                 (actor as ExPersistenceDatabase.ActorInfoInternal).id

@@ -62,7 +62,7 @@ open class Ship(
     }
 
     fun getHoldQuantity(ct: CommodityType): Int {
-        return hold[ct] ?: error("CommodityType $ct not found in hold.")
+        return hold[ct] ?: 0
     }
 
     fun updateHoldQuantity(ct: CommodityType, delta: Int) {
