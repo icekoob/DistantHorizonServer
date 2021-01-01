@@ -69,11 +69,9 @@ open class Ship(
         val existing = hold[ct] ?: 0
         val newAmt = existing + delta
         hold[ct] = newAmt
-        println("updating hold quantity")
         if (dbHook != null) {
             DHServer.getDatabase().getPersistenceDatabase().updateShipHold(dbHook, ct, newAmt)
             //todo some form of verification that we're still in sync.
-            println("updated in database.")
         }
     }
 

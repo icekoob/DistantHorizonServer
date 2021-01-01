@@ -166,7 +166,6 @@ class Player(val connection: WsContext) : CommandSender {
                 val commodity = CommodityType.fromString(message.getString("commodity_name"))
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, wallet, quantity)
-                println("sold $quantity of $commodity to station, new balance is ${wallet.getBalance()}")
                 queueSendStationMenuMessage()
             }
         } else if (messageType == "chat") {
