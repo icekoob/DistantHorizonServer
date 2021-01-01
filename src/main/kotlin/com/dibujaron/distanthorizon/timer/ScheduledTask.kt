@@ -1,9 +1,7 @@
 package com.dibujaron.distanthorizon.timer
 
-import com.dibujaron.distanthorizon.DHServer
-
-abstract class ScheduledTask {
-    val scheduledAt = DHServer.getTickCount()
+abstract class ScheduledTask(val taskName: String) {
+    val scheduledAt = ScheduledTaskManager.getTicks()
     val id = ScheduledTaskManager.nextId()
 
 
@@ -17,8 +15,8 @@ abstract class ScheduledTask {
 
     }
 
-    fun cancel() {
-        ScheduledTaskManager.cancelTask(this)
+    fun cancel(reason: CancellationReason) {
+        ScheduledTaskManager.cancelTask(this, reason)
     }
 
     fun schedule() {
@@ -26,6 +24,6 @@ abstract class ScheduledTask {
     }
 
     fun ticksSinceScheduled(): Int {
-        return DHServer.getTickCount() - scheduledAt
+        return ScheduledTaskManager.getTicks() - scheduledAt
     }
 }

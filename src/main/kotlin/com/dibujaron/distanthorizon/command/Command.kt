@@ -6,7 +6,8 @@ enum class Command(val commandStr: String, private val handler: CommandHandler) 
     LIST("list", ListCommandHandler()),
     TOP("top", TopCommandHandler()),
     WHOIS("whois", WhoisCommandHandler()),
-    RESTART("restart", RestartCommandHandler());
+    RESTART("restart", RestartCommandHandler()),
+    CANCEL_RESTART("cancelrestart", CancelRestartCommandHandler());
 
     fun canBeExecutedBy(sender: CommandSender): Boolean {
         return handler.getRequiredPermissions().all { sender.hasPermission(it) }

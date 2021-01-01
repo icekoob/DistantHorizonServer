@@ -10,7 +10,10 @@ object PlayerManager {
 
     fun addPlayer(player: Player) {
         connectionMap[player.connection] = player
-        ScheduledTaskManager.runDelayed(5, { broadcast("- ${player.getDisplayName()} joined the game -") })
+        ScheduledTaskManager.runDelayed(
+            "playerJoinAnnounceTask",
+            5,
+            { broadcast("- ${player.getDisplayName()} joined the game -") })
     }
 
     fun mapAuthenticatedPlayer(username: String, player: Player) {

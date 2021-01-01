@@ -1,5 +1,6 @@
 package com.dibujaron.distanthorizon.timer
 
 enum class CancellationReason {
-    UNKNOWN;
+    UNKNOWN,
+    CANCELLED_BY_SUBMITTER;
 }

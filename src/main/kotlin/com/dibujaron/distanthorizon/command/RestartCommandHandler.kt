@@ -6,24 +6,31 @@ import com.dibujaron.distanthorizon.timer.RepeatWarningExecutionTask
 import com.dibujaron.distanthorizon.timer.ScheduledTaskManager
 
 class RestartCommandHandler : CommandHandler {
+
+    companion object{
+        val TASK_NAME = "delayedRestartTask"
+    }
+
     override fun handle(sender: CommandSender, args: List<String>) {
-        var timeInMinutes = 2
+        var timeInSeconds = 120
+        var warnIntervalSeconds = 10
         if (args.isNotEmpty()) {
-            timeInMinutes = args[0].toIntOrNull() ?: 2
+            timeInSeconds = args[0].toIntOrNull() ?: 120
+            if (args.size > 1) {
+                warnIntervalSeconds = args[1].toIntOrNull() ?: 10
+            }
         }
-        sender.sendMessage("Server will restart in $timeInMinutes minutes.")
-        val timeInSeconds = timeInMinutes * 60
+        sender.sendMessage("Server will restart in $timeInSeconds seconds, with a warning every $warnIntervalSeconds seconds.")
         val timeInTicks = timeInSeconds * DHServer.TICKS_PER_SECOND
-        val warnIntervalTicks = DHServer.TICKS_PER_SECOND * 10
+        val warnIntervalTicks = DHServer.TICKS_PER_SECOND * warnIntervalSeconds
         val warningCount = timeInTicks / warnIntervalTicks
-        val task = RepeatWarningExecutionTask(
+        var remainingSeconds = timeInSeconds
+        val task = RepeatWarningExecutionTask(TASK_NAME,
             warnIntervalTicks,
             warningCount,
             {
-                val elapsedTimeTicks = it * warnIntervalTicks
-                val elapsedTimeSeconds = elapsedTimeTicks / DHServer.TICK_LENGTH_SECONDS
-                val remainingTime = (timeInSeconds - elapsedTimeSeconds).toInt()
-                PlayerManager.broadcast("WARNING: The server will restart in $remainingTime seconds! Dock at a station to save your progress!")
+                PlayerManager.broadcast("WARNING: The server will restart in $remainingSeconds seconds! Dock at a station to save your progress!")
+                remainingSeconds -= warnIntervalSeconds
             },
             {
                 PlayerManager.broadcast("WARNING: The server is now shut down, logging out is recommended!")
