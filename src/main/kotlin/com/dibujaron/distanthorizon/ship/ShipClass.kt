@@ -106,8 +106,8 @@ class ShipClass(
 
     fun getGoodRandomColors(): Pair<ShipColor, ShipColor>
     {
-        return Pair(this.primaryColors[0],this.secondaryColors[0])
-        /*var primaryColor = this.primaryColors.random()
+        //return Pair(this.primaryColors[0],this.secondaryColors[0])
+        var primaryColor = this.primaryColors.random()
         var secondaryColor = this.secondaryColors.random()
         var tries = 0
         while(primaryColor.colorDistance(secondaryColor) < 10 && tries < 10000){
@@ -115,7 +115,7 @@ class ShipClass(
             secondaryColor = this.secondaryColors.random()
             tries++
         }
-        return Pair(primaryColor, secondaryColor)*/
+        return Pair(primaryColor, secondaryColor)
     }
 
 }

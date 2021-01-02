@@ -52,7 +52,7 @@ object DHServer {
     val shipHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.ship.offset", "0").toInt()
     val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "10").toInt()
     val worldHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.world.offset", "0").toInt()
-    val playerStartingShip = serverProperties.getProperty("starting.ship", "rijay.mockingbird")
+    val playerStartingShip = serverProperties.getProperty("starting.ship", "rijay.crusader")
     val startingPlanetName = serverProperties.getProperty("starting.planet", "Rakuri")
     val startingOrbitalRadius = serverProperties.getProperty("starting.radius", "400.0").toDouble()
     val startingOrbitalSpeed = serverProperties.getProperty("starting.speed", "25.0").toDouble()
