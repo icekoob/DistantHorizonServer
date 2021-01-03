@@ -60,8 +60,7 @@ class ExScriptDatabase : ScriptDatabase {
         }
 
         val selectedRoute =
-            routes.asSequence()
-                .minByOrNull { it[ExDatabase.Route.departureTick] + it[ExDatabase.Route.duration] } //min by arrival time
+            routes.minBy { it[ExDatabase.Route.departureTick] + it[ExDatabase.Route.duration] } //min by arrival time
         return if (selectedRoute == null) {
             null
         } else {
@@ -178,7 +177,7 @@ class ExScriptDatabase : ScriptDatabase {
         startState: ShipState,
         shipClass: ShipClass
     ): ScriptWriter {
-        println("Beginning script logging.")
+        println("Beginning script logging for ${actorInfo?.displayName}")
         return RelationalScriptWriter(actorInfo, sourceStation, startState, shipClass)
     }
 
