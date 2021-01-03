@@ -30,6 +30,7 @@ object DiscordManager : EventHandler {
         } else {
             println("Warning: Discord integration is disabled, bot token is not set.")
         }
+
     }
 
     private suspend fun initializeBot() {
