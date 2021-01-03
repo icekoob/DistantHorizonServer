@@ -3,70 +3,64 @@
     <output-path>$PROJECT_DIR$/out/artifacts/DistantHorizonServer_jar</output-path>
     <root id="archive" name="DistantHorizonServer.jar">
       <element id="module-output" name="DistantHorizonServer" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-core/2.10.1/jackson-core-2.10.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-servlet/9.4.25.v20191220/jetty-servlet-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/postgresql/postgresql/42.2.16/postgresql-42.2.16.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-client/9.4.25.v20191220/jetty-client-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-http/9.4.25.v20191220/jetty-http-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/websocket/websocket-common/9.4.25.v20191220/websocket-common-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/io/javalin/javalin/3.8.0/javalin-3.8.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-reflect/1.3.61/kotlin-reflect-1.3.61.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/slf4j/slf4j-api/1.7.28/slf4j-api-1.7.28.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib/1.4.0/kotlin-stdlib-1.4.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-webapp/9.4.25.v20191220/jetty-webapp-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib-common/1.4.0/kotlin-stdlib-common-1.4.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-util/9.4.25.v20191220/jetty-util-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/slf4j/slf4j-simple/1.7.28/slf4j-simple-1.7.28.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-security/9.4.25.v20191220/jetty-security-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/json/json/20200518/json-20200518.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-server/9.4.25.v20191220/jetty-server-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/annotations/13.0/annotations-13.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/exposed/exposed-core/0.21.1/exposed-core-0.21.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-databind/2.10.1/jackson-databind-2.10.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/websocket/websocket-server/9.4.25.v20191220/websocket-server-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.3.3/kotlinx-coroutines-core-1.3.3.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.3.61/kotlin-stdlib-jdk7-1.3.61.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/websocket/websocket-api/9.4.25.v20191220/websocket-api-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.3.61/kotlin-stdlib-jdk8-1.3.61.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-xml/9.4.25.v20191220/jetty-xml-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/exposed/exposed-jdbc/0.21.1/exposed-jdbc-0.21.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/javax/servlet/javax.servlet-api/3.1.0/javax.servlet-api-3.1.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/checkerframework/checker-qual/3.5.0/checker-qual-3.5.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-annotations/2.10.1/jackson-annotations-2.10.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/websocket/websocket-client/9.4.25.v20191220/websocket-client-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/websocket/websocket-servlet/9.4.25.v20191220/websocket-servlet-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/eclipse/jetty/jetty-io/9.4.25.v20191220/jetty-io-9.4.25.v20191220.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/junit/junit/4.13/junit-4.13.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/diskord-jvm-1.8.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlinx-coroutines-core-1.3.8.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-stdlib-1.3.71.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/annotations-13.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlinx-serialization-runtime-0.20.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlinx-coroutines-core-common-1.3.8.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlinx-serialization-runtime-common-0.20.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-stdlib-jdk8-1.3.72.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-stdlib-jdk7-1.3.72.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-logging-1.7.9.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/slf4j-api-1.7.30.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-client-cio-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/atomicfu-0.14.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-client-core-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-network-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-http-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-http-cio-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-network-tls-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-utils-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-io-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-client-logging-jvm-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-stdlib-common-1.3.72.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/kotlin-logging-common-1.7.9.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-client-core-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-http-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-utils-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-io-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-http-cio-1.3.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ktor-client-logging-1.3.2.jar" path-in-jar="/" />
+      <element id="library" level="project" name="com.jessecorbett:diskord-jvm:1.8.1" />
+      <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.10.1" />
+      <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.10.1" />
+      <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.10.1" />
+      <element id="library" level="project" name="Maven: com.jessecorbett:diskord-jvm:1.8.1" />
+      <element id="library" level="project" name="Maven: io.github.microutils:kotlin-logging-common:1.7.9" />
+      <element id="library" level="project" name="Maven: io.github.microutils:kotlin-logging:1.7.9" />
+      <element id="library" level="project" name="Maven: io.javalin:javalin:3.8.0" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-client-cio:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-client-core-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-client-core:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-client-logging-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-client-logging:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-http-cio-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-http-cio:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-http-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-http:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-io-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-io:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-network-tls:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-network:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-utils-jvm:1.3.2" />
+      <element id="library" level="project" name="Maven: io.ktor:ktor-utils:1.3.2" />
+      <element id="library" level="project" name="Maven: javax.servlet:javax.servlet-api:3.1.0" />
+      <element id="library" level="project" name="Maven: junit:junit:4.13.1" />
+      <element id="library" level="project" name="Maven: org.checkerframework:checker-qual:3.5.0" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty.websocket:websocket-api:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty.websocket:websocket-client:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty.websocket:websocket-common:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty.websocket:websocket-server:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty.websocket:websocket-servlet:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-client:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-http:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-io:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-security:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-server:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-servlet:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-util:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-webapp:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-xml:9.4.25.v20191220" />
+      <element id="library" level="project" name="Maven: org.hamcrest:hamcrest-core:1.3" />
+      <element id="library" level="project" name="Maven: org.jetbrains.exposed:exposed-core:0.21.1" />
+      <element id="library" level="project" name="Maven: org.jetbrains.exposed:exposed-jdbc:0.21.1" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.3.61" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-common:1.4.0" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.61" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.61" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.4.0" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlinx:atomicfu:0.14.2" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.8" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.20.0" />
+      <element id="library" level="project" name="Maven: org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0" />
+      <element id="library" level="project" name="Maven: org.jetbrains:annotations:13.0" />
+      <element id="library" level="project" name="Maven: org.json:json:20200518" />
+      <element id="library" level="project" name="Maven: org.postgresql:postgresql:42.2.16" />
+      <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.28" />
+      <element id="library" level="project" name="Maven: org.slf4j:slf4j-simple:1.7.28" />
     </root>
   </artifact>
 </component>
