@@ -1,13 +1,12 @@
 package com.dibujaron.distanthorizon.player
 
 import com.dibujaron.distanthorizon.DHServer
+import com.dibujaron.distanthorizon.command.CommandManager
 import com.dibujaron.distanthorizon.command.CommandSender
 import com.dibujaron.distanthorizon.command.Permission
 import com.dibujaron.distanthorizon.database.persistence.AccountInfo
 import com.dibujaron.distanthorizon.database.persistence.ActorInfo
 import com.dibujaron.distanthorizon.database.persistence.ShipInfo
-import com.dibujaron.distanthorizon.event.EventManager
-import com.dibujaron.distanthorizon.event.PlayerChatEvent
 import com.dibujaron.distanthorizon.login.PendingLoginManager
 import com.dibujaron.distanthorizon.orbiter.CommodityType
 import com.dibujaron.distanthorizon.player.wallet.AccountWallet
@@ -159,7 +158,7 @@ class Player(val connection: WsContext) : CommandSender {
                 val commodity = CommodityType.fromString(message.getString("commodity_name"))
                 val quantity = message.getInt("quantity")
                 ship.buyResourceFromStation(commodity, wallet, quantity)
-                println("${getDisplayName()} bought $quantity of $commodity from station, new balance is ${wallet.getBalance()}")
+                println("bought $quantity of $commodity from station, new balance is ${wallet.getBalance()}")
                 queueSendStationMenuMessage()
             }
         } else if (messageType == "sell_to_station") {
@@ -167,15 +166,12 @@ class Player(val connection: WsContext) : CommandSender {
                 val commodity = CommodityType.fromString(message.getString("commodity_name"))
                 val quantity = message.getInt("quantity")
                 ship.sellResourceToStation(commodity, wallet, quantity)
-                println("${getDisplayName()} sold $quantity of $commodity from station, new balance is ${wallet.getBalance()}")
                 queueSendStationMenuMessage()
             }
         } else if (messageType == "chat") {
             val payload = message.getString("payload")
-            val event = PlayerChatEvent(this, payload)
-            EventManager.triggerPlayerChatEvent(event)
-            if (!event.cancelled) {
-                PlayerManager.broadcast(event.player.getDisplayName(), event.message)
+            if (!CommandManager.handlePlayerCommand(this, payload)) {
+                PlayerManager.broadcast(getDisplayName(), payload)
             }
         } else if (messageType == "buy_ship") {
             println("got buy ship message")

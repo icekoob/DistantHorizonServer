@@ -4,7 +4,6 @@ import com.dibujaron.distanthorizon.command.CommandManager
 import com.dibujaron.distanthorizon.command.CommandSender
 import com.dibujaron.distanthorizon.database.DhDatabase
 import com.dibujaron.distanthorizon.database.impl.ExDatabase
-import com.dibujaron.distanthorizon.discord.DiscordManager
 import com.dibujaron.distanthorizon.login.PendingLoginManager
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
 import com.dibujaron.distanthorizon.player.Player
@@ -65,11 +64,6 @@ object DHServer {
         "jdbc:postgresql://localhost/distant_horizon?user=postgres&password=admin"
     )
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
-
-    init {
-        CommandManager.moduleInit()
-        DiscordManager.moduleInit(serverProperties)
-    }
 
     private val javalin = initJavalin(serverPort)
     val timer =

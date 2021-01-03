@@ -192,7 +192,7 @@ open class Ship(
             .filter { it.third < maxDistSquared }
             .onEach { anyPassedDistTest = true }
             .filter { (it.first.getVelocity() - it.second.getVelocity()).lengthSquared < maxClosingSpeedSquared }
-            .minBy { it.third }
+            .minByOrNull { it.third }
 
         return if (match != null) {
             val bestShipPort = match.first
