@@ -22,7 +22,7 @@ class CommodityStore(val type: CommodityType, properties: Properties) {
         retval.put("display_name", displayName)
         retval.put("price", price)
         retval.put("quantity_available", quantityAvailable)
-        return retval
+        return retval 
     }
 
     fun tick() {
