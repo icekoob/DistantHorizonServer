@@ -23,7 +23,7 @@ object DiscordManager : EventHandler {
         BOT_TOKEN =
             properties.getProperty("discord.bot.token", "")
         CHANNEL_ID = properties.getProperty("discord.bot.channel.id", "")
-        BOT_USERNAME = properties.getProperty("discord.bot.username", "KANE")
+        BOT_USERNAME = properties.getProperty("discord.bot.username", "Ingame Chat")
         if (BOT_TOKEN.isNotEmpty() && CHANNEL_ID.isNotEmpty()) {
             EventManager.registerEvents(this)
             GlobalScope.launch { initializeBot() }
