@@ -1,10 +1,23 @@
 package com.dibujaron.distanthorizon.command
 
+import com.dibujaron.distanthorizon.event.EventHandler
+import com.dibujaron.distanthorizon.event.EventManager
+import com.dibujaron.distanthorizon.event.PlayerChatEvent
 import com.dibujaron.distanthorizon.player.Player
 
-object CommandManager {
+object CommandManager : EventHandler {
 
-    val CONSOLE_SENDER = ConsoleCommandSender()
+    private val CONSOLE_SENDER = ConsoleCommandSender()
+
+    fun moduleInit() {
+        EventManager.registerEvents(this)
+    }
+
+    override fun onPlayerChat(event: PlayerChatEvent) {
+        val handled = handlePlayerCommand(event.player, event.message)
+        event.cancelled = handled
+    }
+
     fun handlePlayerCommand(issuer: Player, commandStr: String): Boolean {
         if (commandStr.startsWith("/")) {
             println("handling command $commandStr from player ${issuer.getUsername()}")

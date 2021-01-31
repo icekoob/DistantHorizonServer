@@ -87,6 +87,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun mapShipInfo(row: ResultRow): ShipInfoInternal {
         val holdMap = HashMap<CommodityType, Int>()
         CommodityType.values().forEach { ct ->
@@ -219,6 +220,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         throw java.lang.IllegalStateException("Object must be from same db")
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun updateShipHold(ship: ShipInfo, commodity: CommodityType, amount: Int) {
         if (ship is ShipInfoInternal) {
             val shipIDFilter = (ExDatabase.Ship.id eq ship.id)

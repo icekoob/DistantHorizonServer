@@ -11,9 +11,9 @@ interface PersistenceDatabase {
     fun deleteActor(actorInfo: ActorInfo)
     fun updateShipOfActor(
         actor: ActorInfo,
-        shipClass: ShipClass,
-        primaryColor: ShipColor,
-        secondaryColor: ShipColor
+        sc: ShipClass,
+        primColor: ShipColor,
+        secColor: ShipColor
     ): ActorInfo?
 
     fun updateActorBalance(actor: ActorInfo, newBal: Int): ActorInfo?
