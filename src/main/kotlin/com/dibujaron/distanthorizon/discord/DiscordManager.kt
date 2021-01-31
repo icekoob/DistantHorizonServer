@@ -13,13 +13,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
+import kotlin.collections.HashMap
+
+data class SentMessage(val sender: String, val message: String)
 
 object DiscordManager : EventHandler {
 
     var CHANNEL_ID = ""
     var BOT_TOKEN = ""
     var BOT_USERNAME = ""
+    var expectingMessageFromSelf = false
     private val scope = CoroutineScope(Dispatchers.Default)
+    private var recentlySentCache: Map<Long, SentMessage> = HashMap<Long, SentMessage>()
     fun moduleInit(properties: Properties) {
         BOT_TOKEN =
             properties.getProperty("discord.bot.token", "")
@@ -43,8 +48,16 @@ object DiscordManager : EventHandler {
                     delete()
                 }
                 messageCreated {
-                    if (it.channelId == CHANNEL_ID && it.author.username != BOT_USERNAME) {
-                        PlayerManager.broadcast(it.author.username, it.content)
+                    if (it.channelId == CHANNEL_ID) {
+                        if (it.author.username == BOT_USERNAME ){
+                            if(expectingMessageFromSelf) {
+                                expectingMessageFromSelf = false //got it
+                            } else {
+                                PlayerManager.broadcast(it.content) //message includes author
+                            }
+                        } else {
+                            PlayerManager.broadcast(it.author.username, it.content)
+                        }
                     }
                 }
             }
@@ -56,6 +69,7 @@ object DiscordManager : EventHandler {
         if (BOT_TOKEN.isNotEmpty() && CHANNEL_ID.isNotEmpty()) {
             val sender = event.player.getDisplayName()
             val message = event.message
+            expectingMessageFromSelf = true
             scope.launch {
                 relayChat(sender, message)
             }
