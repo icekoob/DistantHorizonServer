@@ -13,4 +13,8 @@ class ListCommandHandler : CommandHandler {
             }
         sender.sendMessage("Total ships currently active: ${ShipManager.getShips().size}")
     }
+
+    override fun getRequiredPermissions(): List<Permission> {
+        return listOf(Permission.LIST)
+    }
 }
