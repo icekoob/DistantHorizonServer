@@ -123,7 +123,6 @@ object DHServer {
     var accumulator = 0.0
 
     private fun mainLoop() {
-        sendBalancerPing()
         val tickTime = System.currentTimeMillis()
         val delta = tickTime - lastTickTime
         accumulator += delta
@@ -136,16 +135,16 @@ object DHServer {
         lastTickTime = tickTime
     }
 
-    var lastBalancerPing = 0
+    //var lastBalancerPing = 0
     private fun tick() {
         OrbiterManager.tick()
         ShipManager.tick()
         ScheduledTaskManager.tick()
-        val secondsSinceLastBalancerPing = (tickCount - lastBalancerPing) * TICK_LENGTH_SECONDS
+        /*,val secondsSinceLastBalancerPing = (tickCount - lastBalancerPing) * TICK_LENGTH_SECONDS
         if(secondsSinceLastBalancerPing >= balancerPingsEverySeconds){
             lastBalancerPing = tickCount
             sendBalancerPing()
-        }
+        }*/
         val isWorldStateMessageTick = tickCount % worldHeartbeatsEvery == worldHeartbeatsTickOffset
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
