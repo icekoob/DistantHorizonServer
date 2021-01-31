@@ -9,9 +9,9 @@ import com.jessecorbett.diskord.dsl.command
 import com.jessecorbett.diskord.dsl.commands
 import com.jessecorbett.diskord.util.ClientStore
 import com.jessecorbett.diskord.util.sendMessage
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.*
 
 object DiscordManager : EventHandler {
@@ -19,6 +19,7 @@ object DiscordManager : EventHandler {
     var CHANNEL_ID = ""
     var BOT_TOKEN = ""
     var BOT_USERNAME = ""
+    private val scope = CoroutineScope(Dispatchers.Default)
     fun moduleInit(properties: Properties) {
         BOT_TOKEN =
             properties.getProperty("discord.bot.token", "")
@@ -26,7 +27,8 @@ object DiscordManager : EventHandler {
         BOT_USERNAME = properties.getProperty("discord.bot.username", "Ingame Chat")
         if (BOT_TOKEN.isNotEmpty() && CHANNEL_ID.isNotEmpty()) {
             EventManager.registerEvents(this)
-            GlobalScope.launch { initializeBot() }
+            println("Discord integration enabled, launching bot.")
+            scope.launch { initializeBot() }
         } else {
             println("Warning: Discord integration is disabled, bot token is not set.")
         }
@@ -47,11 +49,16 @@ object DiscordManager : EventHandler {
                 }
             }
         }
+        println("Discord integration initialized.")
     }
 
     override fun onPlayerChat(event: PlayerChatEvent) {
         if (BOT_TOKEN.isNotEmpty() && CHANNEL_ID.isNotEmpty()) {
-            runBlocking { relayChat(event.player.getDisplayName(), event.message) }
+            val sender = event.player.getDisplayName()
+            val message = event.message
+            scope.launch {
+                relayChat(sender, message)
+            }
         }
     }
 
