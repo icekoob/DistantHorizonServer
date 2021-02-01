@@ -12,8 +12,8 @@ import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import com.dibujaron.distanthorizon.timer.ScheduledTaskManager
-import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.extensions.jsonBody
+import com.github.kittinunf.fuel.httpPost
 import io.javalin.Javalin
 import io.javalin.websocket.WsBinaryMessageContext
 import io.javalin.websocket.WsCloseContext
@@ -57,6 +57,7 @@ object DHServer {
     val worldHeartbeatsEvery = serverProperties.getProperty("heartbeats.world", "10").toInt()
     val worldHeartbeatsTickOffset = serverProperties.getProperty("heartbeats.world.offset", "0").toInt()
     val balancerPingsEverySeconds = serverProperties.getProperty("balancer.pings.seconds", "30").toInt()
+    val balancerPingsEveryTicks = balancerPingsEverySeconds * TICKS_PER_SECOND
     val playerStartingShip = serverProperties.getProperty("starting.ship", "rijay.crusader")
     val startingPlanetName = serverProperties.getProperty("starting.planet", "Rakuri")
     val startingOrbitalRadius = serverProperties.getProperty("starting.radius", "400.0").toDouble()
@@ -71,6 +72,7 @@ object DHServer {
     val dbDriver = serverProperties.getProperty("database.driver", "org.postgresql.Driver")
 
     init {
+        sendBalancerPing()
         CommandManager.moduleInit()
         DiscordManager.moduleInit(serverProperties)
     }
@@ -135,16 +137,16 @@ object DHServer {
         lastTickTime = tickTime
     }
 
-    //var lastBalancerPing = 0
+    var lastBalancerPing = 0
     private fun tick() {
         OrbiterManager.tick()
         ShipManager.tick()
         ScheduledTaskManager.tick()
-        /*,val secondsSinceLastBalancerPing = (tickCount - lastBalancerPing) * TICK_LENGTH_SECONDS
-        if(secondsSinceLastBalancerPing >= balancerPingsEverySeconds){
+        val ticksSinceLastBalancerPing = tickCount - lastBalancerPing
+        if(ticksSinceLastBalancerPing >= balancerPingsEveryTicks){
             lastBalancerPing = tickCount
             sendBalancerPing()
-        }*/
+        }
         val isWorldStateMessageTick = tickCount % worldHeartbeatsEvery == worldHeartbeatsTickOffset
         if (isWorldStateMessageTick) {
             val worldStateMessage = composeWorldStateMessage()
@@ -164,13 +166,15 @@ object DHServer {
     }
 
     private fun sendBalancerPing(){
+        println("sending balancer ping.")
         val payload = JSONObject()
         payload.put("secret", serverSecret)
-        payload.put("active_players", PlayerManager.playerCount())
-        payload.put("max_players", maxPlayers)
-        Fuel.post("http://distant-horizon.io/server_heartbeat/")
+        payload.put("player_count", PlayerManager.playerCount())
+        payload.put("server_limit", maxPlayers)
+        "http://distant-horizon.io/server_heartbeat"
+            .httpPost()
             .jsonBody(payload.toString())
-            .response { result -> println(result)}
+            .responseString{ result -> println(result)}
     }
 
     //gotta get rid of the confirmation step. Also token should be ageless, or long-lived.
