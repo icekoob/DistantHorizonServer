@@ -12,8 +12,6 @@ import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
 import com.dibujaron.distanthorizon.ship.ShipManager
 import com.dibujaron.distanthorizon.timer.ScheduledTaskManager
-import com.github.kittinunf.fuel.core.extensions.jsonBody
-import com.github.kittinunf.fuel.httpPost
 import io.javalin.Javalin
 import io.javalin.websocket.WsBinaryMessageContext
 import io.javalin.websocket.WsCloseContext
@@ -166,7 +164,7 @@ object DHServer {
     }
 
     private fun sendBalancerPing(){
-        println("sending balancer ping.")
+        /*println("sending balancer ping.")
         val payload = JSONObject()
         payload.put("secret", serverSecret)
         payload.put("player_count", PlayerManager.playerCount())
@@ -174,7 +172,7 @@ object DHServer {
         "http://distant-horizon.io/server_heartbeat"
             .httpPost()
             .jsonBody(payload.toString())
-            .responseString{ result -> println(result)}
+            .responseString{ result -> println(result)}*/
     }
 
     //gotta get rid of the confirmation step. Also token should be ageless, or long-lived.
