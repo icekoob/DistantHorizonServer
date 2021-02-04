@@ -206,6 +206,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     companion object {
         fun createEconomyCSV(): String {
             val builder = StringBuilder()
+            builder.append("station,")
             builder.append(CommodityType.values().asSequence()
                 .map{it.displayName}
                 .joinToString(","))
