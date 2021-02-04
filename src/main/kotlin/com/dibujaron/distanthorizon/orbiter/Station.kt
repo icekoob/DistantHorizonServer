@@ -8,6 +8,8 @@ import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.wallet.Wallet
 import com.dibujaron.distanthorizon.ship.*
 import com.dibujaron.distanthorizon.utils.TimeUtils
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVPrinter
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -27,7 +29,7 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
     private val commodityStores: Map<CommodityType, CommodityStore> = CommodityType
         .values()
         .asSequence()
-        .map { CommodityStore(it, properties) }
+        .map { FixedValueCommodityStore(it, properties) }
         .map { Pair(it.type, it) }
         .toMap()
 
@@ -191,5 +193,28 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
         retval.put("display_name", displayName)
         retval.put("navigable", navigable)
         return retval
+    }
+
+    fun writeEconomyCSV(printer: CSVPrinter) {
+        printer.print(displayName)
+        CommodityType.values().asSequence()
+            .map { commodityStores[it] ?: error("commodity type does not exist") }
+            .map { it.price }
+            .map { if (it == 0) "" else it.toString() }
+            .forEach { printer.print(it) }
+        printer.println()
+    }
+
+    companion object {
+        fun createEconomyCSV(): String {
+            val builder = StringBuilder()
+            val printer = CSVPrinter(builder, CSVFormat.DEFAULT)
+            CommodityType.values().asSequence()
+                .forEach { printer.print(it.displayName) }
+            printer.println()
+            OrbiterManager.getStations().forEach { it.writeEconomyCSV(printer) }
+            printer.close()
+            return builder.toString()
+        }
     }
 }

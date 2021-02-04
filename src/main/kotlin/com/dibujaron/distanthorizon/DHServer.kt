@@ -7,6 +7,7 @@ import com.dibujaron.distanthorizon.database.impl.ExDatabase
 import com.dibujaron.distanthorizon.discord.DiscordManager
 import com.dibujaron.distanthorizon.login.PendingLoginManager
 import com.dibujaron.distanthorizon.orbiter.OrbiterManager
+import com.dibujaron.distanthorizon.orbiter.Station
 import com.dibujaron.distanthorizon.player.Player
 import com.dibujaron.distanthorizon.player.PlayerManager
 import com.dibujaron.distanthorizon.ship.Ship
@@ -237,6 +238,8 @@ object DHServer {
                 }
                 it.result(db.selectOrCreateAccount(acctName).toJSON().toString())
             }
+        }.get("/ecoData"){
+            it.result(Station.createEconomyCSV())
         }.start(port)
     }
 
