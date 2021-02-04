@@ -208,10 +208,12 @@ class Station(parentName: String?, stationName: String, properties: Properties) 
             val builder = StringBuilder()
             builder.append("station,")
             builder.append(CommodityType.values().asSequence()
-                .map{it.displayName}
+                .map { it.displayName }
                 .joinToString(","))
             builder.append("\n")
-            OrbiterManager.getStations().forEach { it.writeEconomyCSV(builder) }
+            OrbiterManager.getStations().asSequence()
+                .sortedBy { it.displayName }
+                .forEach { it.writeEconomyCSV(builder) }
             return builder.toString()
         }
     }
