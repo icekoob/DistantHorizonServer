@@ -108,13 +108,14 @@ class ExPersistenceDatabase : PersistenceDatabase {
         if (accountInfo is AccountInfoInternal) {
             val acctId = accountInfo.id
             val colors = ShipClassManager.getShipClass(DHServer.playerStartingShip)!!.getGoodRandomColors()
-            transaction {
-                val shipId = ExDatabase.Ship.insertAndGetId {
+            val shipId = transaction {
+                ExDatabase.Ship.insertAndGetId {
                     it[shipClass] = DHServer.playerStartingShip
                     it[primaryColor] = colors.first.toInt()//ShipColor(Color(0,148,255)),
                     it[secondaryColor] = colors.second.toInt()
                 }
-
+            }
+            transaction {
                 ExDatabase.Actor.insert {
                     it[ownedByAccount] = acctId
                     it[displayName] = actorDisplayName
