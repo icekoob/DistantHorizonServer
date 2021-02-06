@@ -190,6 +190,7 @@ class Player(val connection: WsContext) : CommandSender {
                 wallet.setBalance(newBalance)
                 updateShip(ShipClassManager.getShipClass(qualName)!!, color1, color2)
             }
+            queueSendStationMenuMessage()
         }
     }
 
