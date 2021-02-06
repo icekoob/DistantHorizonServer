@@ -104,7 +104,7 @@ class ExPersistenceDatabase : PersistenceDatabase {
         )
     }
 
-    override fun createNewActorForAccount(accountInfo: AccountInfo, actorDisplayName: String): AccountInfo? {
+    override fun createNewActorForAccount(accountInfo: AccountInfo, actorDisplayName: String): AccountInfo {
         if (accountInfo is AccountInfoInternal) {
             val acctId = accountInfo.id
             val colors = ShipClassManager.getShipClass(DHServer.playerStartingShip)!!.getGoodRandomColors()

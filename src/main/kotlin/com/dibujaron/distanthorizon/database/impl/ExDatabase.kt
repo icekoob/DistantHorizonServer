@@ -64,7 +64,7 @@ class ExDatabase(databaseUrl: String, databaseDriver: String) : DhDatabase {
     }
 
     object Actor: IntIdTable("actor") {
-        val ownedByAccount = reference("account_id", Ship.id)
+        val ownedByAccount = reference("account_id", Account.id)
         val displayName: Column<String> = varchar("display_name", 32)
         val balance: Column<Int> = integer("balance")
         val lastDockedStation: Column<String?> = varchar("last_docked_station", 32).nullable()
