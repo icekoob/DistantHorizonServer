@@ -167,7 +167,6 @@ object DHServer {
     }
 
     private fun sendBalancerPing(){
-        println("sending balancer ping.")
         val payload = JSONObject()
         payload.put("secret", serverSecret)
         payload.put("player_count", PlayerManager.playerCount())
@@ -175,7 +174,7 @@ object DHServer {
         "http://distant-horizon.io/server_heartbeat"
             .httpPost()
             .jsonBody(payload.toString())
-            .responseString{ result -> println(result)}
+            .responseString{result -> result.get() }
     }
 
     //gotta get rid of the confirmation step. Also token should be ageless, or long-lived.

@@ -14,7 +14,7 @@ class AIShip(private val scriptReader: ScriptReader) : Ship(
                 receiveInputChange(scriptReader.getNextAction())
             }
         } else {
-            println("AI ship $uuid completed run to ${scriptReader.getDestinationStation().name} and will be removed.")
+            //println("AI ship $uuid completed run to ${scriptReader.getDestinationStation().name} and will be removed.")
             ShipManager.removeShip(this)
         }
         return super.computeNextState() //will apply the inputs.
